@@ -1,0 +1,37 @@
+/* Always square; the game screen sets --board-size, a story may override it locally. */
+.board {
+  position: relative;
+  width: var(--board-size);
+  aspect-ratio: 1;
+  padding: var(--board-padding);
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  grid-template-rows: repeat(9, minmax(0, 1fr));
+  gap: var(--board-gap);
+  background: var(--color-board);
+  border-radius: var(--radius-md);
+}
+
+.board[data-path='red'] {
+  --path-color: var(--ball-red);
+}
+
+.board[data-path='orange'] {
+  --path-color: var(--ball-orange);
+}
+
+.board[data-path='yellow'] {
+  --path-color: var(--ball-yellow);
+}
+
+.board[data-path='green'] {
+  --path-color: var(--ball-green);
+}
+
+.board[data-path='blue'] {
+  --path-color: var(--ball-blue);
+}
+
+.board[data-path='purple'] {
+  --path-color: var(--ball-purple);
+}

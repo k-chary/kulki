@@ -1,6 +1,5 @@
-// Stand-in until the Ball from #7 merges; it keeps the same path, exports and
-// props, so whichever PR merges second drops its copy.
-import type { Color } from '../../rules/color';
+import type { AnimationEvent } from 'react';
+import type { Color } from '../../rules';
 import styles from './Ball.module.css';
 
 export type BallState = 'idle' | 'selected' | 'shake' | 'clearing' | 'spawning';
@@ -8,21 +7,31 @@ export type BallState = 'idle' | 'selected' | 'shake' | 'clearing' | 'spawning';
 export interface BallProps {
   color: Color;
   state?: BallState;
-  /** Spawn stagger, applied as animation-delay. */
+  /** Spawn stagger, read from --dur-spawn-stagger by the caller. */
   delayMs?: number;
+  /** Fires when a shake, clear or spawn ends (the hop loops and never ends). */
   onAnimationEnd?: () => void;
   className?: string;
 }
 
+/**
+ * A ball, 80% of its container. A parent resizes it by overriding --ball-size
+ * and scales it on hover through --ball-scale.
+ */
 export function Ball({ color, state = 'idle', delayMs, onAnimationEnd, className }: BallProps) {
+  const handleAnimationEnd = onAnimationEnd
+    ? (event: AnimationEvent<HTMLSpanElement>) => {
+        if (event.target === event.currentTarget) onAnimationEnd();
+      }
+    : undefined;
   return (
     <span
-      aria-hidden="true"
       className={className ? `${styles.ball} ${className}` : styles.ball}
       data-color={color}
       data-state={state}
-      style={delayMs === undefined ? undefined : { animationDelay: `${delayMs}ms` }}
-      onAnimationEnd={onAnimationEnd}
+      style={delayMs ? { animationDelay: `${delayMs}ms` } : undefined}
+      onAnimationEnd={handleAnimationEnd}
+      aria-hidden="true"
     />
   );
 }

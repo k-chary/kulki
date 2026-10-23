@@ -1,0 +1,17 @@
+/* Positioned against the board's padding box: one field wide, stepped by a field plus a gap. */
+.moving {
+  position: absolute;
+  left: var(--board-padding);
+  top: var(--board-padding);
+  width: calc((100% - 2 * var(--board-padding) - 8 * var(--board-gap)) / 9);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  z-index: var(--z-moving);
+  pointer-events: none;
+  transform: translate(
+    calc(var(--col) * (100% + var(--board-gap))),
+    calc(var(--row) * (100% + var(--board-gap)))
+  );
+  transition: transform var(--dur-step) var(--ease-step);
+}

@@ -1,0 +1,46 @@
+/* Storybook only: a field-sized tile to show a ball in. */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.tile {
+  width: calc(var(--control-height) * 1.5);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: var(--board-padding);
+  background: var(--color-board);
+  border-radius: var(--radius-md);
+}
+
+.tile > * {
+  width: 100%;
+  height: 100%;
+}
+
+.slot {
+  width: var(--preview-slot-size);
+  height: var(--preview-slot-size);
+  display: grid;
+  place-items: center;
+  background: var(--color-field);
+  border-radius: var(--radius-sm);
+}
+
+.dots {
+  --ball-size: var(--logo-dot-size);
+
+  display: flex;
+  gap: var(--space-1);
+}

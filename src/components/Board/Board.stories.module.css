@@ -1,0 +1,4 @@
+/* Storybook only: a board that fits a story pane (528 px at most). */
+.stage {
+  --board-size: min(100%, calc(var(--control-height) * 12));
+}
