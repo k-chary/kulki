@@ -40,6 +40,7 @@ CSS Modules (`*.module.css`) may only use design tokens: no hex or `rgb()` color
 ## Layout
 
 - `src/` — React frontend (`src/styles/` holds global CSS; tokens arrive with issue #2)
+- `src/rules/` — game rules in plain TypeScript (board, seedable RNG, pathfinding). ESLint forbids React, Tauri, Node and browser APIs there; `tests/rules-boundary.test.ts` proves it
 - `src-tauri/` — Tauri shell (Rust); window settings live in `src-tauri/tauri.conf.json`
 - `tests/` — tooling tests and fixtures
 - `docs/` — spec and design reference
