@@ -1,0 +1,78 @@
+.field {
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  background: var(--color-field);
+  border-radius: var(--radius-sm);
+  cursor: default;
+  transition: background-color var(--dur-hover) var(--ease-standard);
+}
+
+.field:focus-visible {
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: calc(var(--ring-width) / 2);
+  z-index: 1;
+}
+
+.field[data-ball='true'] {
+  cursor: pointer;
+}
+
+/* Hover lightens a field with a ball and lifts the ball (Ball reads --ball-scale). */
+.field[data-ball='true']:not([data-locked='true']):hover,
+.field[data-hover='true'] {
+  --ball-scale: var(--ball-hover-scale);
+
+  background: var(--color-field-hover);
+}
+
+.field[data-state='selected'] {
+  background: var(--color-field-hover);
+}
+
+/* The inset ring, drawn as a border so it stays clear of the focus outline. */
+.field[data-state='selected']::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: var(--ring-width) solid var(--color-ring);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* --path-color is the selected ball's color, set by the Board. */
+.field[data-state='path']::after {
+  content: '';
+  width: var(--path-dot-size);
+  aspect-ratio: 1;
+  border-radius: var(--radius-full);
+  background: var(--path-color);
+  opacity: var(--path-dot-opacity);
+}
+
+.field[data-state='target'] {
+  cursor: pointer;
+  background: var(--color-field-hover);
+  outline: var(--ring-width) dashed var(--path-color);
+  outline-offset: calc(-1 * var(--ring-width));
+}
+
+.field[data-state='blocked'] {
+  cursor: not-allowed;
+}
+
+.field[data-state='clearing'] {
+  background: var(--color-field-hover);
+}
+
+.field[data-locked='true'] {
+  cursor: default;
+}
