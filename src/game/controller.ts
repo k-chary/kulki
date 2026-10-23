@@ -16,6 +16,14 @@ import {
   playTurn,
   sameCell,
 } from '../rules';
+import {
+  type HighscoreEntry,
+  type HighscoreRow,
+  pointsMissing,
+  qualifies,
+  placeFor,
+  rowsWithLive,
+} from '../highscores/ranking';
 
 export interface ControllerState {
   readonly game: GameState;
@@ -27,6 +35,8 @@ export interface ControllerState {
   /** Turns played in this game; „Nowa gra” asks for confirmation once it is above 0. */
   readonly moves: number;
   readonly confirming: boolean;
+  /** Set once the score of a finished game is saved; rings its row until the next game. */
+  readonly saved: { readonly name: string; readonly place: number } | null;
 }
 
 export type ControllerAction =
@@ -35,7 +45,8 @@ export type ControllerAction =
   | { type: 'clearNotice'; noticeId: number }
   | { type: 'requestNewGame' }
   | { type: 'cancelNewGame' }
-  | { type: 'confirmNewGame' };
+  | { type: 'confirmNewGame' }
+  | { type: 'scoreSaved'; name: string; place: number };
 
 export function initialState(
   game: GameState,
@@ -49,6 +60,7 @@ export function initialState(
     noticeId: notice ? 1 : 0,
     moves: 0,
     confirming: false,
+    saved: null,
   };
 }
 
@@ -109,6 +121,10 @@ export function reduce(
       return { ...state, confirming: false };
     case 'confirmNewGame':
       return state.confirming ? freshGame(state, rng) : state;
+    case 'scoreSaved':
+      return state.game.gameOver && state.saved === null
+        ? { ...state, saved: { name: action.name, place: action.place } }
+        : state;
   }
 }
 
@@ -160,4 +176,44 @@ export function boardView(state: ControllerState): CellView[] {
     }
   }
   return cells;
+}
+
+/** The „Koniec gry” dialog in the state the finished game calls for; null while it is running. */
+export type GameOverView =
+  | { state: 'entry'; place: number; initialName: string }
+  | { state: 'saved'; name: string; place: number }
+  | { state: 'outside'; missing: number };
+
+/**
+ * Picks the game-over state: name entry when the score makes the top 30 (the field
+ * prefilled with the last name used, empty on the very first game), outside the top
+ * 30 with the points missing otherwise, and saved once the name is stored.
+ */
+export function gameOverView(
+  state: ControllerState,
+  highscores: readonly HighscoreEntry[],
+  lastName: string | null,
+): GameOverView | null {
+  if (!state.game.gameOver) return null;
+  if (state.saved) return { state: 'saved', ...state.saved };
+  const { score } = state.game;
+  if (!qualifies(score, highscores)) {
+    return { state: 'outside', missing: pointsMissing(score, highscores) };
+  }
+  return { state: 'entry', place: placeFor(score, highscores), initialName: lastName ?? '' };
+}
+
+/**
+ * The rows of the highscore list. While playing, and while the name is still to be
+ * entered, „Ta gra · teraz” sits at the place the score would take; once saved the
+ * list holds stored rows only, and the saved one is ringed by the list.
+ */
+export function highscoreRows(
+  state: ControllerState,
+  highscores: readonly HighscoreEntry[],
+): HighscoreRow[] {
+  if (state.saved) {
+    return highscores.map((entry, i) => ({ kind: 'stored', place: i + 1, entry }));
+  }
+  return rowsWithLive(highscores, state.game.score);
 }

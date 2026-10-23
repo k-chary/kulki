@@ -2,7 +2,9 @@
 //   ?seed=7                    a seeded random generator for the whole session
 //   ?board=<9 rows split by />  a fixture board, e.g. rrrr...../......... (r o y g b p, . empty)
 //   &preview=rgb               the colors of the next balls (default: red, red, red)
+//   ?scores=900,500,120        highscores already stored, best first (names „Gracz 1”, „Gracz 2”, …)
 // Only available in dev and in the build made for the tests (VITE_E2E=1), never in a release.
+import type { HighscoreEntry } from '../highscores/ranking';
 import { type Color, type GameState, type Rng, createRng, SPAWN_COUNT } from '../rules';
 import { parseBoard } from '../rules/testing';
 
@@ -19,6 +21,8 @@ export interface Start {
   rng: Rng;
   /** A fixture game; without one the screen starts a new game. */
   game?: GameState;
+  /** Highscores to start with; empty without `scores`. */
+  highscores: HighscoreEntry[];
 }
 
 export function hookEnabled(): boolean {
@@ -33,17 +37,33 @@ export function parsePreview(text: string): Color[] {
   return colors as Color[];
 }
 
+export function parseScores(text: string): HighscoreEntry[] {
+  return text
+    .split(',')
+    .filter((part) => part !== '')
+    .map((part, i) => ({
+      name: `Gracz ${i + 1}`,
+      score: Number(part),
+      date: '2026-01-15T12:00:00.000Z',
+    }));
+}
+
 export function startFromSearch(search: string, enabled = hookEnabled()): Start {
   const params = new URLSearchParams(search);
   const seed = params.get('seed');
   const board = params.get('board');
-  if (!enabled || (seed === null && board === null)) return { rng: Math.random };
+  const scores = params.get('scores');
+  if (!enabled || (seed === null && board === null && scores === null)) {
+    return { rng: Math.random, highscores: [] };
+  }
 
   const rng = seed === null ? Math.random : createRng(Number(seed));
-  if (board === null) return { rng };
+  const highscores = parseScores(scores ?? '');
+  if (board === null) return { rng, highscores };
   const preview = parsePreview(params.get('preview') ?? 'rrr');
   return {
     rng,
+    highscores,
     game: {
       board: parseBoard(board.replaceAll('/', '\n')),
       preview,

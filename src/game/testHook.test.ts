@@ -24,4 +24,14 @@ describe('startFromSearch', () => {
   it('rejects a preview that is not three colors', () => {
     expect(() => startFromSearch(`?board=${ROWS}&preview=rg`, true)).toThrow();
   });
+
+  it('reads stored highscores, best first', () => {
+    const { highscores } = startFromSearch('?scores=900,500', true);
+    expect(highscores.map((row) => [row.name, row.score])).toEqual([
+      ['Gracz 1', 900],
+      ['Gracz 2', 500],
+    ]);
+    expect(startFromSearch('?seed=1', true).highscores).toEqual([]);
+    expect(startFromSearch('?scores=900', false).highscores).toEqual([]);
+  });
 });
