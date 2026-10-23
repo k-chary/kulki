@@ -1,0 +1,8 @@
+/* Must fail Stylelint: every declaration uses a raw value instead of a token. */
+.field {
+  color: #e5484d;
+  padding: 8px;
+  font-family: Sora, sans-serif;
+  transition-duration: 300ms;
+  border: 1px solid #fff;
+}

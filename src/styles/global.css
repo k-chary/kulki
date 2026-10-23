@@ -1,0 +1,19 @@
+/* App-wide behavior only. Visual values come from tokens.css (issue #2). */
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+  user-select: none;
+  cursor: default;
+}
+
+input,
+textarea {
+  user-select: text;
+}

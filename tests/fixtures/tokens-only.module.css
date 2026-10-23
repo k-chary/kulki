@@ -1,0 +1,11 @@
+/* Must pass Stylelint: only tokens and keywords. */
+.field {
+  color: var(--color-text);
+  padding: var(--space-2);
+  font-family: var(--font-body);
+  transition-duration: var(--duration-clear);
+  border: var(--border-width) solid var(--color-border);
+  width: calc(var(--size-control) * 2);
+  background-color: transparent;
+  margin: 0;
+}
