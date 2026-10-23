@@ -18,3 +18,12 @@ export {
 } from './board';
 export { type Rng, createRng, randomColor, randomInt, sample } from './random';
 export { findPath, reachable } from './path';
+export {
+  MIN_LINE_LENGTH,
+  POINTS_PER_BALL,
+  type Line,
+  findAllLines,
+  findLines,
+  lineCells,
+  scoreFor,
+} from './lines';
