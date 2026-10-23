@@ -1,0 +1,20 @@
+[package]
+name = "kulki"
+version = "0.1.0"
+description = "Kulki, a Lines-style ball puzzle"
+authors = ["k-chary"]
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+# The _lib suffix avoids a name clash with the binary on Windows.
+name = "kulki_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
