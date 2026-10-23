@@ -8,7 +8,7 @@ A Lines-style ball puzzle for the desktop, in Polish. Tauri + React + TypeScript
 
 ## Prerequisites
 
-- Node.js 22 (see `.nvmrc`) and npm
+- Node.js 26 (see `.nvmrc`; 22 or newer works) and npm
 - Rust (stable) and the [Tauri 2 system dependencies](https://v2.tauri.app/start/prerequisites/) for your OS. On Debian/Ubuntu:
   `sudo apt install libwebkit2gtk-4.1-dev build-essential libssl-dev libayatana-appindicator3-dev librsvg2-dev`
 
