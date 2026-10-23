@@ -1,0 +1,65 @@
+name: Release
+
+# A release is a version tag such as v0.1.0, pushed by hand. The full suite must pass
+# before any installer is built; the result is a draft GitHub Release to review and publish.
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  suite:
+    name: Full suite
+    uses: ./.github/workflows/full-suite.yml
+
+  installers:
+    name: Installer (${{ matrix.name }})
+    needs: suite
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            os: windows-latest
+            args: ''
+          - name: macOS (Apple silicon)
+            os: macos-latest
+            args: --target aarch64-apple-darwin
+          - name: macOS (Intel)
+            os: macos-latest
+            args: --target x86_64-apple-darwin
+          - name: Linux
+            os: ubuntu-22.04
+            args: ''
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.os == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Install Tauri system dependencies
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libssl-dev libayatana-appindicator3-dev librsvg2-dev
+      - run: npm ci
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: Kulki ${{ github.ref_name }}
+          releaseBody: Instalatory dla Windows, macOS i Linuksa.
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
