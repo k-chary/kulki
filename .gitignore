@@ -9,4 +9,5 @@ dist
 # Tauri
 src-tauri/target
 src-tauri/gen/schemas
+coverage
 storybook-static

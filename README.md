@@ -45,6 +45,7 @@ CSS Modules (`*.module.css`) may only use design tokens: no hex or `rgb()` color
   - `src/styles/tokens.css` — the design tokens, the only place raw colors, sizes, fonts and timings live. A verbatim copy of `docs/design/tokens.css`, so Stylelint and Prettier skip it
   - `src/styles/fonts.ts` — bundled Sora, IBM Plex Sans and IBM Plex Mono (latin + latin-ext)
   - `src/styles/motion.ts` — `readDuration('--dur-clear')` reads a motion token in ms for animation sequencing
+  - `src/rules/` — game rules in plain TypeScript (board, seedable RNG, pathfinding). ESLint forbids React, Tauri, Node and browser APIs there; `tests/rules-boundary.test.ts` proves it
   - `src/storybook/` — Storybook frame (Theme and Motion toolbars), the Tokens page and the specimen story
 - `.storybook/` — Storybook config
 - `src-tauri/` — Tauri shell (Rust); window settings live in `src-tauri/tauri.conf.json`
