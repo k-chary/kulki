@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { type GameState, createRng } from '../rules';
 import { parseBoard } from '../rules/testing';
+import type { HighscoreEntry } from '../highscores/ranking';
 import {
   boardView,
+  gameOverView,
+  highscoreRows,
   initialState,
   isLocked,
+  pendingScore,
   reduce,
   saveEffect,
   selectedColor,
@@ -312,6 +316,123 @@ describe('saveEffect', () => {
     const resumed = initialState(game(OPEN), 'loaded', 1);
     expect(reduce(resumed, { type: 'requestNewGame' }, rng).confirming).toBe(true);
     expect(statusOf(resumed).lead).toBe('Wczytano zapisaną grę');
+  });
+});
+
+const stored = (score: number): HighscoreEntry => ({
+  name: `Gracz ${score}`,
+  score,
+  date: '2026-01-15T12:00:00.000Z',
+});
+const top30 = Array.from({ length: 30 }, (_, i) => stored(1000 - i * 10)); // 1000 .. 710
+const over = (score: number) => initialState(game(OPEN, { score, gameOver: true }));
+
+describe('game over dialog', () => {
+  it('is absent while the game runs', () => {
+    expect(gameOverView(initialState(game(OPEN)), [], null)).toBeNull();
+  });
+
+  it('asks for a name when the score makes the list', () => {
+    expect(gameOverView(over(800), top30, null)).toEqual({
+      state: 'entry',
+      place: 22,
+      initialName: '',
+    });
+    expect(gameOverView(over(0), [], null)).toMatchObject({ state: 'entry', place: 1 });
+  });
+
+  it('prefills the last name used', () => {
+    expect(gameOverView(over(800), top30, 'Ola')).toMatchObject({ initialName: 'Ola' });
+  });
+
+  it('a tie with the 30th entry does not make a full list', () => {
+    expect(gameOverView(over(710), top30, null)).toEqual({ state: 'outside', missing: 1 });
+  });
+
+  it('shows the points missing to 30th place outside a full list', () => {
+    expect(gameOverView(over(600), top30, null)).toEqual({ state: 'outside', missing: 111 });
+  });
+
+  it('shows the saved state after the score is stored', () => {
+    const state = reduce(over(800), { type: 'scoreSaved', name: 'Ola', place: 22 }, rng);
+    expect(gameOverView(state, top30, 'Ola')).toEqual({ state: 'saved', name: 'Ola', place: 22 });
+  });
+
+  it('only stores a score once, and only for a finished game', () => {
+    const saved = reduce(over(800), { type: 'scoreSaved', name: 'Ola', place: 22 }, rng);
+    expect(reduce(saved, { type: 'scoreSaved', name: 'Ala', place: 1 }, rng)).toBe(saved);
+    const running = initialState(game(OPEN));
+    expect(reduce(running, { type: 'scoreSaved', name: 'Ola', place: 1 }, rng)).toBe(running);
+  });
+
+  it('„Nowa gra” starts at once and drops the saved ring', () => {
+    const saved = reduce(over(800), { type: 'scoreSaved', name: 'Ola', place: 22 }, rng);
+    const next = reduce(saved, { type: 'requestNewGame' }, rng);
+    expect(next.game.gameOver).toBe(false);
+    expect(next.saved).toBeNull();
+    expect(next.confirming).toBe(false);
+  });
+
+  it('locks the board', () => {
+    const state = reduce(over(800), { type: 'click', cell: at(0, 0) }, rng);
+    expect(state.selected).toBeNull();
+  });
+});
+
+describe('highscore rows', () => {
+  const live = (state: ReturnType<typeof initialState>, list: HighscoreEntry[]) =>
+    highscoreRows(state, list).find((row) => row.kind === 'live');
+
+  it('places „Ta gra · teraz” where the score would rank and moves it up as the score grows', () => {
+    const list = [stored(300), stored(200), stored(100)];
+    expect(live(initialState(game(OPEN, { score: 0 })), list)?.place).toBe(4);
+    expect(live(initialState(game(OPEN, { score: 150 })), list)?.place).toBe(3);
+    expect(live(initialState(game(OPEN, { score: 250 })), list)?.place).toBe(2);
+    expect(live(initialState(game(OPEN, { score: 350 })), list)?.place).toBe(1);
+  });
+
+  it('is absent when the score is outside a full list, and never beyond 30 rows', () => {
+    expect(live(initialState(game(OPEN, { score: 5 })), top30)).toBeUndefined();
+    const inside = highscoreRows(initialState(game(OPEN, { score: 900 })), top30);
+    expect(inside).toHaveLength(30);
+    expect(inside.filter((row) => row.kind === 'live')).toHaveLength(1);
+  });
+
+  it('keeps the live row at the final score until the name is saved', () => {
+    expect(live(over(250), [stored(300), stored(200)])?.place).toBe(2);
+    expect(live(over(5), top30)).toBeUndefined();
+  });
+
+  it('holds stored rows only once saved', () => {
+    const saved = reduce(over(250), { type: 'scoreSaved', name: 'Ola', place: 2 }, rng);
+    const list = [stored(300), { ...stored(250), name: 'Ola' }, stored(200)];
+    const rows = highscoreRows(saved, list);
+    expect(rows.every((row) => row.kind === 'stored')).toBe(true);
+    expect(rows.map((row) => row.place)).toEqual([1, 2, 3]);
+  });
+});
+
+describe('pendingScore', () => {
+  const NOW = '2026-10-23T16:00:00.000Z';
+
+  it('is the score of a finished game whose name is still to be entered', () => {
+    expect(pendingScore(over(800), top30, 'Ola', NOW)).toEqual({
+      name: 'Ola',
+      score: 800,
+      date: NOW,
+    });
+  });
+
+  it('falls back to „Gracz” without a last name', () => {
+    expect(pendingScore(over(800), top30, null, NOW)?.name).toBe('Gracz');
+    expect(pendingScore(over(800), [], '  ', NOW)?.name).toBe('Gracz');
+  });
+
+  it('is null while playing, once saved and outside the top 30', () => {
+    expect(pendingScore(initialState(game(OPEN)), [], null, NOW)).toBeNull();
+    const saved = reduce(over(800), { type: 'scoreSaved', name: 'Ola', place: 22 }, rng);
+    expect(pendingScore(saved, top30, 'Ola', NOW)).toBeNull();
+    expect(pendingScore(over(600), top30, 'Ola', NOW)).toBeNull();
   });
 });
 

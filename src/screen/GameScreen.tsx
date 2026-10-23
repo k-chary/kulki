@@ -2,6 +2,7 @@ import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Board } from '../components/Board/Board';
 import { Button } from '../components/Button/Button';
 import { ConfirmDialog } from '../components/ConfirmDialog/ConfirmDialog';
+import { GameOver } from '../components/GameOver/GameOver';
 import { HighscoreList } from '../components/HighscoreList/HighscoreList';
 import { Logo } from '../components/Logo/Logo';
 import { NextBalls } from '../components/NextBalls/NextBalls';
@@ -9,8 +10,11 @@ import { ScorePanel } from '../components/ScorePanel/ScorePanel';
 import { StatusLine } from '../components/StatusLine/StatusLine';
 import {
   boardView,
+  gameOverView,
+  highscoreRows,
   initialState,
   isLocked,
+  pendingScore,
   reduce,
   saveEffect,
   selectedColor,
@@ -19,7 +23,7 @@ import {
 } from '../game/controller';
 import { type PlaybackView, buildSteps, restingView } from '../game/playback';
 import { type Sequence, playSequence } from '../game/sequencer';
-import { type HighscoreEntry, rowsWithLive } from '../highscores/ranking';
+import { type HighscoreEntry, placeFor, rowsWithLive } from '../highscores/ranking';
 import { type GameState, type Rng, newGame } from '../rules';
 import type { Storage } from '../storage/Storage';
 import { readDuration, readTurnDurations } from '../styles/motion';
@@ -48,12 +52,16 @@ export function GameScreen({ storage, rng, game, resumed = false }: GameScreenPr
     },
   );
   const [highscores, setHighscores] = useState<HighscoreEntry[]>([]);
+  const [lastName, setLastName] = useState<string | null>(null);
+  const saving = useRef(false);
   const newGameButton = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     let current = true;
-    void storage.listHighscores().then((list) => {
-      if (current) setHighscores(list);
+    void Promise.all([storage.listHighscores(), storage.getLastName()]).then(([list, name]) => {
+      if (!current) return;
+      setHighscores(list);
+      setLastName(name);
     });
     return () => {
       current = false;
@@ -135,13 +143,47 @@ export function GameScreen({ storage, rng, game, resumed = false }: GameScreenPr
     () => boardView(state, turn ? view : undefined, durations?.spawnStagger ?? 0),
     [state, turn, view, durations],
   );
-  const liveScore = turn ? view.score : after.score;
+  // While a turn plays the live row follows the score on screen; the dialogs wait for its end.
   const rows = useMemo(
-    () =>
-      after.gameOver && !turn ? rowsWithLive(highscores, -1) : rowsWithLive(highscores, liveScore),
-    [highscores, liveScore, after.gameOver, turn],
+    () => (turn ? rowsWithLive(highscores, view.score) : highscoreRows(state, highscores)),
+    [state, highscores, turn, view.score],
   );
+  const gameOver = turn ? null : gameOverView(state, highscores, lastName);
+  const startNewGame = () => dispatch({ type: 'requestNewGame' });
+
+  const saveScore = async (name: string) => {
+    if (saving.current) return;
+    saving.current = true;
+    try {
+      const entry = { name, score: state.game.score, date: new Date().toISOString() };
+      const { place, highscores: list } = await storage.insertHighscore(entry);
+      await storage.setLastName(name);
+      setHighscores(list);
+      setLastName(name);
+      dispatch({ type: 'scoreSaved', name, place: place ?? placeFor(entry.score, list) });
+    } finally {
+      saving.current = false;
+    }
+  };
   const status = statusOf(state);
+
+  // Closing the window with the name dialog open stores the score under the
+  // prefilled name, so a top-30 game is never lost.
+  const closing = useRef<() => void>(() => undefined);
+  useEffect(() => {
+    closing.current = () => {
+      if (saving.current) return;
+      const entry = pendingScore(state, highscores, lastName, new Date().toISOString());
+      if (entry === null) return;
+      saving.current = true;
+      void storage.insertHighscore(entry).catch(() => undefined);
+    };
+  });
+  useEffect(() => {
+    const onClose = () => closing.current();
+    window.addEventListener('pagehide', onClose);
+    return () => window.removeEventListener('pagehide', onClose);
+  }, []);
 
   return (
     <main className={styles.screen}>
@@ -171,6 +213,22 @@ export function GameScreen({ storage, rng, game, resumed = false }: GameScreenPr
               onConfirm={() => dispatch({ type: 'confirmNewGame' })}
             />
           )}
+          {gameOver?.state === 'entry' && (
+            <GameOver
+              {...gameOver}
+              score={state.game.score}
+              returnFocusRef={newGameButton}
+              onSave={saveScore}
+            />
+          )}
+          {gameOver && gameOver.state !== 'entry' && (
+            <GameOver
+              {...gameOver}
+              score={state.game.score}
+              returnFocusRef={newGameButton}
+              onNewGame={startNewGame}
+            />
+          )}
         </Board>
         <aside className={styles.rail}>
           <ScorePanel
@@ -185,12 +243,12 @@ export function GameScreen({ storage, rng, game, resumed = false }: GameScreenPr
             ref={newGameButton}
             variant="secondary"
             block
-            disabled={state.confirming || turn !== null}
-            onClick={() => dispatch({ type: 'requestNewGame' })}
+            disabled={state.confirming || turn !== null || gameOver !== null}
+            onClick={startNewGame}
           >
             Nowa gra
           </Button>
-          <HighscoreList rows={rows} />
+          <HighscoreList rows={rows} savedPlace={state.saved?.place ?? null} />
         </aside>
       </div>
     </main>

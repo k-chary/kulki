@@ -23,10 +23,12 @@ interface Launch {
 }
 
 export function App() {
-  const [{ storage, start }] = useState(() => ({
-    storage: createStorage(),
-    start: startFromSearch(window.location.search),
-  }));
+  const [{ storage, start }] = useState(() => {
+    const start = startFromSearch(window.location.search);
+    const storage = createStorage();
+    for (const entry of start.highscores) void storage.insertHighscore(entry);
+    return { storage, start };
+  });
   const [launch, setLaunch] = useState<Launch | null>(null);
 
   // The save is read before the first paint: nothing is drawn until it is known.
