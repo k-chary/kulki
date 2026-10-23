@@ -1,0 +1,36 @@
+.screen {
+  height: 100%;
+  min-height: var(--window-min-height);
+  padding: var(--layout-padding);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  overflow: hidden;
+}
+
+.header {
+  width: calc(var(--board-size) + var(--layout-gap) + var(--rail-width));
+  height: var(--header-height);
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.body {
+  display: flex;
+  gap: var(--layout-gap);
+  flex: none;
+}
+
+.rail {
+  width: var(--rail-width);
+  height: var(--board-size);
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+}

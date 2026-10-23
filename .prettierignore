@@ -7,3 +7,5 @@ docs/design
 docs/SPEC.md
 src/styles/tokens.css
 storybook-static
+playwright-report
+test-results
