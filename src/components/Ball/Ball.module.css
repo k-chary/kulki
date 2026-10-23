@@ -1,0 +1,111 @@
+.ball {
+  --ball-color: var(--ball-red);
+
+  display: block;
+  width: var(--ball-size);
+  aspect-ratio: 1;
+  border-radius: var(--radius-full);
+  background:
+    radial-gradient(circle at 34% 30%, var(--ball-highlight) 0 12%, transparent 40%),
+    radial-gradient(
+      circle at 50% 55%,
+      var(--ball-color) 55%,
+      color-mix(in srgb, var(--ball-color) 62%, var(--ball-shade)) 100%
+    );
+  box-shadow: var(--shadow-ball);
+  transform: scale(var(--ball-scale, 1));
+  transition: transform var(--dur-hover) var(--ease-standard);
+  pointer-events: none;
+}
+
+.ball[data-color='red'] {
+  --ball-color: var(--ball-red);
+}
+
+.ball[data-color='orange'] {
+  --ball-color: var(--ball-orange);
+}
+
+.ball[data-color='yellow'] {
+  --ball-color: var(--ball-yellow);
+}
+
+.ball[data-color='green'] {
+  --ball-color: var(--ball-green);
+}
+
+.ball[data-color='blue'] {
+  --ball-color: var(--ball-blue);
+}
+
+.ball[data-color='purple'] {
+  --ball-color: var(--ball-purple);
+}
+
+.ball[data-state='selected'] {
+  animation: hop var(--dur-hop) var(--ease-hop) infinite;
+}
+
+.ball[data-state='shake'] {
+  animation: shake var(--dur-shake) var(--ease-standard);
+}
+
+.ball[data-state='clearing'] {
+  animation: clear var(--dur-clear) var(--ease-out) forwards;
+}
+
+.ball[data-state='spawning'] {
+  animation: spawn var(--dur-spawn) var(--ease-pop) both;
+}
+
+@keyframes hop {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(calc(-14% * var(--motion-distance)));
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20%,
+  60% {
+    transform: translateX(calc(-8% * var(--motion-distance)));
+  }
+
+  40%,
+  80% {
+    transform: translateX(calc(8% * var(--motion-distance)));
+  }
+}
+
+@keyframes clear {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(calc(1 - 0.4 * var(--motion-distance)));
+  }
+}
+
+@keyframes spawn {
+  from {
+    opacity: 0;
+    transform: scale(calc(1 - var(--motion-distance)));
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
