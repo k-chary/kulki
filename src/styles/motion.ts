@@ -36,3 +36,15 @@ export function prefersReducedMotion(element: Element): boolean {
   if (forced === 'full') return false;
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 }
+
+/** The durations a turn's playback needs, in ms, as they resolve now (reduced motion included). */
+export function readTurnDurations(source?: StyleSource) {
+  return {
+    step: readDuration('--dur-step', source),
+    clear: readDuration('--dur-clear', source),
+    spawn: readDuration('--dur-spawn', source),
+    spawnStagger: readDuration('--dur-spawn-stagger', source),
+    score: readDuration('--dur-score', source),
+    shake: readDuration('--dur-shake', source),
+  };
+}

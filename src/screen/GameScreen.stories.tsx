@@ -12,7 +12,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** A new game with a seeded generator; playable, with turns applied at once. */
+/** A new game with a seeded generator; playable, with turns animated (use the Motion switch for reduced motion). */
 export const NewGame: Story = {
   args: { storage: new MemoryStorage(), rng: createRng(7) },
 };

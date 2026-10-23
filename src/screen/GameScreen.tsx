@@ -15,11 +15,14 @@ import {
   selectedColor,
   statusOf,
 } from '../game/controller';
+import { type PlaybackView, buildSteps, restingView } from '../game/playback';
+import { type Sequence, playSequence } from '../game/sequencer';
 import { type HighscoreEntry, rowsWithLive } from '../highscores/ranking';
 import { type GameState, type Rng, newGame } from '../rules';
 import type { Storage } from '../storage/Storage';
-import { readDuration } from '../styles/motion';
+import { readDuration, readTurnDurations } from '../styles/motion';
 import styles from './GameScreen.module.css';
+import { useCountUp } from './useCountUp';
 
 export interface GameScreenProps {
   storage: Storage<GameState>;
@@ -60,14 +63,62 @@ export function GameScreen({ storage, rng, game }: GameScreenProps) {
     return () => clearTimeout(timer);
   }, [notice, noticeId]);
 
+  // Playback of the turn in progress: each step shows a view until its animation ends.
+  const { turn, game: after } = state;
+  const durations = useMemo(() => (turn ? readTurnDurations() : null), [turn]);
+  const steps = useMemo(
+    () => (turn && durations ? buildSteps(turn.before, after, turn.events, durations) : null),
+    [turn, durations, after],
+  );
+  const [progress, setProgress] = useState<{ turn: typeof turn; view: PlaybackView } | null>(null);
+  const [chip, setChip] = useState<{ delta: number; id: number } | null>(null);
+  const sequence = useRef<Sequence | null>(null);
+  const chipCount = useRef(0);
+
+  useEffect(() => {
+    if (!turn || !steps) return;
+    const running = playSequence(steps, {
+      onStep(view) {
+        setProgress({ turn, view });
+        if (view.delta !== null) {
+          chipCount.current += 1;
+          setChip({ delta: view.delta, id: chipCount.current });
+        }
+      },
+      onDone: () => dispatch({ type: 'turnDone' }),
+    });
+    sequence.current = running;
+    return () => {
+      running.cancel();
+      sequence.current = null;
+    };
+  }, [turn, steps]);
+
+  // The no-path shake does not lock input; its end is signalled by the ball or this timer.
+  const { shaking } = state;
+  useEffect(() => {
+    if (!shaking) return;
+    const timer = setTimeout(
+      () => dispatch({ type: 'shakeEnd' }),
+      readDuration('--dur-shake') + 50,
+    );
+    return () => clearTimeout(timer);
+  }, [shaking, state.noticeId]);
+
+  const resting = useMemo(() => restingView(after), [after]);
+  const view = progress?.turn === turn && progress ? progress.view : (steps?.[0]?.view ?? resting);
+  const shownScore = useCountUp(view.score, turn ? (durations?.score ?? 0) : 0);
+
   const locked = isLocked(state);
-  const cells = useMemo(() => boardView(state), [state]);
+  const cells = useMemo(
+    () => boardView(state, turn ? view : undefined, durations?.spawnStagger ?? 0),
+    [state, turn, view, durations],
+  );
+  const liveScore = turn ? view.score : after.score;
   const rows = useMemo(
     () =>
-      state.game.gameOver
-        ? rowsWithLive(highscores, -1)
-        : rowsWithLive(highscores, state.game.score),
-    [highscores, state.game.score, state.game.gameOver],
+      after.gameOver && !turn ? rowsWithLive(highscores, -1) : rowsWithLive(highscores, liveScore),
+    [highscores, liveScore, after.gameOver, turn],
   );
   const status = statusOf(state);
 
@@ -82,6 +133,12 @@ export function GameScreen({ storage, rng, game }: GameScreenProps) {
           cells={cells}
           pathColor={selectedColor(state) ?? undefined}
           locked={locked}
+          moving={view.moving ?? undefined}
+          onBallAnimationEnd={() => {
+            sequence.current?.signal();
+            dispatch({ type: 'shakeEnd' });
+          }}
+          onMoveStepEnd={() => sequence.current?.signal()}
           onFieldClick={(cell) => dispatch({ type: 'click', cell })}
           onFieldHover={(cell) => dispatch({ type: 'hover', cell })}
         >
@@ -95,13 +152,19 @@ export function GameScreen({ storage, rng, game }: GameScreenProps) {
           )}
         </Board>
         <aside className={styles.rail}>
-          <ScorePanel score={state.game.score} cleared={state.game.cleared} />
-          <NextBalls colors={state.game.preview} />
+          <ScorePanel
+            score={view.score}
+            shownScore={shownScore}
+            cleared={view.cleared}
+            delta={chip?.delta}
+            deltaId={chip?.id}
+          />
+          <NextBalls colors={view.preview} fresh={view.spawning.length > 0} />
           <Button
             ref={newGameButton}
             variant="secondary"
             block
-            disabled={state.confirming}
+            disabled={state.confirming || turn !== null}
             onClick={() => dispatch({ type: 'requestNewGame' })}
           >
             Nowa gra
