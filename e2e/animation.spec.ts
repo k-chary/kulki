@@ -14,15 +14,38 @@ test.describe('input lock', () => {
     await expect(page.locator('div[data-locked="true"]')).toHaveCount(1);
     await expect(page.getByRole('button', { name: 'Nowa gra' })).toBeDisabled();
     await expect(status(page)).toHaveText('');
-    await field(page, 0, 8).click({ force: true });
-    await field(page, 0, 8).click({ force: true });
+    // An empty field is dropped.
+    await field(page, 0, 4).click({ force: true });
 
     await expect(page.locator('div[data-locked="true"]')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Nowa gra' })).toBeEnabled();
-    // The dropped clicks selected nothing.
+    // The dropped click selected nothing.
     await expect(status(page)).toHaveText('Kliknij kulkę, aby ją wybrać');
     await expect(field(page, 8, 0)).toHaveAccessibleName('Kulka czerwona, wiersz 9, kolumna 1');
     await expect(balls(page)).toHaveCount(5);
+  });
+
+  test('another ball can be selected during a move but not moved until it ends', async ({
+    page,
+  }) => {
+    await openFixture(page, { rows: { 0: 'r.......y', 4: '..g......' }, preview: 'bbb' });
+    await field(page, 0, 0).click();
+    await field(page, 8, 0).click();
+    await expect(page.locator('div[data-locked="true"]')).toHaveCount(1);
+
+    // The yellow ball takes the selection at once, with the board still locked.
+    await field(page, 0, 8).click({ force: true });
+    await expect(field(page, 0, 8)).toHaveAttribute('data-state', 'selected');
+    await expect(page.locator('div[data-locked="true"]')).toHaveCount(1);
+    // A target click is dropped.
+    await field(page, 2, 4).click({ force: true });
+    await expect(field(page, 2, 4)).toHaveAttribute('data-ball', 'false');
+
+    // After the animation the selection stands and the ball can move.
+    await expect(page.locator('div[data-locked="true"]')).toHaveCount(0);
+    await expect(field(page, 0, 8)).toHaveAttribute('data-state', 'selected');
+    await field(page, 2, 4).click();
+    await expect(field(page, 2, 4)).toHaveAttribute('data-ball', 'true');
   });
 
   test('the shake of a missed move does not lock the board', async ({ page }) => {

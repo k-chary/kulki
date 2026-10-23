@@ -22,6 +22,8 @@ export interface BoardProps {
   pathColor?: Color;
   /** True while anything animates or a dialog is open: clicks and hovers are dropped. */
   locked?: boolean;
+  /** Clicks still reach `onFieldClick` while locked (hover stays off); the owner drops the ones it cannot use. */
+  clickable?: boolean;
   /** The ball sliding along its path, drawn over the fields. */
   moving?: { color: Color; row: number; col: number };
   onFieldClick?: (cell: Cell) => void;
@@ -40,6 +42,7 @@ export function Board({
   cells,
   pathColor,
   locked = false,
+  clickable = false,
   moving,
   onFieldClick,
   onFieldHover,
@@ -66,7 +69,7 @@ export function Board({
             hasBall={color !== null}
             label={fieldLabel(cell.row, cell.col, color)}
             locked={locked}
-            onClick={locked ? undefined : () => onFieldClick?.(cell)}
+            onClick={locked && !clickable ? undefined : () => onFieldClick?.(cell)}
             onPointerEnter={locked ? undefined : () => onFieldHover?.(cell)}
           >
             {color && (

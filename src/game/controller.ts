@@ -122,7 +122,28 @@ function freshGame(state: ControllerState, rng: Rng): ControllerState {
   return { ...withIntro(initialState(newGame(rng))), noticeId: state.noticeId };
 }
 
+/**
+ * True while a turn animates and a click may still select `cell`: it holds the same
+ * ball before and after the turn and is not an end of the move, so it neither
+ * clears, nor spawns, nor is the ball on its way.
+ */
+function selectableDuringTurn(state: ControllerState, cell: Cell): boolean {
+  const { turn, confirming, game } = state;
+  if (turn === null || confirming || game.gameOver) return false;
+  const color = getBall(turn.before.board, cell);
+  if (color === null || color !== getBall(game.board, cell)) return false;
+  return !turn.events.some(
+    (event) => event.type === 'move' && (sameCell(event.from, cell) || sameCell(event.to, cell)),
+  );
+}
+
 function click(state: ControllerState, cell: Cell, rng: Rng): ControllerState {
+  if (state.turn !== null) {
+    // The turn plays on; another ball may be picked now but moves only once it ends.
+    if (!selectableDuringTurn(state, cell)) return state;
+    const same = state.selected !== null && sameCell(state.selected, cell);
+    return { ...state, selected: same ? null : cell, shaking: false, notice: null };
+  }
   if (isLocked(state)) return state;
   const { board } = state.game;
   const { selected } = state;

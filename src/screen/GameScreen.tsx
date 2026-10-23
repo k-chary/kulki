@@ -196,6 +196,7 @@ export function GameScreen({ storage, rng, game, resumed = false }: GameScreenPr
           cells={cells}
           pathColor={selectedColor(state) ?? undefined}
           locked={locked}
+          clickable={turn !== null}
           moving={view.moving ?? undefined}
           onBallAnimationEnd={() => {
             sequence.current?.signal();
