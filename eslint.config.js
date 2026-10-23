@@ -4,13 +4,16 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
+import storybook from 'eslint-plugin-storybook';
 
 const browserOnlyGlobals = Object.keys(globals.browser).filter(
   (name) => !(name in globals.builtin),
 );
 
 export default tseslint.config(
-  { ignores: ['dist', 'src-tauri/target', 'src-tauri/gen', 'node_modules'] },
+  {
+    ignores: ['dist', 'storybook-static', 'src-tauri/target', 'src-tauri/gen', 'node_modules'],
+  },
   {
     files: ['**/*.{ts,tsx}'],
     extends: [js.configs.recommended, ...tseslint.configs.strict],
@@ -52,5 +55,6 @@ export default tseslint.config(
       ],
     },
   },
+  ...storybook.configs['flat/recommended'],
   prettier,
 );

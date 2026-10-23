@@ -1,4 +1,10 @@
-/* App-wide behavior only. Visual values come from tokens.css (issue #2). */
+/* App-wide base styles. Every visual value comes from tokens.css. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
 html,
 body,
@@ -9,6 +15,12 @@ body,
 
 body {
   overflow: hidden;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
   user-select: none;
   cursor: default;
 }
