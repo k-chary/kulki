@@ -47,3 +47,45 @@ describe('MemoryStorage', () => {
     expect((await storage.listHighscores())[0]?.name).toBe('Ala');
   });
 });
+
+describe('MemoryStorage with a backing', () => {
+  const backing = () => {
+    const items = new Map<string, string>();
+    return {
+      getItem: (key: string) => items.get(key) ?? null,
+      setItem: (key: string, value: string) => void items.set(key, value),
+    };
+  };
+
+  it('survives a new instance on the same backing', async () => {
+    const shared = backing();
+    const first = new MemoryStorage<{ n: number }>(shared);
+    await first.insertHighscore(entry('Ala', 100));
+    await first.setLastName('Ala');
+    await first.saveGame({ n: 1 });
+
+    const second = new MemoryStorage<{ n: number }>(shared);
+    expect((await second.listHighscores()).map((row) => row.name)).toEqual(['Ala']);
+    expect(await second.getLastName()).toBe('Ala');
+    expect(await second.loadGame()).toEqual({ n: 1 });
+
+    await second.deleteGame();
+    expect(await new MemoryStorage(shared).loadGame()).toBeNull();
+  });
+
+  it('ignores junk and a backing that throws', async () => {
+    const junk = { getItem: () => '{nope', setItem: () => undefined };
+    expect(await new MemoryStorage(junk).loadGame()).toBeNull();
+    const broken = {
+      getItem: () => {
+        throw new Error('blocked');
+      },
+      setItem: () => {
+        throw new Error('blocked');
+      },
+    };
+    const storage = new MemoryStorage<number>(broken);
+    await storage.saveGame(2);
+    expect(await storage.loadGame()).toBe(2);
+  });
+});

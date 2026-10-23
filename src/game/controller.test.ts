@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { type GameState, createRng } from '../rules';
 import { parseBoard } from '../rules/testing';
-import { boardView, initialState, isLocked, reduce, selectedColor, statusOf } from './controller';
+import {
+  boardView,
+  initialState,
+  isLocked,
+  reduce,
+  saveEffect,
+  selectedColor,
+  statusOf,
+  withIntro,
+} from './controller';
 import { restingView } from './playback';
 
 const rng = createRng(1);
@@ -258,5 +267,69 @@ describe('turn playback', () => {
     const cells = boardView(state, view, 60);
     expect(cells[1]?.ballState).toBe('clearing');
     expect(cells[0]).toMatchObject({ color: 'red', ballState: 'spawning', ballDelayMs: 0 });
+  });
+});
+
+describe('saveEffect', () => {
+  const start = initialState(game(OPEN));
+
+  it('saves a played turn, with the state the turn produced', () => {
+    const selected = reduce(start, { type: 'click', cell: { row: 0, col: 0 } }, rng);
+    const moved = reduce(selected, { type: 'click', cell: { row: 2, col: 0 } }, rng);
+    expect(saveEffect(selected, moved)).toEqual({ type: 'save', game: moved.game });
+  });
+
+  it('touches nothing for a selection, a refused move or a hover', () => {
+    const selected = reduce(start, { type: 'click', cell: { row: 0, col: 0 } }, rng);
+    const refused = reduce(
+      initialState(game(WALLED)),
+      { type: 'click', cell: { row: 0, col: 0 } },
+      rng,
+    );
+    expect(saveEffect(start, selected)).toBeNull();
+    expect(
+      saveEffect(selected, reduce(selected, { type: 'hover', cell: { row: 1, col: 1 } }, rng)),
+    ).toBeNull();
+    expect(saveEffect(refused, refused)).toBeNull();
+  });
+
+  it('deletes the save when the turn ends the game', () => {
+    const next = initialState(game(OPEN, { gameOver: true }), null, 5);
+    expect(saveEffect(initialState(game(OPEN), null, 4), next)).toEqual({ type: 'delete' });
+  });
+
+  it('deletes the save on a confirmed new game but not while asking', () => {
+    const playing = initialState(game(OPEN), null, 3);
+    const asking = reduce(playing, { type: 'requestNewGame' }, rng);
+    expect(saveEffect(playing, asking)).toBeNull();
+    expect(saveEffect(asking, reduce(asking, { type: 'cancelNewGame' }, rng))).toBeNull();
+    expect(saveEffect(asking, reduce(asking, { type: 'confirmNewGame' }, rng))).toEqual({
+      type: 'delete',
+    });
+  });
+
+  it('asks before discarding a resumed game', () => {
+    const resumed = initialState(game(OPEN), 'loaded', 1);
+    expect(reduce(resumed, { type: 'requestNewGame' }, rng).confirming).toBe(true);
+    expect(statusOf(resumed).lead).toBe('Wczytano zapisaną grę');
+  });
+});
+
+describe('pop-in of a new game', () => {
+  it('plays the start balls in as a spawn and locks the board meanwhile', () => {
+    const state = withIntro(initialState(game('rg.......\n' + '.........\n'.repeat(8))));
+    expect(isLocked(state)).toBe(true);
+    expect(state.turn?.before.board.every((square) => square === null)).toBe(true);
+    expect(state.turn?.events).toEqual([
+      { type: 'spawn', cells: [at(0, 0), at(0, 1)], colors: ['red', 'green'] },
+    ]);
+  });
+
+  it('is played again after a confirmed new game but not for a resumed game', () => {
+    const resumed = initialState(game(OPEN), 'loaded', 1);
+    expect(resumed.turn).toBeNull();
+    const asking = reduce({ ...resumed, moves: 2 }, { type: 'requestNewGame' }, rng);
+    const fresh = reduce(asking, { type: 'confirmNewGame' }, createRng(5));
+    expect(fresh.turn?.events[0]?.type).toBe('spawn');
   });
 });

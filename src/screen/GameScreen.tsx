@@ -12,8 +12,10 @@ import {
   initialState,
   isLocked,
   reduce,
+  saveEffect,
   selectedColor,
   statusOf,
+  withIntro,
 } from '../game/controller';
 import { type PlaybackView, buildSteps, restingView } from '../game/playback';
 import { type Sequence, playSequence } from '../game/sequencer';
@@ -29,15 +31,21 @@ export interface GameScreenProps {
   rng: Rng;
   /** Start from this game instead of a new one (test fixtures). */
   game?: GameState;
+  /** `game` was read from the save: shows „Wczytano zapisaną grę” and asks before „Nowa gra”. */
+  resumed?: boolean;
 }
 
 /** The one screen of Kulki: assembles the components and connects them to the controller. */
-export function GameScreen({ storage, rng, game }: GameScreenProps) {
+export function GameScreen({ storage, rng, game, resumed = false }: GameScreenProps) {
   const [state, dispatch] = useReducer(
     (current: ReturnType<typeof initialState>, action: Parameters<typeof reduce>[1]) =>
       reduce(current, action, rng),
     undefined,
-    () => initialState(game ?? newGame(rng)),
+    () => {
+      const start = initialState(game ?? newGame(rng), resumed ? 'loaded' : null, resumed ? 1 : 0);
+      // A fresh game pops its balls in; a fixture or a resumed game appears at once.
+      return game === undefined && !resumed ? withIntro(start) : start;
+    },
   );
   const [highscores, setHighscores] = useState<HighscoreEntry[]>([]);
   const newGameButton = useRef<HTMLButtonElement>(null);
@@ -51,6 +59,19 @@ export function GameScreen({ storage, rng, game }: GameScreenProps) {
       current = false;
     };
   }, [storage]);
+
+  // Every turn is saved as soon as the reducer has computed it, before anything
+  // is played back; game over and a new game delete the save. Writes run in order.
+  const previous = useRef(state);
+  const writes = useRef<Promise<unknown>>(Promise.resolve());
+  useEffect(() => {
+    const effect = saveEffect(previous.current, state);
+    previous.current = state;
+    if (effect === null) return;
+    const write = () =>
+      effect.type === 'save' ? storage.saveGame(effect.game) : storage.deleteGame();
+    writes.current = writes.current.then(write).catch(() => undefined);
+  }, [state, storage]);
 
   // One-off messages leave the status line after --dur-status.
   const { notice, noticeId } = state;

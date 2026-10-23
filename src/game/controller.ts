@@ -9,7 +9,9 @@ import {
   type Color,
   type GameState,
   type Rng,
+  cellAt,
   cellIndex,
+  emptyBoard,
   CELL_COUNT,
   findPath,
   getBall,
@@ -56,6 +58,7 @@ export type ControllerAction =
 export function initialState(
   game: GameState,
   notice: ControllerState['notice'] = null,
+  moves = 0,
 ): ControllerState {
   return {
     game,
@@ -65,9 +68,23 @@ export function initialState(
     hover: null,
     notice,
     noticeId: notice ? 1 : 0,
-    moves: 0,
+    moves,
     confirming: false,
   };
+}
+
+/** What to do with the saved game after a state change. */
+export type SaveEffect = { type: 'save'; game: GameState } | { type: 'delete' };
+
+/**
+ * The save to write or drop when `prev` becomes `next`. A played turn is saved
+ * as soon as the reducer has computed it, before any playback. Game over and a
+ * fresh game delete the save; changes that leave the game alone touch nothing.
+ */
+export function saveEffect(prev: ControllerState, next: ControllerState): SaveEffect | null {
+  if (next.game === prev.game) return null;
+  if (next.game.gameOver || next.moves === 0) return { type: 'delete' };
+  return { type: 'save', game: next.game };
 }
 
 /** True while the board takes no input: a turn is animating, a dialog is open or the game is over. */
@@ -75,8 +92,21 @@ export function isLocked(state: ControllerState): boolean {
   return state.turn !== null || state.confirming || state.game.gameOver;
 }
 
+/**
+ * The turn that pops a new game's balls in. A resumed game has none: it is
+ * restored without animation.
+ */
+export function withIntro(state: ControllerState): ControllerState {
+  const cells = Array.from({ length: CELL_COUNT }, (_, index) => cellAt(index)).filter(
+    (cell) => getBall(state.game.board, cell) !== null,
+  );
+  const colors = cells.map((cell) => getBall(state.game.board, cell) as Color);
+  const before: GameState = { ...state.game, board: emptyBoard() };
+  return { ...state, turn: { before, events: [{ type: 'spawn', cells, colors }] } };
+}
+
 function freshGame(state: ControllerState, rng: Rng): ControllerState {
-  return { ...initialState(newGame(rng)), noticeId: state.noticeId };
+  return { ...withIntro(initialState(newGame(rng))), noticeId: state.noticeId };
 }
 
 function click(state: ControllerState, cell: Cell, rng: Rng): ControllerState {

@@ -74,3 +74,25 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
     });
   });
 }
+
+test.describe('new game and resume', () => {
+  test.use({ reducedMotion: 'no-preference' });
+
+  test('a new game pops its five balls in, then takes input', async ({ page }) => {
+    await page.goto('/?seed=3');
+    await expect(page.locator('div[data-locked="true"]')).toHaveCount(1);
+    await expect(page.locator('div[data-locked="true"]')).toHaveCount(0);
+    await expect(balls(page)).toHaveCount(5);
+  });
+
+  test('a resumed game appears at once, without animation', async ({ page }) => {
+    await openFixture(page, { rows: { 0: 'r' }, preview: 'bbb' });
+    await field(page, 0, 0).click();
+    await field(page, 2, 0).click();
+    await expect(page.locator('div[data-locked="true"]')).toHaveCount(0);
+    await page.reload();
+    await expect(status(page)).toHaveText('Wczytano zapisaną grę');
+    await expect(balls(page)).toHaveCount(4);
+    await expect(page.locator('div[data-locked="true"]')).toHaveCount(0);
+  });
+});
