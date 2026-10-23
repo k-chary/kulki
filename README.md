@@ -20,20 +20,24 @@ npm install
 
 ## Commands
 
-| Command                   | What it does                                                     |
-| ------------------------- | ---------------------------------------------------------------- |
-| `npm run tauri dev`       | Runs the desktop app with hot reload (starts Vite on port 1420)  |
-| `npm run tauri build`     | Builds the installer for the current OS into `src-tauri/target/` |
-| `npm run dev`             | Runs only the web frontend in a browser at http://localhost:1420 |
-| `npm run build`           | Typechecks and builds the web frontend into `dist/`              |
-| `npm run lint`            | ESLint, Stylelint and Prettier check                             |
-| `npm run format`          | Formats every file with Prettier                                 |
-| `npm run typecheck`       | TypeScript in strict mode, no emit                               |
-| `npm test`                | Vitest once (`npm run test:watch` to keep it running)            |
-| `npm run storybook`       | Storybook at http://localhost:6006 with the Tokens page          |
-| `npm run build-storybook` | Builds Storybook into `storybook-static/`                        |
+| Command                   | What it does                                                         |
+| ------------------------- | -------------------------------------------------------------------- |
+| `npm run tauri dev`       | Runs the desktop app with hot reload (starts Vite on port 1420)      |
+| `npm run tauri build`     | Builds the installer for the current OS into `src-tauri/target/`     |
+| `npm run dev`             | Runs only the web frontend in a browser at http://localhost:1420     |
+| `npm run build`           | Typechecks and builds the web frontend into `dist/`                  |
+| `npm run build:e2e`       | Builds the web frontend with the e2e test hook (`?seed=`, `?board=`) |
+| `npm run e2e`             | Playwright end-to-end tests against that build (builds it first)     |
+| `npm run lint`            | ESLint, Stylelint and Prettier check                                 |
+| `npm run format`          | Formats every file with Prettier                                     |
+| `npm run typecheck`       | TypeScript in strict mode, no emit                                   |
+| `npm test`                | Vitest once (`npm run test:watch` to keep it running)                |
+| `npm run storybook`       | Storybook at http://localhost:6006 with the Tokens page              |
+| `npm run build-storybook` | Builds Storybook into `storybook-static/`                            |
 
-Pull requests run `npm run lint`, `npm run typecheck` and `npm test` in `.github/workflows/pr.yml`. The full suite (component tests, Playwright, `cargo test`) runs only for releases.
+Pull requests run `npm run lint`, `npm run typecheck` and `npm test` in `.github/workflows/pr.yml`. The full suite (Vitest, component tests and Playwright) runs on demand from the Actions tab (`.github/workflows/full-suite.yml`) and for releases. Run `npx playwright install chromium` once before `npm run e2e`.
+
+The e2e build reads `?seed=7` (seeded random generator) and `?board=rrrr...../...&preview=bbb` (nine rows split by `/`; r o y g b p for a ball, `.` for empty) from the URL. The hook exists only in `--mode e2e` and dev builds.
 
 ## Styling rule
 
@@ -45,9 +49,12 @@ CSS Modules (`*.module.css`) may only use design tokens: no hex or `rgb()` color
   - `src/styles/tokens.css` — the design tokens, the only place raw colors, sizes, fonts and timings live. A verbatim copy of `docs/design/tokens.css`, so Stylelint and Prettier skip it
   - `src/styles/fonts.ts` — bundled Sora, IBM Plex Sans and IBM Plex Mono (latin + latin-ext)
   - `src/styles/motion.ts` — `readDuration('--dur-clear')` reads a motion token in ms for animation sequencing
+  - `src/game/` — the game controller (a pure reducer over the rules: selection, hover preview, status line, „Nowa gra” dialog) and the e2e URL hook
+  - `src/screen/` — the game screen that assembles the components
   - `src/rules/` — game rules in plain TypeScript (board, seedable RNG, pathfinding). ESLint forbids React, Tauri, Node and browser APIs there; `tests/rules-boundary.test.ts` proves it
   - `src/storybook/` — Storybook frame (Theme and Motion toolbars), the Tokens page and the specimen story
 - `.storybook/` — Storybook config
 - `src-tauri/` — Tauri shell (Rust); window settings live in `src-tauri/tauri.conf.json`
+- `e2e/` — Playwright specs
 - `tests/` — tooling tests and fixtures
 - `docs/` — spec and design reference
