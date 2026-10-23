@@ -1,8 +1,10 @@
 name: Full suite
 
-# Run by hand from the Actions tab before a release. Pull requests only run pr.yml.
+# Run by hand from the Actions tab, and by release.yml before it builds installers.
+# Pull requests only run pr.yml.
 on:
   workflow_dispatch:
+  workflow_call:
 
 jobs:
   frontend:
@@ -30,3 +32,27 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 7
+
+  storage:
+    name: cargo test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Install Tauri system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libssl-dev libayatana-appindicator3-dev librsvg2-dev
+      # tauri-build checks that frontendDist exists.
+      - run: npm run build
+      - run: cargo test
+        working-directory: src-tauri

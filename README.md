@@ -39,6 +39,21 @@ Pull requests run `npm run lint`, `npm run typecheck` and `npm test` in `.github
 
 The e2e build reads `?seed=7` (seeded random generator) and `?board=rrrr...../...&preview=bbb` (nine rows split by `/`; r o y g b p for a ball, `.` for empty) from the URL. The hook exists only in `--mode e2e` and dev builds.
 
+## Releasing
+
+A release is a version tag pushed by hand (agents never tag).
+
+1. Set the same new version in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json` (also run `cargo update -p kulki` or build once so `Cargo.lock` follows). `tests/versions.test.ts` fails if the three differ.
+2. Merge that change to `main`, then tag it and push the tag:
+   ```sh
+   git tag v0.1.0
+   git push origin v0.1.0
+   ```
+3. `.github/workflows/release.yml` runs the full suite (`full-suite.yml`: lint, typecheck, Vitest and component tests, Playwright, `cargo test`). Only if all of it passes does it build installers for Windows, macOS (Apple silicon and Intel) and Linux and attach them to a **draft** GitHub Release.
+4. Open the draft under Releases, check the three installers, and publish it.
+
+To rehearse, push a tag such as `v0.0.1-test` from a throwaway branch and delete the draft release and tag afterwards. A failing test stops the run before any installer is built.
+
 ## Styling rule
 
 CSS Modules (`*.module.css`) may only use design tokens: no hex or `rgb()` colors, no `px`/`ms` values and no font names. Stylelint enforces this with `declaration-strict-value` plus unit, color and function bans (see `stylelint.config.js`). `tests/stylelint.test.ts` proves it: the fixture `tests/fixtures/raw-values.module.css` must fail and `tests/fixtures/tokens-only.module.css` must pass.
