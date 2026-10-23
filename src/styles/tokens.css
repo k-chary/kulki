@@ -1,0 +1,259 @@
+/*
+ * Kulki design tokens.
+ * The single source for every color, size, font and timing in the app.
+ * Component CSS Modules use only these custom properties: no raw colors,
+ * sizes or durations anywhere else.
+ *
+ * Theme: follows the OS (prefers-color-scheme). data-theme="light" | "dark"
+ * on any element forces a theme for that subtree (Storybook toolbar, tests).
+ * Motion: follows the OS (prefers-reduced-motion). data-motion="full" |
+ * "reduced" forces it for a subtree.
+ */
+
+/* ---------- Theme-independent tokens ---------- */
+:root {
+  /* Type */
+  --font-display: "Sora", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Menlo, monospace;
+
+  --text-xs: 12px;   /* panel labels, dates, hints */
+  --text-sm: 13px;   /* status line, score rows, buttons */
+  --text-md: 15px;   /* body, inputs */
+  --text-lg: 18px;   /* dialog body when it is the main message */
+  --text-xl: 22px;   /* dialog titles */
+  --text-2xl: 28px;  /* logo, current score */
+  --text-3xl: 40px;  /* final score in the game-over dialog */
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-black: 800;
+
+  --leading-tight: 1.1;
+  --leading-snug: 1.3;
+  --leading-normal: 1.5;
+
+  --tracking-label: 0.08em;
+  --tracking-display: -0.02em;
+
+  /* Space (4 px grid) */
+  --space-0-5: 2px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* Radius */
+  --radius-sm: 6px;    /* field, preview slot, score row */
+  --radius-md: 10px;   /* board, button, input */
+  --radius-lg: 14px;   /* panel */
+  --radius-xl: 18px;   /* dialog */
+  --radius-full: 999px;
+
+  /* Component sizes */
+  --board-gap: 4px;
+  --board-padding: 6px;
+  --ball-size: 80%;            /* of its field or slot */
+  --ball-hover-scale: 1.06;
+  --path-dot-size: 28%;        /* of the field */
+  --path-dot-opacity: 0.45;
+  --ring-width: 2px;
+  --focus-width: 3px;
+  --preview-slot-size: 44px;
+  --logo-dot-size: 14px;
+  --control-height: 44px;
+  --rank-width: 28px;
+  --dialog-width: 380px;
+  --opacity-disabled: 0.45;
+
+  /* Layout */
+  --header-height: 40px;
+  --rail-width: 280px;
+  --layout-padding: var(--space-6);
+  --layout-gap: var(--space-6);
+  --window-default-width: 1280px;
+  --window-default-height: 800px;
+  --window-min-width: 880px;
+  --window-min-height: 600px;
+  /* The board is the largest square that fits beside the rail and under the header. */
+  --board-size: min(
+    calc(100vh - var(--header-height) - var(--space-4) - 2 * var(--layout-padding)),
+    calc(100vw - var(--rail-width) - var(--layout-gap) - 2 * var(--layout-padding))
+  );
+
+  /* Layers */
+  --z-moving: 2;
+  --z-overlay: 10;
+}
+
+/* ---------- Motion (full) ---------- */
+:root,
+[data-motion="full"] {
+  --dur-step: 40ms;          /* per square while a ball slides */
+  --dur-clear: 300ms;        /* cleared balls fade and shrink */
+  --dur-score: 300ms;        /* score counts up, runs with the clear */
+  --dur-spawn: 220ms;        /* one new ball pops in */
+  --dur-spawn-stagger: 60ms; /* delay between the new balls */
+  --dur-hop: 900ms;          /* one hop cycle of the selected ball */
+  --dur-shake: 320ms;        /* "no path" shake */
+  --dur-delta: 900ms;        /* the "+50" chip next to the score */
+  --dur-hover: 120ms;        /* hover and press feedback */
+  --dur-dialog: 180ms;       /* dialog and scrim fade in */
+  --dur-status: 2200ms;      /* a one-off status message stays this long */
+
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-step: linear;
+  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-hop: cubic-bezier(0.45, 0, 0.55, 1);
+
+  /* 1 = full movement; 0 turns hops, shakes, pops and shrinks into plain fades. */
+  --motion-distance: 1;
+}
+
+/* ---------- Motion (reduced) ---------- */
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) {
+    --dur-step: 0ms;
+    --dur-clear: 150ms;
+    --dur-score: 0ms;
+    --dur-spawn: 150ms;
+    --dur-spawn-stagger: 0ms;
+    --dur-hop: 0ms;
+    --dur-shake: 0ms;
+    --dur-dialog: 0ms;
+    --motion-distance: 0;
+  }
+}
+[data-motion="reduced"] {
+  --dur-step: 0ms;
+  --dur-clear: 150ms;
+  --dur-score: 0ms;
+  --dur-spawn: 150ms;
+  --dur-spawn-stagger: 0ms;
+  --dur-hop: 0ms;
+  --dur-shake: 0ms;
+  --dur-dialog: 0ms;
+  --motion-distance: 0;
+}
+
+/* ---------- Light theme ---------- */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  --color-bg: #eef1f6;              /* window background */
+  --color-surface: #ffffff;         /* panels, dialogs */
+  --color-surface-sunken: #f3f5f9;  /* inputs, striped rows */
+  --color-text: #1b2233;
+  --color-text-muted: #5a6479;      /* 5.9:1 on surface */
+  --color-border: #d5dbe6;
+  --color-border-strong: #b7c0d0;
+  --color-accent: #3a56d4;          /* current-game row, place, focus */
+  --color-accent-soft: #e2e7fb;
+  --color-on-accent: #ffffff;
+  --color-primary: #1b2233;         /* primary button fill */
+  --color-primary-hover: #2e3a55;
+  --color-on-primary: #ffffff;
+  --color-focus: #3a56d4;
+  --color-scrim: rgb(17 21 31 / 0.42);
+
+  --color-board: #c9d1df;
+  --color-field: #e7ebf2;
+  --color-field-hover: #f6f8fb;
+  --color-ring: #1b2233;            /* selected field */
+
+  --ball-red: #e2453c;
+  --ball-orange: #f08a24;
+  --ball-yellow: #f2c418;
+  --ball-green: #2fa84f;
+  --ball-blue: #3b8cf0;
+  --ball-purple: #8b4fd6;
+  --ball-highlight: rgb(255 255 255 / 0.85);
+  --ball-shade: #000000;
+
+  --shadow-ball: 0 1px 2px rgb(0 0 0 / 0.25);
+  --shadow-dialog: 0 12px 32px rgb(17 21 31 / 0.22);
+}
+
+/* ---------- Dark theme ---------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --color-bg: #11151f;
+    --color-surface: #1a2030;
+    --color-surface-sunken: #151a27;
+    --color-text: #e8ecf5;
+    --color-text-muted: #9aa5bd;
+    --color-border: #2c354a;
+    --color-border-strong: #3d4862;
+    --color-accent: #8ea2ff;
+    --color-accent-soft: #252f52;
+    --color-on-accent: #11151f;
+    --color-primary: #e8ecf5;
+    --color-primary-hover: #ffffff;
+    --color-on-primary: #11151f;
+    --color-focus: #8ea2ff;
+    --color-scrim: rgb(0 0 0 / 0.55);
+
+    --color-board: #0b0f18;
+    --color-field: #222a3c;
+    --color-field-hover: #2b3449;
+    --color-ring: #e8ecf5;
+
+    --ball-red: #f05a50;
+    --ball-orange: #f7983a;
+    --ball-yellow: #f5cf35;
+    --ball-green: #3dbb5e;
+    --ball-blue: #5199f2;
+    --ball-purple: #a06ae6;
+    --ball-highlight: rgb(255 255 255 / 0.7);
+    --ball-shade: #000000;
+
+    --shadow-ball: 0 1px 3px rgb(0 0 0 / 0.5);
+    --shadow-dialog: 0 16px 40px rgb(0 0 0 / 0.5);
+  }
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-bg: #11151f;
+  --color-surface: #1a2030;
+  --color-surface-sunken: #151a27;
+  --color-text: #e8ecf5;
+  --color-text-muted: #9aa5bd;
+  --color-border: #2c354a;
+  --color-border-strong: #3d4862;
+  --color-accent: #8ea2ff;
+  --color-accent-soft: #252f52;
+  --color-on-accent: #11151f;
+  --color-primary: #e8ecf5;
+  --color-primary-hover: #ffffff;
+  --color-on-primary: #11151f;
+  --color-focus: #8ea2ff;
+  --color-scrim: rgb(0 0 0 / 0.55);
+
+  --color-board: #0b0f18;
+  --color-field: #222a3c;
+  --color-field-hover: #2b3449;
+  --color-ring: #e8ecf5;
+
+  --ball-red: #f05a50;
+  --ball-orange: #f7983a;
+  --ball-yellow: #f5cf35;
+  --ball-green: #3dbb5e;
+  --ball-blue: #5199f2;
+  --ball-purple: #a06ae6;
+  --ball-highlight: rgb(255 255 255 / 0.7);
+  --ball-shade: #000000;
+
+  --shadow-ball: 0 1px 3px rgb(0 0 0 / 0.5);
+  --shadow-dialog: 0 16px 40px rgb(0 0 0 / 0.5);
+}
