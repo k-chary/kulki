@@ -25,3 +25,14 @@ function parseDuration(value: string, token: string): number {
   const amount = Number(match[1]);
   return match[2] === 's' ? amount * 1000 : amount;
 }
+
+/**
+ * Whether motion is reduced for `element`: a data-motion attribute on it or an
+ * ancestor wins (Storybook's Motion switch), otherwise the OS setting.
+ */
+export function prefersReducedMotion(element: Element): boolean {
+  const forced = element.closest('[data-motion]')?.getAttribute('data-motion');
+  if (forced === 'reduced') return true;
+  if (forced === 'full') return false;
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+}

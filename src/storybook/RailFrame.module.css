@@ -1,0 +1,16 @@
+.rail {
+  width: var(--rail-width);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* The rail at the 1280×800 window's board height. */
+.rail[data-tall='true'] {
+  height: calc(var(--rail-width) * 2.5);
+}
+
+/* A short panel, as the canvas shows the list states. */
+.rail[data-short='true'] {
+  height: calc(var(--rail-width) * 0.8);
+}

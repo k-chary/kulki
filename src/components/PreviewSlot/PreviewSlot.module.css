@@ -1,0 +1,8 @@
+.slot {
+  width: var(--preview-slot-size);
+  height: var(--preview-slot-size);
+  display: grid;
+  place-items: center;
+  background: var(--color-field);
+  border-radius: var(--radius-sm);
+}

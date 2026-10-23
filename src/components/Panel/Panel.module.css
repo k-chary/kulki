@@ -1,0 +1,26 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-height: 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+
+  /* thin is 1px: tokens.css has no border-width token. */
+  border: thin solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.panel[data-grow='true'] {
+  flex: 1;
+}
+
+.label {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}

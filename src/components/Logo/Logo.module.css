@@ -1,0 +1,18 @@
+.logo {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-weight: var(--weight-black);
+  font-size: var(--text-2xl);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
+}
+
+.dots {
+  --ball-size: var(--logo-dot-size);
+
+  display: flex;
+  gap: var(--space-1);
+}

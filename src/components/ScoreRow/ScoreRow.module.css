@@ -1,0 +1,59 @@
+.row {
+  display: grid;
+  grid-template-columns: var(--rank-width) minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  font-variant-numeric: tabular-nums;
+}
+
+.row[data-stripe='odd'] {
+  background: var(--color-surface-sunken);
+}
+
+.rank {
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+}
+
+.who {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.name {
+  font-weight: var(--weight-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.date {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.points {
+  font-family: var(--font-mono);
+  font-weight: var(--weight-medium);
+}
+
+.row[data-kind='current'] {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.row[data-kind='current'] .rank,
+.row[data-kind='current'] .date {
+  color: var(--color-accent);
+}
+
+.row[data-kind='saved'] {
+  background: var(--color-accent-soft);
+  outline: var(--ring-width) solid var(--color-accent);
+  outline-offset: calc(-1 * var(--ring-width));
+}
