@@ -7,7 +7,9 @@ import {
   gameOverView,
   highscoreRows,
   initialState,
+  pendingScore,
   reduce,
+  saveEffect,
   selectedColor,
   statusOf,
 } from './controller';
@@ -222,6 +224,51 @@ describe('clearing', () => {
   });
 });
 
+describe('saveEffect', () => {
+  const start = initialState(game(OPEN));
+
+  it('saves a played turn, with the state the turn produced', () => {
+    const selected = reduce(start, { type: 'click', cell: { row: 0, col: 0 } }, rng);
+    const moved = reduce(selected, { type: 'click', cell: { row: 2, col: 0 } }, rng);
+    expect(saveEffect(selected, moved)).toEqual({ type: 'save', game: moved.game });
+  });
+
+  it('touches nothing for a selection, a refused move or a hover', () => {
+    const selected = reduce(start, { type: 'click', cell: { row: 0, col: 0 } }, rng);
+    const refused = reduce(
+      initialState(game(WALLED)),
+      { type: 'click', cell: { row: 0, col: 0 } },
+      rng,
+    );
+    expect(saveEffect(start, selected)).toBeNull();
+    expect(
+      saveEffect(selected, reduce(selected, { type: 'hover', cell: { row: 1, col: 1 } }, rng)),
+    ).toBeNull();
+    expect(saveEffect(refused, refused)).toBeNull();
+  });
+
+  it('deletes the save when the turn ends the game', () => {
+    const next = initialState(game(OPEN, { gameOver: true }), null, 5);
+    expect(saveEffect(initialState(game(OPEN), null, 4), next)).toEqual({ type: 'delete' });
+  });
+
+  it('deletes the save on a confirmed new game but not while asking', () => {
+    const playing = initialState(game(OPEN), null, 3);
+    const asking = reduce(playing, { type: 'requestNewGame' }, rng);
+    expect(saveEffect(playing, asking)).toBeNull();
+    expect(saveEffect(asking, reduce(asking, { type: 'cancelNewGame' }, rng))).toBeNull();
+    expect(saveEffect(asking, reduce(asking, { type: 'confirmNewGame' }, rng))).toEqual({
+      type: 'delete',
+    });
+  });
+
+  it('asks before discarding a resumed game', () => {
+    const resumed = initialState(game(OPEN), 'loaded', 1);
+    expect(reduce(resumed, { type: 'requestNewGame' }, rng).confirming).toBe(true);
+    expect(statusOf(resumed).lead).toBe('Wczytano zapisaną grę');
+  });
+});
+
 const stored = (score: number): HighscoreEntry => ({
   name: `Gracz ${score}`,
   score,
@@ -312,5 +359,29 @@ describe('highscore rows', () => {
     const rows = highscoreRows(saved, list);
     expect(rows.every((row) => row.kind === 'stored')).toBe(true);
     expect(rows.map((row) => row.place)).toEqual([1, 2, 3]);
+  });
+});
+
+describe('pendingScore', () => {
+  const NOW = '2026-10-23T16:00:00.000Z';
+
+  it('is the score of a finished game whose name is still to be entered', () => {
+    expect(pendingScore(over(800), top30, 'Ola', NOW)).toEqual({
+      name: 'Ola',
+      score: 800,
+      date: NOW,
+    });
+  });
+
+  it('falls back to „Gracz” without a last name', () => {
+    expect(pendingScore(over(800), top30, null, NOW)?.name).toBe('Gracz');
+    expect(pendingScore(over(800), [], '  ', NOW)?.name).toBe('Gracz');
+  });
+
+  it('is null while playing, once saved and outside the top 30', () => {
+    expect(pendingScore(initialState(game(OPEN)), [], null, NOW)).toBeNull();
+    const saved = reduce(over(800), { type: 'scoreSaved', name: 'Ola', place: 22 }, rng);
+    expect(pendingScore(saved, top30, 'Ola', NOW)).toBeNull();
+    expect(pendingScore(over(600), top30, 'Ola', NOW)).toBeNull();
   });
 });

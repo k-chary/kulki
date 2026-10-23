@@ -107,3 +107,42 @@ test('the same seed gives the same start', async ({ page }) => {
   const second = await balls(page).evaluateAll((nodes) => nodes.map((n) => n.ariaLabel));
   expect(second).toEqual(first);
 });
+
+test.describe('save and resume', () => {
+  test('a reload after a move restores board, score and preview with the status message', async ({
+    page,
+  }) => {
+    await openFixture(page, { rows: { 0: 'rrrr' }, preview: 'ggg' });
+    await field(page, 0, 0).click();
+    await field(page, 2, 0).click();
+    await expect(balls(page)).toHaveCount(7);
+
+    await page.reload();
+    await expect(balls(page)).toHaveCount(7);
+    await expect(field(page, 2, 0)).toHaveAccessibleName('Kulka czerwona, wiersz 3, kolumna 1');
+    await expect(page.getByRole('button', { name: /^Kulka zielona/ })).toHaveCount(3);
+    await expect(status(page)).toHaveText('Wczytano zapisaną grę');
+    await expect(status(page)).toHaveText('Kliknij kulkę, aby ją wybrać', { timeout: 5000 });
+  });
+
+  test('a new game after a confirmed „Nowa gra” is not resumed', async ({ page }) => {
+    await openFixture(page, { rows: { 0: 'r' }, preview: 'bbb' });
+    await field(page, 0, 0).click();
+    await field(page, 2, 0).click();
+    await page.getByRole('button', { name: 'Nowa gra' }).click();
+    await page
+      .getByRole('dialog')
+      .getByRole('button', { name: /Nowa gra/ })
+      .click();
+    await expect(balls(page)).toHaveCount(5);
+
+    await page.reload();
+    await expect(status(page)).toHaveText('Kliknij kulkę, aby ją wybrać');
+  });
+
+  test('a fresh install starts a new game with five balls', async ({ page }) => {
+    await page.goto('/');
+    await expect(balls(page)).toHaveCount(5);
+    await expect(status(page)).toHaveText('Kliknij kulkę, aby ją wybrać');
+  });
+});

@@ -81,6 +81,17 @@ test.describe('game over', () => {
     await expect(scoreRows(page, 'stored')).toHaveCount(30);
   });
 
+  test('closing the window with the name dialog open still saves the score', async ({ page }) => {
+    await openFixture(page, { rows: nearlyFullRows(), preview: 'ppp' });
+    await playToGameOver(page);
+    await expect(gameOverDialog(page)).toBeVisible();
+
+    // A reload leaves the page like closing the window does; the web build keeps its storage.
+    await page.goto('/?seed=1');
+    await expect(scoreRows(page, 'stored')).toHaveCount(1);
+    await expect(scoreRows(page, 'stored')).toContainText('Gracz');
+  });
+
   test('the board takes no clicks after the game ended', async ({ page }) => {
     await openFixture(page, { rows: nearlyFullRows(), preview: 'ppp' });
     await playToGameOver(page);
