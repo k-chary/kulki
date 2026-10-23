@@ -30,6 +30,8 @@ fn open_store(app: &tauri::App) -> Store {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        // Remembers the window's size and position between launches.
+        .plugin(tauri_plugin_window_state::Builder::default().build())
         .setup(|app| {
             let store = open_store(app);
             app.manage(Mutex::new(store));

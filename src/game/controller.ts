@@ -40,6 +40,7 @@ export type ControllerAction =
 export function initialState(
   game: GameState,
   notice: ControllerState['notice'] = null,
+  moves = 0,
 ): ControllerState {
   return {
     game,
@@ -47,9 +48,23 @@ export function initialState(
     hover: null,
     notice,
     noticeId: notice ? 1 : 0,
-    moves: 0,
+    moves,
     confirming: false,
   };
+}
+
+/** What to do with the saved game after a state change. */
+export type SaveEffect = { type: 'save'; game: GameState } | { type: 'delete' };
+
+/**
+ * The save to write or drop when `prev` becomes `next`. A played turn is saved
+ * as soon as the reducer has computed it, before any playback. Game over and a
+ * fresh game delete the save; changes that leave the game alone touch nothing.
+ */
+export function saveEffect(prev: ControllerState, next: ControllerState): SaveEffect | null {
+  if (next.game === prev.game) return null;
+  if (next.game.gameOver || next.moves === 0) return { type: 'delete' };
+  return { type: 'save', game: next.game };
 }
 
 /** True while the board takes no input: a dialog is open or the game is over. */
