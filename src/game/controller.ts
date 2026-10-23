@@ -127,7 +127,7 @@ function freshGame(state: ControllerState, rng: Rng): ControllerState {
  * ball before and after the turn and is not an end of the move, so it neither
  * clears, nor spawns, nor is the ball on its way.
  */
-function selectableDuringTurn(state: ControllerState, cell: Cell): boolean {
+export function selectableDuringTurn(state: ControllerState, cell: Cell): boolean {
   const { turn, confirming, game } = state;
   if (turn === null || confirming || game.gameOver) return false;
   const color = getBall(turn.before.board, cell);
@@ -242,6 +242,7 @@ export function boardView(
   const shown = playback?.board ?? board;
   const cells: CellView[] = Array.from({ length: CELL_COUNT }, (_, index) => ({
     color: shown[index] ?? null,
+    pickable: selectableDuringTurn(state, cellAt(index)),
   }));
   playback?.clearing.forEach((cell) => {
     cells[cellIndex(cell)] = { ...(cells[cellIndex(cell)] as CellView), ballState: 'clearing' };

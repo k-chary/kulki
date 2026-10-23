@@ -11,6 +11,8 @@ export interface CellView {
   color: Color | null;
   state?: FieldState;
   ballState?: BallState;
+  /** A locked board still takes a click on this ball (cursor stays a pointer). */
+  pickable?: boolean;
   /** Spawn stagger for this ball. */
   ballDelayMs?: number;
 }
@@ -69,6 +71,7 @@ export function Board({
             hasBall={color !== null}
             label={fieldLabel(cell.row, cell.col, color)}
             locked={locked}
+            pickable={view.pickable}
             onClick={locked && !clickable ? undefined : () => onFieldClick?.(cell)}
             onPointerEnter={locked ? undefined : () => onFieldHover?.(cell)}
           >

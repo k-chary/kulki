@@ -33,6 +33,9 @@ test.describe('input lock', () => {
     await field(page, 8, 0).click();
     await expect(page.locator('div[data-locked="true"]')).toHaveCount(1);
 
+    // Pickable balls keep the pointer cursor, the rest of the locked board does not.
+    await expect(field(page, 0, 8)).toHaveCSS('cursor', 'pointer');
+    await expect(field(page, 2, 4)).toHaveCSS('cursor', 'default');
     // The yellow ball takes the selection at once, with the board still locked.
     await field(page, 0, 8).click({ force: true });
     await expect(field(page, 0, 8)).toHaveAttribute('data-state', 'selected');

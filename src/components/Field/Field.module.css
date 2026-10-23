@@ -76,3 +76,7 @@
 .field[data-locked='true'] {
   cursor: default;
 }
+
+.field[data-locked='true'][data-pickable='true'] {
+  cursor: pointer;
+}

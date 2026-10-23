@@ -252,6 +252,10 @@ describe('turn playback', () => {
     expect(picked.turn).toBe(state.turn);
     expect(picked.game).toBe(state.game);
     expect(boardView(picked)[1]?.state).toBe('selected');
+    // Only the balls that can be picked show the pointer.
+    expect(boardView(state)[1]?.pickable).toBe(true);
+    expect(boardView(state)[5 * 9 + 5]?.pickable).toBe(false);
+    expect(boardView(reduce(state, { type: 'turnDone' }, rng))[1]?.pickable).toBe(false);
     // A target click is dropped: the game does not change.
     expect(reduce(picked, { type: 'click', cell: at(7, 7) }, rng)).toBe(picked);
     // The same ball again deselects it.
