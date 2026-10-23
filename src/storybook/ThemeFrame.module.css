@@ -1,0 +1,17 @@
+.frame {
+  display: grid;
+  min-height: 100%;
+}
+
+.frame[data-side='true'] {
+  grid-template-columns: 1fr 1fr;
+}
+
+.pane {
+  padding: var(--layout-padding);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+}

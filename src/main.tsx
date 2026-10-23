@@ -1,6 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import './styles/fonts';
+import './styles/tokens.css';
 import './styles/global.css';
 
 // A desktop game has no use for the browser context menu.

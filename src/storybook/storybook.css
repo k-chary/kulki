@@ -1,0 +1,12 @@
+/* Storybook only: the app locks page scroll and text selection, docs pages need both. */
+
+body {
+  overflow: auto;
+  user-select: text;
+}
+
+/* On a docs page #storybook-root stays empty and must not take space. */
+#storybook-root:not(:empty) {
+  display: grid;
+  min-height: 100vh;
+}

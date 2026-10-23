@@ -20,16 +20,18 @@ npm install
 
 ## Commands
 
-| Command               | What it does                                                     |
-| --------------------- | ---------------------------------------------------------------- |
-| `npm run tauri dev`   | Runs the desktop app with hot reload (starts Vite on port 1420)  |
-| `npm run tauri build` | Builds the installer for the current OS into `src-tauri/target/` |
-| `npm run dev`         | Runs only the web frontend in a browser at http://localhost:1420 |
-| `npm run build`       | Typechecks and builds the web frontend into `dist/`              |
-| `npm run lint`        | ESLint, Stylelint and Prettier check                             |
-| `npm run format`      | Formats every file with Prettier                                 |
-| `npm run typecheck`   | TypeScript in strict mode, no emit                               |
-| `npm test`            | Vitest once (`npm run test:watch` to keep it running)            |
+| Command                   | What it does                                                     |
+| ------------------------- | ---------------------------------------------------------------- |
+| `npm run tauri dev`       | Runs the desktop app with hot reload (starts Vite on port 1420)  |
+| `npm run tauri build`     | Builds the installer for the current OS into `src-tauri/target/` |
+| `npm run dev`             | Runs only the web frontend in a browser at http://localhost:1420 |
+| `npm run build`           | Typechecks and builds the web frontend into `dist/`              |
+| `npm run lint`            | ESLint, Stylelint and Prettier check                             |
+| `npm run format`          | Formats every file with Prettier                                 |
+| `npm run typecheck`       | TypeScript in strict mode, no emit                               |
+| `npm test`                | Vitest once (`npm run test:watch` to keep it running)            |
+| `npm run storybook`       | Storybook at http://localhost:6006 with the Tokens page          |
+| `npm run build-storybook` | Builds Storybook into `storybook-static/`                        |
 
 Pull requests run `npm run lint`, `npm run typecheck` and `npm test` in `.github/workflows/pr.yml`. The full suite (component tests, Playwright, `cargo test`) runs only for releases.
 
@@ -39,7 +41,12 @@ CSS Modules (`*.module.css`) may only use design tokens: no hex or `rgb()` color
 
 ## Layout
 
-- `src/` — React frontend (`src/styles/` holds global CSS; tokens arrive with issue #2)
+- `src/` — React frontend
+  - `src/styles/tokens.css` — the design tokens, the only place raw colors, sizes, fonts and timings live. A verbatim copy of `docs/design/tokens.css`, so Stylelint and Prettier skip it
+  - `src/styles/fonts.ts` — bundled Sora, IBM Plex Sans and IBM Plex Mono (latin + latin-ext)
+  - `src/styles/motion.ts` — `readDuration('--dur-clear')` reads a motion token in ms for animation sequencing
+  - `src/storybook/` — Storybook frame (Theme and Motion toolbars), the Tokens page and the specimen story
+- `.storybook/` — Storybook config
 - `src-tauri/` — Tauri shell (Rust); window settings live in `src-tauri/tauri.conf.json`
 - `tests/` — tooling tests and fixtures
 - `docs/` — spec and design reference

@@ -41,6 +41,8 @@ const strictProperties = [
 export default {
   extends: ['stylelint-config-standard'],
   plugins: ['stylelint-declaration-strict-value'],
+  // A verbatim copy of the design canvas's file (docs/design/README.md).
+  ignoreFiles: ['src/styles/tokens.css'],
   rules: {
     'selector-class-pattern': null,
   },
