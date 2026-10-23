@@ -1,0 +1,20 @@
+.final {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-weight: var(--weight-medium);
+  font-size: var(--text-3xl);
+  line-height: var(--leading-tight);
+  font-variant-numeric: tabular-nums;
+}
+
+.unit {
+  margin-left: var(--space-1);
+  font-size: var(--text-md);
+  color: var(--color-text-muted);
+}
+
+.note {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-md);
+}
