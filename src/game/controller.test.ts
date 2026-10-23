@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { type GameState, createRng } from '../rules';
 import { parseBoard } from '../rules/testing';
-import { boardView, initialState, reduce, saveEffect, selectedColor, statusOf } from './controller';
+import {
+  boardView,
+  initialState,
+  isLocked,
+  reduce,
+  saveEffect,
+  selectedColor,
+  statusOf,
+  withIntro,
+} from './controller';
+import { restingView } from './playback';
 
 const rng = createRng(1);
 
@@ -155,7 +165,8 @@ describe('new game', () => {
   const played = () => {
     let state = initialState(game(OPEN));
     state = reduce(state, { type: 'click', cell: at(0, 0) }, rng);
-    return reduce(state, { type: 'click', cell: at(5, 5) }, rng);
+    state = reduce(state, { type: 'click', cell: at(5, 5) }, rng);
+    return reduce(state, { type: 'turnDone' }, rng);
   };
 
   it('starts at once before the first move', () => {
@@ -213,6 +224,52 @@ describe('clearing', () => {
   });
 });
 
+describe('turn playback', () => {
+  const start = () => {
+    let state = initialState(game(OPEN));
+    state = reduce(state, { type: 'click', cell: at(0, 0) }, rng);
+    return reduce(state, { type: 'click', cell: at(5, 5) }, rng);
+  };
+
+  it('keeps the new game at once and locks the board until the turn is done', () => {
+    const state = start();
+    expect(state.turn?.before.board[0]).toBe('red');
+    expect(state.turn?.events[0]?.type).toBe('move');
+    expect(isLocked(state)).toBe(true);
+    expect(reduce(state, { type: 'click', cell: at(0, 1) }, rng)).toBe(state);
+    expect(reduce(state, { type: 'hover', cell: at(3, 3) }, rng)).toBe(state);
+    expect(isLocked(reduce(state, { type: 'turnDone' }, rng))).toBe(false);
+  });
+
+  it('refuses „Nowa gra” while a turn plays and keeps the status line empty', () => {
+    const state = start();
+    expect(reduce(state, { type: 'requestNewGame' }, rng)).toBe(state);
+    expect(statusOf(state)).toEqual({ lead: '' });
+  });
+
+  it('shakes the selected ball after a missed move until the shake ends', () => {
+    let state = initialState(game(WALLED));
+    state = reduce(state, { type: 'click', cell: at(8, 8) }, rng);
+    state = reduce(state, { type: 'click', cell: at(4, 4) }, rng);
+    expect(state.shaking).toBe(true);
+    expect(boardView(state)[8 * 9 + 8]?.ballState).toBe('shake');
+    state = reduce(state, { type: 'shakeEnd' }, rng);
+    expect(boardView(state)[8 * 9 + 8]?.ballState).toBe('selected');
+  });
+
+  it('shows the playback step instead of the final board', () => {
+    const state = start();
+    const view = {
+      ...restingView(game(OPEN)),
+      clearing: [at(0, 1)],
+      spawning: [at(0, 0)],
+    };
+    const cells = boardView(state, view, 60);
+    expect(cells[1]?.ballState).toBe('clearing');
+    expect(cells[0]).toMatchObject({ color: 'red', ballState: 'spawning', ballDelayMs: 0 });
+  });
+});
+
 describe('saveEffect', () => {
   const start = initialState(game(OPEN));
 
@@ -255,5 +312,24 @@ describe('saveEffect', () => {
     const resumed = initialState(game(OPEN), 'loaded', 1);
     expect(reduce(resumed, { type: 'requestNewGame' }, rng).confirming).toBe(true);
     expect(statusOf(resumed).lead).toBe('Wczytano zapisaną grę');
+  });
+});
+
+describe('pop-in of a new game', () => {
+  it('plays the start balls in as a spawn and locks the board meanwhile', () => {
+    const state = withIntro(initialState(game('rg.......\n' + '.........\n'.repeat(8))));
+    expect(isLocked(state)).toBe(true);
+    expect(state.turn?.before.board.every((square) => square === null)).toBe(true);
+    expect(state.turn?.events).toEqual([
+      { type: 'spawn', cells: [at(0, 0), at(0, 1)], colors: ['red', 'green'] },
+    ]);
+  });
+
+  it('is played again after a confirmed new game but not for a resumed game', () => {
+    const resumed = initialState(game(OPEN), 'loaded', 1);
+    expect(resumed.turn).toBeNull();
+    const asking = reduce({ ...resumed, moves: 2 }, { type: 'requestNewGame' }, rng);
+    const fresh = reduce(asking, { type: 'confirmNewGame' }, createRng(5));
+    expect(fresh.turn?.events[0]?.type).toBe('spawn');
   });
 });
