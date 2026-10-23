@@ -27,3 +27,14 @@ export {
   lineCells,
   scoreFor,
 } from './lines';
+export {
+  SPAWN_COUNT,
+  START_BALLS,
+  type GameEvent,
+  type GameState,
+  type TurnResult,
+  deserialize,
+  newGame,
+  playTurn,
+  serialize,
+} from './game';
