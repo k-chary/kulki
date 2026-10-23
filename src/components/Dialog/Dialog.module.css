@@ -1,0 +1,63 @@
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-overlay);
+  display: grid;
+  place-items: center;
+  padding: var(--space-6);
+  background: var(--color-scrim);
+  border-radius: var(--radius-md);
+  animation: fade var(--dur-dialog) var(--ease-out) both;
+}
+
+.dialog {
+  width: min(var(--dialog-width), 100%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  background: var(--color-surface);
+  color: var(--color-text);
+
+  /* thin is 1px: tokens.css has no border-width token. */
+  border: thin solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-dialog);
+  animation: rise var(--dur-dialog) var(--ease-out) both;
+}
+
+.dialog:focus {
+  outline: none;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--weight-black);
+  font-size: var(--text-xl);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-display);
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* --motion-distance is 0 under reduced motion, so the card then only fades. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--space-2) * var(--motion-distance)));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
