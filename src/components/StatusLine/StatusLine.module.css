@@ -1,0 +1,13 @@
+.status {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status b {
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}

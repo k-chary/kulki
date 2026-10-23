@@ -1,0 +1,66 @@
+.button {
+  appearance: none;
+  height: var(--control-height);
+  padding: 0 var(--space-4);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+
+  /* thin is 1px: tokens.css has no border-width token. */
+  border: thin solid transparent;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-sm);
+  line-height: var(--leading-tight);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-hover) var(--ease-standard),
+    border-color var(--dur-hover) var(--ease-standard),
+    transform var(--dur-hover) var(--ease-standard);
+}
+
+/* data-force exists only so Storybook can show hover, pressed and focus. */
+.button[data-variant='primary'] {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.button[data-variant='primary']:hover:not(:disabled),
+.button[data-variant='primary'][data-force='hover'] {
+  background: var(--color-primary-hover);
+}
+
+.button[data-variant='secondary'] {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.button[data-variant='secondary']:hover:not(:disabled),
+.button[data-variant='secondary'][data-force='hover'] {
+  background: var(--color-surface-sunken);
+  border-color: var(--color-border-strong);
+}
+
+.button:focus-visible,
+.button[data-force='focus'] {
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: var(--space-0-5);
+}
+
+.button:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+.button:active:not(:disabled),
+.button[data-force='active'] {
+  /* Pressed moves 1 px down. */
+  transform: translateY(calc(var(--space-0-5) / 2));
+}
+
+.button[data-block='true'] {
+  width: 100%;
+}
