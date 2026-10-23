@@ -12,6 +12,8 @@ export interface FieldProps {
   label: string;
   /** No hover feedback and a default cursor while the board is locked. */
   locked?: boolean;
+  /** A locked field that still takes a click keeps the pointer cursor. */
+  pickable?: boolean;
   /** Storybook only: shows the hover look without a pointer. */
   forceHover?: boolean;
   onClick?: () => void;
@@ -28,6 +30,7 @@ export function Field({
   hasBall,
   label,
   locked = false,
+  pickable = false,
   forceHover = false,
   onClick,
   onPointerEnter,
@@ -42,6 +45,7 @@ export function Field({
       data-state={state}
       data-ball={hasBall}
       data-locked={locked}
+      data-pickable={pickable || undefined}
       data-hover={forceHover || undefined}
       aria-label={label}
       aria-disabled={locked || undefined}

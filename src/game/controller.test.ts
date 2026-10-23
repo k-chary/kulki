@@ -240,9 +240,70 @@ describe('turn playback', () => {
     expect(state.turn?.before.board[0]).toBe('red');
     expect(state.turn?.events[0]?.type).toBe('move');
     expect(isLocked(state)).toBe(true);
-    expect(reduce(state, { type: 'click', cell: at(0, 1) }, rng)).toBe(state);
+    expect(reduce(state, { type: 'click', cell: at(3, 3) }, rng)).toBe(state);
     expect(reduce(state, { type: 'hover', cell: at(3, 3) }, rng)).toBe(state);
     expect(isLocked(reduce(state, { type: 'turnDone' }, rng))).toBe(false);
+  });
+
+  it('selects another ball at once while the turn plays, and ignores empty fields', () => {
+    const state = start();
+    const picked = reduce(state, { type: 'click', cell: at(0, 1) }, rng);
+    expect(picked.selected).toEqual(at(0, 1));
+    expect(picked.turn).toBe(state.turn);
+    expect(picked.game).toBe(state.game);
+    expect(boardView(picked)[1]?.state).toBe('selected');
+    // Only the balls that can be picked show the pointer.
+    expect(boardView(state)[1]?.pickable).toBe(true);
+    expect(boardView(state)[5 * 9 + 5]?.pickable).toBe(false);
+    expect(boardView(reduce(state, { type: 'turnDone' }, rng))[1]?.pickable).toBe(false);
+    // A target click is dropped: the game does not change.
+    expect(reduce(picked, { type: 'click', cell: at(7, 7) }, rng)).toBe(picked);
+    // The same ball again deselects it.
+    expect(reduce(picked, { type: 'click', cell: at(0, 1) }, rng).selected).toBeNull();
+    // The selection survives the end of the turn and can then move.
+    const done = reduce(picked, { type: 'turnDone' }, rng);
+    expect(done.selected).toEqual(at(0, 1));
+    expect(reduce(done, { type: 'click', cell: at(7, 7) }, rng).turn).not.toBeNull();
+  });
+
+  it('does not select the moving ball or its start square while the turn plays', () => {
+    const state = start();
+    expect(reduce(state, { type: 'click', cell: at(5, 5) }, rng)).toBe(state);
+    expect(reduce(state, { type: 'click', cell: at(0, 0) }, rng)).toBe(state);
+  });
+
+  it('does not select a ball that the turn clears', () => {
+    const lineBoard = `
+      rrrr.....
+      .........
+      .........
+      .........
+      .........
+      .........
+      .........
+      .........
+      ......r..
+    `;
+    let state = initialState(game(lineBoard));
+    state = reduce(state, { type: 'click', cell: at(8, 6) }, rng);
+    state = reduce(state, { type: 'click', cell: at(0, 4) }, rng);
+    expect(state.turn).not.toBeNull();
+    expect(reduce(state, { type: 'click', cell: at(0, 1) }, rng)).toBe(state);
+  });
+
+  it('refuses a ball click while a dialog is open', () => {
+    const state = reduce(
+      reduce(initialState(game(OPEN)), { type: 'click', cell: at(0, 0) }, rng),
+      { type: 'click', cell: at(5, 5) },
+      rng,
+    );
+    const dialog = reduce(
+      reduce(state, { type: 'turnDone' }, rng),
+      { type: 'requestNewGame' },
+      rng,
+    );
+    expect(dialog.confirming).toBe(true);
+    expect(reduce(dialog, { type: 'click', cell: at(0, 1) }, rng)).toBe(dialog);
   });
 
   it('refuses „Nowa gra” while a turn plays and keeps the status line empty', () => {

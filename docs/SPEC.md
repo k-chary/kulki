@@ -71,7 +71,7 @@ The game is played with a mouse; Kulki has one screen, and everything else is a 
 | Dialog | Scrim fades, card rises 8 px, 180 ms | Appears at once |
 
 - Reduced motion follows the OS setting. Durations are tokens, and the TypeScript sequencing reads them from CSS instead of hard-coding them.
-- Input is locked from the click that starts a move until the last clear or spawn of the turn ends. Clicks during the lock are dropped, not queued. While locked, the board shows no hover feedback and „Nowa gra” is disabled. The hop, shake, chip and list scrolling do not lock input.
+- From the click that starts a move until the last clear or spawn of the turn ends, no ball can be moved. Clicking another ball in that time selects it at once (the selection ring shows) and it can move when the turn ends; a click on an empty field is dropped, not queued. The moving ball, a ball the turn clears and a ball it spawns cannot be selected. While locked, the board shows no hover feedback and „Nowa gra” is disabled. The hop, shake, chip and list scrolling do not lock input.
 - Each step ends on its animationend or transitionend event, with a timer fallback at the token duration + 50 ms, so a hidden window cannot stall the game.
 
 **Dialogs**
