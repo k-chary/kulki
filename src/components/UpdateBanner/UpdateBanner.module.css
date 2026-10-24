@@ -1,0 +1,25 @@
+.banner {
+  height: var(--banner-height);
+  flex: none;
+  padding: 0 var(--layout-padding);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  background: var(--color-surface);
+  border-bottom: thin solid var(--color-border);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+}
+
+.message {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The banner is the one place buttons sit on a bar: shorter than the 44 px control. */
+.banner button {
+  height: var(--space-8);
+  padding: 0 var(--space-3);
+}

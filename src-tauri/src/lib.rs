@@ -29,9 +29,16 @@ fn open_store(app: &tauri::App) -> Store {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         // Remembers the window's size and position between launches.
-        .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(tauri_plugin_window_state::Builder::default().build());
+    // Looks for a newer GitHub Release (the frontend decides when to ask and shows the
+    // banner) and restarts the app once the update is installed.
+    #[cfg(desktop)]
+    let builder = builder
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init());
+    builder
         .setup(|app| {
             let store = open_store(app);
             app.manage(Mutex::new(store));
