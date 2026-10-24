@@ -40,7 +40,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "REPLACE_WITH_UPDATER_PUBLIC_KEY",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEVGRERCRDQ4MzZGOTlFRjEKUldUeG52azJTTDNkNytqU2syaHVrN1NQdE5FOHFna2VHUnN4cDBkVjEvb1ZBV1EwUEtBVHNQMncK",
       "endpoints": ["https://github.com/k-chary/kulki/releases/latest/download/latest.json"]
     }
   }
