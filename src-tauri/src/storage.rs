@@ -4,8 +4,9 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use rusqlite::{params, Connection, OptionalExtension};
+use rusqlite::{params, Connection, ErrorCode, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -17,6 +18,8 @@ const LIMIT: i64 = MAX_HIGHSCORES as i64;
 pub const MAX_NAME_CHARS: usize = 20;
 /// Name used when the player leaves the field empty.
 pub const DEFAULT_NAME: &str = "Gracz";
+/// How long a statement waits for a lock held by another connection.
+const BUSY_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// Each entry upgrades the schema by one version; `PRAGMA user_version`
 /// records how many have run. Append new steps, never edit old ones.
@@ -52,6 +55,8 @@ pub struct HighscoreEntry {
 pub struct InsertResult {
     /// 1-based place of the new row, or `None` if it did not make the list.
     pub place: Option<u32>,
+    /// The new row's id for `rename_highscore`, or `None` if it did not make the list.
+    pub id: Option<i64>,
     pub highscores: Vec<HighscoreEntry>,
 }
 
@@ -61,15 +66,17 @@ pub struct Store {
 
 impl Store {
     /// Opens the database at `path`, creating it if missing. A file that is
-    /// not a usable SQLite database is moved aside to `<name>.corrupt` and a
-    /// fresh one is created in its place.
+    /// not a usable SQLite database is moved aside to `<name>.corrupt-<time>`
+    /// and a fresh one is created in its place. Any other error (a lock held
+    /// too long, a permission or disk problem) is returned and the file is
+    /// left alone, so the highscores are never thrown away by mistake.
     pub fn open(path: &Path) -> rusqlite::Result<Store> {
         match Self::open_existing(path) {
-            Ok(store) => Ok(store),
-            Err(_) => {
+            Err(error) if is_corrupt(&error) => {
                 discard_database(path);
                 Self::open_existing(path)
             }
+            result => result,
         }
     }
 
@@ -82,6 +89,7 @@ impl Store {
     }
 
     fn init(conn: Connection) -> rusqlite::Result<Store> {
+        conn.busy_timeout(BUSY_TIMEOUT)?;
         let check: String = conn.query_row("PRAGMA quick_check", [], |row| row.get(0))?;
         if check != "ok" {
             return Err(rusqlite::Error::SqliteFailure(
@@ -155,8 +163,19 @@ impl Store {
         tx.commit()?;
         Ok(InsertResult {
             place,
+            id: kept.then_some(id),
             highscores: self.list_highscores()?,
         })
+    }
+
+    /// Gives the row `id` a new name (normalised like on insert) and returns
+    /// the list. Renaming a row that is gone changes nothing.
+    pub fn rename_highscore(&self, id: i64, name: &str) -> rusqlite::Result<Vec<HighscoreEntry>> {
+        self.conn.execute(
+            "UPDATE highscores SET name = ?1 WHERE id = ?2",
+            params![normalize_name(name), id],
+        )?;
+        self.list_highscores()
     }
 
     pub fn last_name(&self) -> rusqlite::Result<Option<String>> {
@@ -225,9 +244,23 @@ pub fn normalize_name(name: &str) -> String {
     }
 }
 
-/// Moves an unusable database file (and its journal files) out of the way.
+/// Whether `error` means the file is not a usable database, as opposed to
+/// one that is only busy or out of reach right now.
+fn is_corrupt(error: &rusqlite::Error) -> bool {
+    matches!(
+        error,
+        rusqlite::Error::SqliteFailure(e, _)
+            if matches!(e.code, ErrorCode::DatabaseCorrupt | ErrorCode::NotADatabase)
+    )
+}
+
+/// Moves an unusable database file (and its journal files) out of the way,
+/// stamped with the time so an earlier discarded copy is kept too.
 fn discard_database(path: &Path) {
-    let _ = fs::rename(path, with_suffix(path, ".corrupt"));
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |elapsed| elapsed.as_secs());
+    let _ = fs::rename(path, with_suffix(path, &format!(".corrupt-{stamp}")));
     for suffix in ["-wal", "-shm", "-journal"] {
         let _ = fs::remove_file(with_suffix(path, suffix));
     }
@@ -256,6 +289,21 @@ mod tests {
         list.iter().map(|e| e.name.as_str()).collect()
     }
 
+    /// The discarded copies of `path`, `<name>.corrupt-<time>`.
+    fn discarded(path: &Path) -> usize {
+        let prefix = format!("{}.corrupt-", path.file_name().unwrap().to_string_lossy());
+        fs::read_dir(path.parent().unwrap())
+            .unwrap()
+            .filter(|item| {
+                item.as_ref()
+                    .unwrap()
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with(&prefix)
+            })
+            .count()
+    }
+
     #[test]
     fn ranks_by_score_and_keeps_older_tie_higher() {
         let mut store = Store::open_in_memory().unwrap();
@@ -280,6 +328,23 @@ mod tests {
         store.insert_highscore(&entry("A", 50, "d1")).unwrap();
         let result = store.insert_highscore(&entry("B", 60, "d2")).unwrap();
         assert_eq!(result.place, Some(1));
+        assert!(result.id.is_some());
+    }
+
+    #[test]
+    fn renames_a_row_by_id() {
+        let mut store = Store::open_in_memory().unwrap();
+        store.insert_highscore(&entry("Ala", 90, "d1")).unwrap();
+        let result = store.insert_highscore(&entry("Gracz", 50, "d2")).unwrap();
+        let list = store
+            .rename_highscore(result.id.unwrap(), "  Ola  ")
+            .unwrap();
+        assert_eq!(names(&list), ["Ala", "Ola"]);
+        // Renaming again is harmless, so a retried save never adds a row.
+        let list = store.rename_highscore(result.id.unwrap(), "Ola").unwrap();
+        assert_eq!(names(&list), ["Ala", "Ola"]);
+        let list = store.rename_highscore(result.id.unwrap(), "").unwrap();
+        assert_eq!(names(&list), ["Ala", DEFAULT_NAME]);
     }
 
     #[test]
@@ -302,6 +367,7 @@ mod tests {
         // Equal to the 30th: the older game stays, the new one is not kept.
         let result = store.insert_highscore(&entry("Tie", 105, "d")).unwrap();
         assert_eq!(result.place, None);
+        assert_eq!(result.id, None);
         assert_eq!(result.highscores.len(), MAX_HIGHSCORES);
         assert!(!names(&result.highscores).contains(&"Tie"));
 
@@ -381,7 +447,7 @@ mod tests {
             .unwrap();
         assert_eq!(version as usize, MIGRATIONS.len());
         assert!(store.list_highscores().unwrap().is_empty());
-        assert!(!with_suffix(&path, ".corrupt").exists());
+        assert_eq!(discarded(&path), 0);
     }
 
     #[test]
@@ -413,7 +479,7 @@ mod tests {
         let mut store = Store::open(&path).unwrap();
         assert!(store.list_highscores().unwrap().is_empty());
         store.insert_highscore(&entry("Ala", 10, "d")).unwrap();
-        assert!(with_suffix(&path, ".corrupt").exists());
+        assert_eq!(discarded(&path), 1);
 
         drop(store);
         let store = Store::open(&path).unwrap();
@@ -439,5 +505,53 @@ mod tests {
 
         let store = Store::open(&path).unwrap();
         assert!(store.list_highscores().unwrap().is_empty());
+    }
+
+    #[test]
+    fn waits_for_a_lock_instead_of_discarding_the_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("kulki.db");
+        {
+            let mut store = Store::open(&path).unwrap();
+            store.insert_highscore(&entry("Ala", 70, "d")).unwrap();
+        }
+        // Another Kulki holds a write lock while this one starts.
+        let other = Connection::open(&path).unwrap();
+        other
+            .execute_batch("BEGIN EXCLUSIVE; INSERT INTO settings VALUES ('x', 'y');")
+            .unwrap();
+        let holder = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(300));
+            other.execute_batch("COMMIT").unwrap();
+        });
+
+        let store = Store::open(&path).unwrap();
+        holder.join().unwrap();
+        assert_eq!(names(&store.list_highscores().unwrap()), ["Ala"]);
+        assert_eq!(discarded(&path), 0);
+    }
+
+    #[test]
+    fn only_corruption_discards_the_file() {
+        let corrupt = rusqlite::Error::SqliteFailure(
+            rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_CORRUPT),
+            None,
+        );
+        let not_a_database = rusqlite::Error::SqliteFailure(
+            rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_NOTADB),
+            None,
+        );
+        let busy = rusqlite::Error::SqliteFailure(
+            rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_BUSY),
+            None,
+        );
+        let read_only = rusqlite::Error::SqliteFailure(
+            rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_CANTOPEN),
+            None,
+        );
+        assert!(is_corrupt(&corrupt));
+        assert!(is_corrupt(&not_a_database));
+        assert!(!is_corrupt(&busy));
+        assert!(!is_corrupt(&read_only));
     }
 }
