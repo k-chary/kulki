@@ -70,13 +70,31 @@ jobs:
         if: matrix.os == 'ubuntu-22.04'
         uses: ./.github/actions/tauri-deps
       - run: npm ci
+      # The installed app only accepts updates signed with this key; see README, "Updates".
+      - name: Check updater signing is set up
+        shell: bash
+        env:
+          SIGNING_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if [ -z "$SIGNING_KEY" ]; then
+            echo "::error::Secret TAURI_SIGNING_PRIVATE_KEY is missing (README, Updates)."
+            exit 1
+          fi
+          if grep -q REPLACE_WITH_UPDATER_PUBLIC_KEY src-tauri/tauri.conf.json; then
+            echo "::error::plugins.updater.pubkey in tauri.conf.json is still the placeholder (README, Updates)."
+            exit 1
+          fi
       - uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0.6.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: Kulki ${{ github.ref_name }}
           releaseBody: Instalatory dla Windows, macOS i Linuksa.
           releaseDraft: true
+          # Signed update bundles and latest.json, merged across the matrix jobs.
+          uploadUpdaterJson: true
           prerelease: false
           args: ${{ matrix.args }}
