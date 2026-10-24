@@ -1,4 +1,4 @@
-import { insert, placeFor, MAX_ENTRIES, type HighscoreEntry } from '../highscores/ranking';
+import { placeFor, MAX_ENTRIES, normalizeName, type HighscoreEntry } from '../highscores/ranking';
 import type { InsertResult, Storage } from './Storage';
 
 /** The part of the browser's `localStorage` the web build needs. */
@@ -14,7 +14,9 @@ const BACKING_KEY = 'kulki:v1';
  * reload; a backing that throws or holds junk is ignored.
  */
 export class MemoryStorage<Game = unknown> implements Storage<Game> {
-  private highscores: HighscoreEntry[] = [];
+  /** Best first; each row keeps the id `renameHighscore` addresses it by. */
+  private rows: { id: number; entry: HighscoreEntry }[] = [];
+  private nextId = 1;
   private lastName: string | null = null;
   private game: string | null = null;
   private readonly backing: Backing | undefined;
@@ -29,11 +31,16 @@ export class MemoryStorage<Game = unknown> implements Storage<Game> {
       const text = this.backing?.getItem(BACKING_KEY);
       if (!text) return;
       const data = JSON.parse(text) as {
-        highscores?: HighscoreEntry[];
+        highscores?: (HighscoreEntry & { id?: number })[];
         lastName?: string | null;
         game?: string | null;
       };
-      this.highscores = Array.isArray(data.highscores) ? data.highscores : [];
+      const stored = Array.isArray(data.highscores) ? data.highscores : [];
+      this.rows = stored.map(({ id, ...entry }, i) => ({
+        id: typeof id === 'number' ? id : i + 1,
+        entry,
+      }));
+      this.nextId = Math.max(0, ...this.rows.map((row) => row.id)) + 1;
       this.lastName = typeof data.lastName === 'string' ? data.lastName : null;
       this.game = typeof data.game === 'string' ? data.game : null;
     } catch {
@@ -45,7 +52,11 @@ export class MemoryStorage<Game = unknown> implements Storage<Game> {
     try {
       this.backing?.setItem(
         BACKING_KEY,
-        JSON.stringify({ highscores: this.highscores, lastName: this.lastName, game: this.game }),
+        JSON.stringify({
+          highscores: this.rows.map(({ id, entry }) => ({ ...entry, id })),
+          lastName: this.lastName,
+          game: this.game,
+        }),
       );
     } catch {
       // Storage full or blocked: keep going in memory.
@@ -53,17 +64,31 @@ export class MemoryStorage<Game = unknown> implements Storage<Game> {
   }
 
   async listHighscores(): Promise<HighscoreEntry[]> {
-    return this.highscores.map((entry) => ({ ...entry }));
+    return this.rows.map(({ entry }) => ({ ...entry }));
   }
 
   async insertHighscore(entry: HighscoreEntry): Promise<InsertResult> {
-    const place = placeFor(entry.score, this.highscores);
-    this.highscores = insert(this.highscores, entry);
+    const place = placeFor(
+      entry.score,
+      this.rows.map((row) => row.entry),
+    );
+    if (place > MAX_ENTRIES) {
+      return { place: null, id: null, highscores: await this.listHighscores() };
+    }
+    const id = this.nextId++;
+    this.rows.splice(place - 1, 0, { id, entry: { ...entry, name: normalizeName(entry.name) } });
+    this.rows = this.rows.slice(0, MAX_ENTRIES);
     this.persist();
-    return {
-      place: place <= MAX_ENTRIES ? place : null,
-      highscores: await this.listHighscores(),
-    };
+    return { place, id, highscores: await this.listHighscores() };
+  }
+
+  async renameHighscore(id: number, name: string): Promise<HighscoreEntry[]> {
+    const row = this.rows.find((candidate) => candidate.id === id);
+    if (row) {
+      row.entry = { ...row.entry, name: normalizeName(name) };
+      this.persist();
+    }
+    return this.listHighscores();
   }
 
   async getLastName(): Promise<string | null> {

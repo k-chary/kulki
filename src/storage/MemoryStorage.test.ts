@@ -39,6 +39,23 @@ describe('MemoryStorage', () => {
     expect(await storage.loadGame()).toBeNull();
   });
 
+  it('renames a row by the id the insert returned, as often as asked', async () => {
+    const storage = new MemoryStorage();
+    await storage.insertHighscore(entry('Ala', 100));
+    const { id } = await storage.insertHighscore(entry('Gracz', 50));
+    expect(id).not.toBeNull();
+    await storage.renameHighscore(id as number, '  Ola ');
+    const list = await storage.renameHighscore(id as number, 'Ola');
+    expect(list.map((row) => row.name)).toEqual(['Ala', 'Ola']);
+    expect(await storage.renameHighscore(999, 'X')).toHaveLength(2);
+  });
+
+  it('returns no id for a score outside the list', async () => {
+    const storage = new MemoryStorage();
+    for (let i = 0; i < 30; i++) await storage.insertHighscore(entry(`G${i}`, 1000 + i));
+    expect((await storage.insertHighscore(entry('Last', 10))).id).toBeNull();
+  });
+
   it('does not let callers change stored rows', async () => {
     const storage = new MemoryStorage();
     await storage.insertHighscore(entry('Ala', 100));
@@ -66,6 +83,12 @@ describe('MemoryStorage with a backing', () => {
 
     const second = new MemoryStorage<{ n: number }>(shared);
     expect((await second.listHighscores()).map((row) => row.name)).toEqual(['Ala']);
+    const { id } = await second.insertHighscore(entry('Gracz', 50));
+    await second.renameHighscore(id as number, 'Ola');
+    expect((await new MemoryStorage(shared).listHighscores()).map((row) => row.name)).toEqual([
+      'Ala',
+      'Ola',
+    ]);
     expect(await second.getLastName()).toBe('Ala');
     expect(await second.loadGame()).toEqual({ n: 1 });
 

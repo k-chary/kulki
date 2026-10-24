@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 
 /**
- * A number that runs from its current value to `target` over `duration` ms and
- * jumps when the duration is 0. `duration` is read when `target` changes.
+ * A number that counts up from its current value to `target` over `duration` ms.
+ * It jumps when the duration is 0 and when the target is lower (a new game starts
+ * at 0 at once). `duration` is read when `target` changes.
  */
 export function useCountUp(target: number, duration: number): number {
   const [shown, setShown] = useState(target);
@@ -20,7 +21,7 @@ export function useCountUp(target: number, duration: number): number {
       current.current = value;
       setShown(value);
     };
-    if (length <= 0 || from === target) {
+    if (length <= 0 || target <= from) {
       show(target);
       return;
     }

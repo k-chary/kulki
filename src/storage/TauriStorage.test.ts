@@ -16,19 +16,27 @@ describe('TauriStorage', () => {
 
   it('inserts a highscore and returns place and trimmed list', async () => {
     const entry = { name: 'Ola', score: 50, date: '2026-10-23T09:00:00.000Z' };
-    const { storage, invoke } = storageReturning({ place: 2, highscores: [entry] });
+    const { storage, invoke } = storageReturning({ place: 2, id: 7, highscores: [entry] });
     await expect(storage.insertHighscore(entry)).resolves.toEqual({
       place: 2,
+      id: 7,
       highscores: [entry],
     });
     expect(invoke).toHaveBeenCalledWith('insert_highscore', { entry });
+  });
+
+  it('renames a highscore row by id', async () => {
+    const list = [{ name: 'Ola', score: 50, date: '2026-10-23T09:00:00.000Z' }];
+    const { storage, invoke } = storageReturning(list);
+    await expect(storage.renameHighscore(7, 'Ola')).resolves.toEqual(list);
+    expect(invoke).toHaveBeenCalledWith('rename_highscore', { id: 7, name: 'Ola' });
   });
 
   it('maps a score that did not make the list to place null', async () => {
     const { storage } = storageReturning({ place: null, highscores: [] });
     await expect(
       storage.insertHighscore({ name: 'X', score: 0, date: '2026-10-23' }),
-    ).resolves.toEqual({ place: null, highscores: [] });
+    ).resolves.toEqual({ place: null, id: null, highscores: [] });
   });
 
   it('gets and sets the last name', async () => {

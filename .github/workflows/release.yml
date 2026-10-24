@@ -8,8 +8,26 @@ on:
       - 'v*.*.*'
 
 jobs:
+  version:
+    name: Tag matches the app version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      # versions.test.ts keeps package.json, Cargo.toml and tauri.conf.json in step;
+      # this keeps the tag in step with them, so v0.2.0 never ships 0.1.0 installers.
+      - name: Compare the tag with package.json
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(node -p "require('./package.json').version")"
+          if [ "$tag" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match the app version $version. Bump package.json, src-tauri/Cargo.toml and src-tauri/tauri.conf.json first."
+            exit 1
+          fi
+
   suite:
     name: Full suite
+    needs: version
     uses: ./.github/workflows/full-suite.yml
 
   installers:
@@ -36,15 +54,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
         with:
+          toolchain: stable
           targets: ${{ matrix.os == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
-      - uses: swatinem/rust-cache@v2
+      - uses: swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           workspaces: src-tauri
       - name: Install Tauri system dependencies
@@ -65,7 +84,7 @@ jobs:
             echo "::error::plugins.updater.pubkey in tauri.conf.json is still the placeholder (README, Updates)."
             exit 1
           fi
-      - uses: tauri-apps/tauri-action@v0
+      - uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0.6.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}

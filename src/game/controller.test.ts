@@ -7,8 +7,8 @@ import {
   gameOverView,
   highscoreRows,
   initialState,
+  finishedEntry,
   isLocked,
-  pendingScore,
   reduce,
   saveEffect,
   selectedColor,
@@ -241,7 +241,10 @@ describe('turn playback', () => {
     expect(state.turn?.events[0]?.type).toBe('move');
     expect(isLocked(state)).toBe(true);
     expect(reduce(state, { type: 'click', cell: at(3, 3) }, rng)).toBe(state);
-    expect(reduce(state, { type: 'hover', cell: at(3, 3) }, rng)).toBe(state);
+    // The hover is remembered for when the turn ends, but the board shows nothing for it.
+    const hovered = reduce(state, { type: 'hover', cell: at(3, 3) }, rng);
+    expect(hovered.hover).toEqual(at(3, 3));
+    expect(boardView(hovered)).toEqual(boardView(state));
     expect(isLocked(reduce(state, { type: 'turnDone' }, rng))).toBe(false);
   });
 
@@ -358,9 +361,12 @@ describe('saveEffect', () => {
     expect(saveEffect(refused, refused)).toBeNull();
   });
 
-  it('deletes the save when the turn ends the game', () => {
+  it('finishes the game when the turn ends it', () => {
     const next = initialState(game(OPEN, { gameOver: true }), null, 5);
-    expect(saveEffect(initialState(game(OPEN), null, 4), next)).toEqual({ type: 'delete' });
+    expect(saveEffect(initialState(game(OPEN), null, 4), next)).toEqual({
+      type: 'finish',
+      game: next.game,
+    });
   });
 
   it('deletes the save on a confirmed new game but not while asking', () => {
@@ -473,11 +479,11 @@ describe('highscore rows', () => {
   });
 });
 
-describe('pendingScore', () => {
+describe('finishedEntry', () => {
   const NOW = '2026-10-23T16:00:00.000Z';
 
-  it('is the score of a finished game whose name is still to be entered', () => {
-    expect(pendingScore(over(800), top30, 'Ola', NOW)).toEqual({
+  it('stores the final score under the last name used', () => {
+    expect(finishedEntry(over(800).game, 'Ola', NOW)).toEqual({
       name: 'Ola',
       score: 800,
       date: NOW,
@@ -485,15 +491,27 @@ describe('pendingScore', () => {
   });
 
   it('falls back to „Gracz” without a last name', () => {
-    expect(pendingScore(over(800), top30, null, NOW)?.name).toBe('Gracz');
-    expect(pendingScore(over(800), [], '  ', NOW)?.name).toBe('Gracz');
+    expect(finishedEntry(over(800).game, null, NOW).name).toBe('Gracz');
+    expect(finishedEntry(over(800).game, '  ', NOW).name).toBe('Gracz');
+  });
+});
+
+describe('hover during a turn', () => {
+  it('is tracked while a turn plays and shown once it ends', () => {
+    const selected = reduce(initialState(game(OPEN)), { type: 'click', cell: at(0, 0) }, rng);
+    const moving = reduce(selected, { type: 'click', cell: at(2, 0) }, rng);
+    expect(moving.turn).not.toBeNull();
+    const picked = reduce(moving, { type: 'click', cell: at(0, 1) }, rng);
+    const hovering = reduce(picked, { type: 'hover', cell: at(0, 4) }, rng);
+    expect(hovering.hover).toEqual(at(0, 4));
+    expect(boardView(hovering).some((cell) => cell.state === 'target')).toBe(false);
+    const done = reduce(hovering, { type: 'turnDone' }, rng);
+    expect(boardView(done)[4]?.state).toBe('target');
   });
 
-  it('is null while playing, once saved and outside the top 30', () => {
-    expect(pendingScore(initialState(game(OPEN)), [], null, NOW)).toBeNull();
-    const saved = reduce(over(800), { type: 'scoreSaved', name: 'Ola', place: 22 }, rng);
-    expect(pendingScore(saved, top30, 'Ola', NOW)).toBeNull();
-    expect(pendingScore(over(600), top30, 'Ola', NOW)).toBeNull();
+  it('is ignored while a dialog is open', () => {
+    const asking = reduce(initialState(game(OPEN), null, 2), { type: 'requestNewGame' }, rng);
+    expect(reduce(asking, { type: 'hover', cell: at(4, 4) }, rng)).toBe(asking);
   });
 });
 

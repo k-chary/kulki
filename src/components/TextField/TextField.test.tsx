@@ -43,9 +43,16 @@ describe('TextField', () => {
   it('never reports a value longer than the limit', () => {
     const onChange = vi.fn();
     render(<TextField id="n" label="Twoje imię" value="" onChange={onChange} maxLength={3} />);
-    // Setting the value directly bypasses maxlength; the field still cuts it.
+    // The field cuts what the input reports, by characters rather than UTF-16 units.
     fireEvent.change(input(), { target: { value: 'Harry' } });
     expect(onChange).toHaveBeenCalledWith('Har');
+    fireEvent.change(input(), { target: { value: '🎱🎱🎱🎱' } });
+    expect(onChange).toHaveBeenLastCalledWith('🎱🎱🎱');
+  });
+
+  it('counts an emoji as one character', () => {
+    render(<TextField id="n" label="Twoje imię" value="Ola🎱" onChange={() => {}} />);
+    expect(screen.getByText('4/20')).toBeTruthy();
   });
 
   it('honours a custom limit and links the hint', () => {
@@ -60,7 +67,6 @@ describe('TextField', () => {
       />,
     );
     expect(screen.getByText('2/5')).toBeTruthy();
-    expect(input().maxLength).toBe(5);
     expect(input().getAttribute('aria-describedby')).toBe('n-hint');
   });
 });

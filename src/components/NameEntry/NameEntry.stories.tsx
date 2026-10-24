@@ -27,5 +27,8 @@ export const Empty: Story = { args: { initialName: '' } };
 
 export const NewRecord: Story = { args: { place: 1 } };
 
+/** Saving failed: the line asks to press „Zapisz wynik” again. */
+export const SaveFailed: Story = { args: { failed: true } };
+
 /** The counter turns accent; further typing is blocked. */
 export const AtTheLimit: Story = { args: { initialName: 'Bartłomiej Kowalczyk' } };

@@ -89,6 +89,7 @@
   );
 
   /* Layers */
+  --z-focus: 1;
   --z-moving: 2;
   --z-overlay: 10;
 }

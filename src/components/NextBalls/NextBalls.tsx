@@ -1,16 +1,8 @@
+import { COLOR_NAMES } from '../../format';
 import type { Color } from '../../rules/color';
 import { Panel } from '../Panel/Panel';
 import { PreviewSlot } from '../PreviewSlot/PreviewSlot';
 import styles from './NextBalls.module.css';
-
-const COLOR_NAMES: Record<Color, string> = {
-  red: 'czerwona',
-  orange: 'pomarańczowa',
-  yellow: 'żółta',
-  green: 'zielona',
-  blue: 'niebieska',
-  purple: 'fioletowa',
-};
 
 export interface NextBallsProps {
   colors: readonly Color[];

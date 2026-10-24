@@ -33,6 +33,8 @@ const strictProperties = [
   '/radius$/',
   'box-shadow',
   'outline-offset',
+  // Layers
+  'z-index',
   // Motion
   '/^(transition|animation)-(duration|delay|timing-function)$/',
 ];

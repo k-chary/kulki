@@ -92,6 +92,21 @@ test.describe('game over', () => {
     await expect(scoreRows(page, 'stored')).toContainText('Gracz');
   });
 
+  test('the score is stored when the game ends and „Zapisz wynik” only renames it', async ({
+    page,
+  }) => {
+    await openFixture(page, { rows: nearlyFullRows(), preview: 'ppp' });
+    await playToGameOver(page);
+    const dialog = gameOverDialog(page);
+    await dialog.getByLabel('Twoje imię').fill('Ola');
+    await dialog.getByRole('button', { name: 'Zapisz wynik' }).click();
+    await expect(dialog).toContainText('Zapisano jako Ola');
+
+    await page.goto('/?seed=1');
+    await expect(scoreRows(page, 'stored')).toHaveCount(1);
+    await expect(scoreRows(page, 'stored')).toContainText('Ola');
+  });
+
   test('the board takes no clicks after the game ended', async ({ page }) => {
     await openFixture(page, { rows: nearlyFullRows(), preview: 'ppp' });
     await playToGameOver(page);

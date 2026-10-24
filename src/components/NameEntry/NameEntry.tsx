@@ -11,10 +11,12 @@ export interface NameEntryProps {
   initialName: string;
   /** Called with the trimmed name, or „Gracz” when the field is empty. */
   onSave: (name: string) => void;
+  /** The last save did not go through; the player can press „Zapisz wynik” again. */
+  failed?: boolean;
 }
 
 /** The name form of „Koniec gry”: the field opens focused with its text selected. */
-export function NameEntry({ place, initialName, onSave }: NameEntryProps) {
+export function NameEntry({ place, initialName, onSave, failed = false }: NameEntryProps) {
   const [name, setName] = useState(initialName);
   const input = useRef<HTMLInputElement>(null);
 
@@ -45,6 +47,11 @@ export function NameEntry({ place, initialName, onSave }: NameEntryProps) {
         autoComplete="off"
         spellCheck={false}
       />
+      {failed && (
+        <p className={styles.error} role="alert">
+          Nie udało się zapisać wyniku. Spróbuj jeszcze raz.
+        </p>
+      )}
       <Button variant="primary" type="submit" block>
         Zapisz wynik
       </Button>

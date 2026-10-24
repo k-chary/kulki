@@ -316,9 +316,11 @@ describe('serialize and deserialize', () => {
       preview: ['purple', 'yellow', 'orange'],
       score: 1240,
       cleared: 124,
-      gameOver: true,
+      gameOver: false,
     };
     expect(deserialize(serialize(state))).toEqual(state);
+    const over: GameState = { ...state, board: state.board.map(() => 'green'), gameOver: true };
+    expect(deserialize(serialize(over))).toEqual(over);
     const fresh = newGame(createRng(11));
     expect(deserialize(serialize(fresh))).toEqual(fresh);
   });
@@ -336,6 +338,9 @@ describe('serialize and deserialize', () => {
       JSON.stringify({ ...good, score: -10 }),
       JSON.stringify({ ...good, cleared: 1.5 }),
       JSON.stringify({ ...good, gameOver: 'no' }),
+      // Over on a board with room, or still running on a full one: no move could follow.
+      JSON.stringify({ ...good, gameOver: true }),
+      JSON.stringify({ ...good, board: Array.from({ length: 81 }, () => 'red'), gameOver: false }),
     ];
     for (const text of bad) expect(() => deserialize(text)).toThrow(Error);
   });

@@ -32,6 +32,15 @@ pub fn insert_highscore(
 }
 
 #[tauri::command]
+pub fn rename_highscore(
+    state: State<StoreState>,
+    id: i64,
+    name: String,
+) -> Result<Vec<HighscoreEntry>, String> {
+    with_store(&state, |store| store.rename_highscore(id, &name))
+}
+
+#[tauri::command]
 pub fn get_last_name(state: State<StoreState>) -> Result<Option<String>, String> {
     with_store(&state, |store| store.last_name())
 }

@@ -44,7 +44,7 @@ describe('Board', () => {
     expect(onFieldHover.mock.calls).toEqual([[{ row: 5, col: 2 }], [null]]);
   });
 
-  it('drops clicks and hovers while locked', () => {
+  it('drops clicks while locked but still reports where the pointer is', () => {
     const onFieldClick = vi.fn();
     const onFieldHover = vi.fn();
     render(
@@ -54,7 +54,7 @@ describe('Board', () => {
     fireEvent.pointerEnter(field);
     fireEvent.click(field);
     expect(onFieldClick).not.toHaveBeenCalled();
-    expect(onFieldHover).not.toHaveBeenCalled();
+    expect(onFieldHover).toHaveBeenCalledWith({ row: 3, col: 7 });
   });
 
   it('sets the path color from the selected ball', () => {

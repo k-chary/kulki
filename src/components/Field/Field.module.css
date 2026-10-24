@@ -19,7 +19,7 @@
 .field:focus-visible {
   outline: var(--focus-width) solid var(--color-focus);
   outline-offset: calc(var(--ring-width) / 2);
-  z-index: 1;
+  z-index: var(--z-focus);
 }
 
 .field[data-ball='true'] {

@@ -1,14 +1,12 @@
-/** One row of the top-30 list. */
-export interface HighscoreEntry {
-  name: string;
-  score: number;
-  /** When the game ended, as an ISO 8601 string. */
-  date: string;
-}
+import type { HighscoreEntry } from '../highscores/ranking';
+
+export type { HighscoreEntry };
 
 export interface InsertResult {
   /** 1-based place of the new row, or null if it did not make the list. */
   place: number | null;
+  /** The new row's id for `renameHighscore`, or null if it did not make the list. */
+  id: number | null;
   /** The list after inserting and trimming to 30, best first. */
   highscores: HighscoreEntry[];
 }
@@ -22,6 +20,8 @@ export interface Storage<Game = unknown> {
   listHighscores(): Promise<HighscoreEntry[]>;
   /** Inserts a finished game, trims the list to 30 (ties keep the older game higher). */
   insertHighscore(entry: HighscoreEntry): Promise<InsertResult>;
+  /** Gives row `id` a new name (trimmed, cut to 20, empty = „Gracz”); returns the list. */
+  renameHighscore(id: number, name: string): Promise<HighscoreEntry[]>;
   getLastName(): Promise<string | null>;
   setLastName(name: string): Promise<void>;
   saveGame(game: Game): Promise<void>;

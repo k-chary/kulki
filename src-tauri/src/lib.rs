@@ -29,7 +29,18 @@ fn open_store(app: &tauri::App) -> Store {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let builder = tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    // A second launch focuses the running window instead of opening another
+    // one on the same database. It must be the first plugin.
+    #[cfg(desktop)]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+        if let Some(window) = app.get_webview_window("main") {
+            let _ = window.unminimize();
+            let _ = window.show();
+            let _ = window.set_focus();
+        }
+    }));
+    let builder = builder
         // Remembers the window's size and position between launches.
         .plugin(tauri_plugin_window_state::Builder::default().build());
     // Looks for a newer GitHub Release (the frontend decides when to ask and shows the
@@ -47,6 +58,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::list_highscores,
             commands::insert_highscore,
+            commands::rename_highscore,
             commands::get_last_name,
             commands::set_last_name,
             commands::save_game,
