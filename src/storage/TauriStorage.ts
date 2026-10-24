@@ -17,7 +17,11 @@ export class TauriStorage<Game = unknown> implements Storage<Game> {
 
   async insertHighscore(entry: HighscoreEntry): Promise<InsertResult> {
     const result = await this.invoke<InsertResult>('insert_highscore', { entry });
-    return { place: result.place ?? null, highscores: result.highscores };
+    return { place: result.place ?? null, id: result.id ?? null, highscores: result.highscores };
+  }
+
+  renameHighscore(id: number, name: string): Promise<HighscoreEntry[]> {
+    return this.invoke<HighscoreEntry[]>('rename_highscore', { id, name });
   }
 
   async getLastName(): Promise<string | null> {

@@ -128,7 +128,7 @@ One SQLite file in the app's data folder holds the highscores and the unfinished
 - Each turn is saved as soon as the rules module has computed it, before playback: board, score, balls cleared and preview colors. The selected ball is not saved.
 - On launch the save is read before the first paint. A saved game is restored without animation, nothing selected, with „Wczytano zapisaną grę”. Without one, a new game pops in its 5 balls.
 - Game over deletes the save. Confirming „Nowa gra” discards it.
-- „Zapisz wynik” inserts the row, trims the list to 30 and remembers the name as the next default.
+- The finished game's row is inserted (and the list trimmed to 30) the moment the game ends, under the prefilled name or „Gracz”. „Zapisz wynik” renames that row and remembers the name as the next default, so a closed window or a crash never loses the score.
 
 ## Architecture and tech stack
 
@@ -188,7 +188,7 @@ The full test suite gates each release; pull requests get only a quick check of 
 | Suite | Tool | Covers | Runs on |
 | --- | --- | --- | --- |
 | Rules | Vitest, seeded random generator | Paths, lines in 4 directions, crossing lines, spawning, scoring, game end, start reroll | Every PR and every release |
-| Components | React Testing Library | Presentational components and the click-to-move flow | Release |
+| Components | React Testing Library | Presentational components and the click-to-move flow | Every PR and every release |
 | End to end | Playwright on the web build, in-memory storage | A full move, a clear, game over, name entry | Release |
 | Storage | cargo test | Highscore ranking and trimming, save and load | Release |
 

@@ -140,7 +140,10 @@ function isColor(value: unknown): value is Color {
   return COLORS.includes(value as Color);
 }
 
-/** Reads a state written by `serialize`. Throws an Error if the text is not a valid saved game. */
+/**
+ * Reads a state written by `serialize`. Throws an Error if the text is not a valid
+ * saved game, including one whose `gameOver` disagrees with a full board.
+ */
 export function deserialize(text: string): GameState {
   let data: Record<string, unknown>;
   try {
@@ -161,6 +164,9 @@ export function deserialize(text: string): GameState {
     typeof gameOver !== 'boolean'
   ) {
     throw new Error('Saved game has an invalid shape');
+  }
+  if (gameOver !== isFull(board as Board)) {
+    throw new Error('Saved game is over on a board with room, or running on a full one');
   }
   return { board: board as Board, preview, score, cleared, gameOver };
 }

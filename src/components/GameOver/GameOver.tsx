@@ -17,6 +17,8 @@ interface Entry extends Common {
   place: number;
   initialName: string;
   onSave: (name: string) => void;
+  /** The last save did not go through. */
+  failed?: boolean;
 }
 
 interface Saved extends Common {
@@ -46,7 +48,12 @@ export function GameOver(props: GameOverProps) {
         <small className={styles.unit}>pkt</small>
       </p>
       {props.state === 'entry' && (
-        <NameEntry place={props.place} initialName={props.initialName} onSave={props.onSave} />
+        <NameEntry
+          place={props.place}
+          initialName={props.initialName}
+          onSave={props.onSave}
+          failed={props.failed}
+        />
       )}
       {props.state === 'saved' && (
         <>

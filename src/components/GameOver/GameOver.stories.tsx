@@ -29,6 +29,9 @@ export const NameEntryNewRecord: Story = { args: { ...entry, place: 1, score: 28
 
 export const NameEntryFirstGame: Story = { args: { ...entry, initialName: '' } };
 
+/** Saving failed; „Zapisz wynik” can be pressed again. */
+export const NameEntrySaveFailed: Story = { args: { ...entry, failed: true } };
+
 /** „Nowa gra” is focused. */
 export const Saved: Story = {
   args: { state: 'saved', name: 'Harry', place: 4, onNewGame: fn() },

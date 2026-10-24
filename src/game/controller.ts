@@ -2,7 +2,7 @@
 // screen needs besides the game itself: the selection, the hovered field, the
 // one-off message and the "Nowa gra" dialog.
 import type { PlaybackView } from './playback';
-import { COLOR_NAMES } from '../components/Board/fieldLabel';
+import { COLOR_NAMES } from '../format';
 import type { CellView } from '../components/Board/Board';
 import {
   type Cell,
@@ -86,18 +86,37 @@ export function initialState(
   };
 }
 
-/** What to do with the saved game after a state change. */
-export type SaveEffect = { type: 'save'; game: GameState } | { type: 'delete' };
+/**
+ * What to store after a state change: `save` the game, `finish` it (drop the save and
+ * store the score at once, so a top-30 game survives a closed window or a crash), or
+ * `delete` the save for a fresh game.
+ */
+export type SaveEffect =
+  { type: 'save'; game: GameState } | { type: 'finish'; game: GameState } | { type: 'delete' };
 
 /**
  * The save to write or drop when `prev` becomes `next`. A played turn is saved
- * as soon as the reducer has computed it, before any playback. Game over and a
- * fresh game delete the save; changes that leave the game alone touch nothing.
+ * as soon as the reducer has computed it, before any playback. The turn that ends
+ * the game finishes it and a fresh game deletes the save; changes that leave the
+ * game alone touch nothing.
  */
 export function saveEffect(prev: ControllerState, next: ControllerState): SaveEffect | null {
   if (next.game === prev.game) return null;
-  if (next.game.gameOver || next.moves === 0) return { type: 'delete' };
+  if (next.game.gameOver) return { type: 'finish', game: next.game };
+  if (next.moves === 0) return { type: 'delete' };
   return { type: 'save', game: next.game };
+}
+
+/**
+ * The row stored the moment a game ends: its score under the last name used, or
+ * „Gracz”. „Zapisz wynik” later renames it to what the player typed.
+ */
+export function finishedEntry(
+  game: GameState,
+  lastName: string | null,
+  date: string,
+): HighscoreEntry {
+  return { name: normalizeName(lastName ?? ''), score: game.score, date };
 }
 
 /** True while the board takes no input: a turn is animating, a dialog is open or the game is over. */
@@ -180,7 +199,12 @@ export function reduce(
     case 'click':
       return click(state, action.cell, rng);
     case 'hover':
-      return isLocked(state) ? state : { ...state, hover: action.cell };
+      // Tracked during a turn too, so the path preview is right when the turn ends;
+      // boardView shows nothing for it while the board is locked.
+      if (state.confirming || state.game.gameOver) return state;
+      if (action.cell === state.hover) return state;
+      if (action.cell && state.hover && sameCell(action.cell, state.hover)) return state;
+      return { ...state, hover: action.cell };
     case 'turnDone':
       return state.turn === null ? state : { ...state, turn: null };
     case 'shakeEnd':
@@ -311,19 +335,4 @@ export function highscoreRows(
     return highscores.map((entry, i) => ({ kind: 'stored', place: i + 1, entry }));
   }
   return rowsWithLive(highscores, state.game.score);
-}
-
-/**
- * The row to store if the app closes while the name dialog is open: the final score
- * under the prefilled name, or „Gracz”, so a top-30 game is never lost. Null when
- * there is nothing pending.
- */
-export function pendingScore(
-  state: ControllerState,
-  highscores: readonly HighscoreEntry[],
-  lastName: string | null,
-  date: string,
-): HighscoreEntry | null {
-  if (gameOverView(state, highscores, lastName)?.state !== 'entry') return null;
-  return { name: normalizeName(lastName ?? ''), score: state.game.score, date };
 }

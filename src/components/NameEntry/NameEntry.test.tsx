@@ -16,6 +16,13 @@ describe('NameEntry', () => {
     expect([input().selectionStart, input().selectionEnd]).toEqual([0, 5]);
   });
 
+  it('shows a retry line only after a failed save', () => {
+    const { rerender } = render(<NameEntry place={4} initialName="Harry" onSave={() => {}} />);
+    expect(screen.queryByRole('alert')).toBeNull();
+    rerender(<NameEntry place={4} initialName="Harry" onSave={() => {}} failed />);
+    expect(screen.getByRole('alert').textContent).toContain('Spróbuj jeszcze raz');
+  });
+
   it('typing replaces the selected name', async () => {
     render(<NameEntry place={4} initialName="Harry" onSave={() => {}} />);
     await userEvent.keyboard('Ola');

@@ -22,7 +22,11 @@ export interface BoardProps {
   cells: readonly CellView[];
   /** The selected ball's color, used for path dots and the target ring. */
   pathColor?: Color;
-  /** True while anything animates or a dialog is open: clicks and hovers are dropped. */
+  /**
+   * True while anything animates or a dialog is open: clicks are dropped and fields show
+   * no hover feedback. Hovers are still reported, so the owner knows where the pointer is
+   * when the lock ends.
+   */
   locked?: boolean;
   /** Clicks still reach `onFieldClick` while locked (hover stays off); the owner drops the ones it cannot use. */
   clickable?: boolean;
@@ -57,7 +61,7 @@ export function Board({
       className={styles.board}
       data-path={pathColor}
       data-locked={locked}
-      onPointerLeave={locked ? undefined : () => onFieldHover?.(null)}
+      onPointerLeave={() => onFieldHover?.(null)}
     >
       {cells.map((view, index) => {
         const cell = cellAt(index);
@@ -73,7 +77,7 @@ export function Board({
             locked={locked}
             pickable={view.pickable}
             onClick={locked && !clickable ? undefined : () => onFieldClick?.(cell)}
-            onPointerEnter={locked ? undefined : () => onFieldHover?.(cell)}
+            onPointerEnter={() => onFieldHover?.(cell)}
           >
             {color && (
               <Ball
