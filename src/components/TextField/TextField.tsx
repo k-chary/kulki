@@ -14,6 +14,9 @@ export interface TextFieldProps extends Omit<
   hint?: string;
 }
 
+/** Characters as the player sees them (code points), so an emoji counts once. */
+const length = (text: string) => Array.from(text).length;
+
 /** A labelled text input with a „5/20” counter that turns accent at the limit. */
 export function TextField({
   id,
@@ -31,8 +34,8 @@ export function TextField({
         <label className={styles.label} htmlFor={id}>
           {label}
         </label>
-        <span className={styles.count} data-full={value.length >= maxLength} aria-hidden="true">
-          {value.length}/{maxLength}
+        <span className={styles.count} data-full={length(value) >= maxLength} aria-hidden="true">
+          {length(value)}/{maxLength}
         </span>
       </div>
       <input
@@ -41,9 +44,8 @@ export function TextField({
         type="text"
         className={styles.input}
         value={value}
-        maxLength={maxLength}
         aria-describedby={hintId}
-        onChange={(event) => onChange(event.target.value.slice(0, maxLength))}
+        onChange={(event) => onChange(Array.from(event.target.value).slice(0, maxLength).join(''))}
       />
       {hint && (
         <p id={hintId} className={styles.hint}>
