@@ -10,7 +10,7 @@ A Lines-style ball puzzle for the desktop, in Polish. Tauri + React + TypeScript
 
 - Node.js 26 (see `.nvmrc`; 22 or newer works) and npm
 - Rust (stable) and the [Tauri 2 system dependencies](https://v2.tauri.app/start/prerequisites/) for your OS. On Debian/Ubuntu:
-  `sudo apt install libwebkit2gtk-4.1-dev build-essential libssl-dev libayatana-appindicator3-dev librsvg2-dev`
+  `sudo apt install libwebkit2gtk-4.1-dev build-essential libssl-dev librsvg2-dev`
 
 Then install the JavaScript dependencies:
 
@@ -49,10 +49,16 @@ A release is a version tag pushed by hand (agents never tag).
    git tag v0.1.0
    git push origin v0.1.0
    ```
-3. `.github/workflows/release.yml` runs the full suite (`full-suite.yml`: lint, typecheck, Vitest and component tests, Playwright, `cargo test`). Only if all of it passes does it build installers for Windows, macOS (Apple silicon and Intel) and Linux and attach them to a **draft** GitHub Release.
+3. `.github/workflows/release.yml` first checks that the tag (without its `v`) equals the version in `package.json` and stops if it does not. Then it runs the full suite (`full-suite.yml`: lint, typecheck, Vitest and component tests, Playwright, `cargo test`). Only if all of it passes does it build installers for Windows, macOS (Apple silicon and Intel) and Linux and attach them to a **draft** GitHub Release.
 4. Open the draft under Releases, check the three installers, and publish it.
 
-To rehearse, push a tag such as `v0.0.1-test` from a throwaway branch and delete the draft release and tag afterwards. A failing test stops the run before any installer is built.
+To rehearse, set the version to something like `0.0.1-test` on a throwaway branch, push the tag `v0.0.1-test` from it, and delete the draft release and tag afterwards. A failing test stops the run before any installer is built.
+
+The installers are not code-signed yet, so the first launch shows a warning:
+
+- **Windows:** SmartScreen says “Windows protected your PC”. Click “More info”, then “Run anyway”.
+- **macOS:** Gatekeeper refuses an app from an unidentified developer. Right-click Kulki in Applications, choose “Open” and confirm, or allow it under System Settings › Privacy & Security. If macOS says the app is damaged, run `xattr -dr com.apple.quarantine /Applications/Kulki.app`.
+- **Linux:** no warning; make the AppImage executable with `chmod +x`.
 
 ## Styling rule
 
@@ -61,7 +67,7 @@ CSS Modules (`*.module.css`) may only use design tokens: no hex or `rgb()` color
 ## Layout
 
 - `src/` — React frontend
-  - `src/styles/tokens.css` — the design tokens, the only place raw colors, sizes, fonts and timings live. A verbatim copy of `docs/design/tokens.css`, so Stylelint and Prettier skip it
+  - `src/styles/tokens.css` — the design tokens, the only place raw colors, sizes, fonts and timings live. Copied from `docs/design/tokens.css` (since then it adds only `--z-focus`); Stylelint and Prettier skip it
   - `src/styles/fonts.ts` — bundled Sora, IBM Plex Sans and IBM Plex Mono (latin + latin-ext)
   - `src/styles/motion.ts` — `readDuration('--dur-clear')` reads a motion token in ms for animation sequencing
   - `src/game/` — the game controller (a pure reducer over the rules: selection, hover preview, status line, „Nowa gra” dialog) and the e2e URL hook
