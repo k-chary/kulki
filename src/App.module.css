@@ -1,0 +1,21 @@
+.app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The board shrinks by the banner's height so the game still fits the window. */
+.app[data-banner='true'] {
+  --board-size: min(
+    calc(
+      100vh - var(--banner-height) - var(--header-height) - var(--space-4) - 2 *
+        var(--layout-padding)
+    ),
+    calc(100vw - var(--rail-width) - var(--layout-gap) - 2 * var(--layout-padding))
+  );
+}
+
+.game {
+  flex: 1;
+  min-height: 0;
+}

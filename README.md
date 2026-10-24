@@ -54,6 +54,19 @@ A release is a version tag pushed by hand (agents never tag).
 
 To rehearse, push a tag such as `v0.0.1-test` from a throwaway branch and delete the draft release and tag afterwards. A failing test stops the run before any installer is built.
 
+## Updates
+
+The installed app looks for a newer **published** release at launch and every 6 hours. When it finds one, a bar at the top of the window shows „Dostępna nowa wersja X.Y.Z” with „Zainstaluj i uruchom ponownie” (the game is saved after every move, so restarting loses nothing) and „Później”. A failed check (offline, no release yet) shows nothing. The code is in `src/update/` and `src/components/UpdateBanner/`; the Tauri updater plugin reads `latest.json` from the latest GitHub Release (`plugins.updater` in `src-tauri/tauri.conf.json`).
+
+One-time setup, done by the repository owner:
+
+1. Generate a signing key pair (this is separate from OS code signing): `npx tauri signer generate -w ~/.tauri/kulki.key`. Keep the private key file safe; losing it means installed apps can never update again.
+2. Put the public key (the content of `~/.tauri/kulki.key.pub`) in `plugins.updater.pubkey` in `src-tauri/tauri.conf.json`, replacing `REPLACE_WITH_UPDATER_PUBLIC_KEY`, and merge that.
+3. Add the repository secrets `TAURI_SIGNING_PRIVATE_KEY` (the private key file's content) and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. `release.yml` stops early with a clear error when either is missing.
+4. Make the repository public (or at least its releases): the app fetches `latest.json` without a token, so it cannot see a private repository's releases.
+
+`latest.json` only exists on a **published** release, so the banner appears after you publish the draft, not when the tag passes the tests. The first version that can update itself is the first one released with this setup; older installs have to be reinstalled once by hand.
+
 ## Styling rule
 
 CSS Modules (`*.module.css`) may only use design tokens: no hex or `rgb()` colors, no `px`/`ms` values and no font names. Stylelint enforces this with `declaration-strict-value` plus unit, color and function bans (see `stylelint.config.js`). `tests/stylelint.test.ts` proves it: the fixture `tests/fixtures/raw-values.module.css` must fail and `tests/fixtures/tokens-only.module.css` must pass.

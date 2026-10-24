@@ -74,6 +74,7 @@
 
   /* Layout */
   --header-height: 40px;
+  --banner-height: 48px;      /* update banner above the game screen */
   --rail-width: 280px;
   --layout-padding: var(--space-6);
   --layout-gap: var(--space-6);
