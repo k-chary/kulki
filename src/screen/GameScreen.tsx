@@ -229,7 +229,7 @@ export function GameScreen({
           name,
           score: state.game.score,
           date: new Date().toISOString(),
-          colorCount: DEFAULT_COLOR_COUNT,
+          colorCount: state.game.colorCount,
         };
         const inserted = storage.insertHighscore(entry);
         finished.current = inserted;

@@ -5,7 +5,14 @@
 //   ?scores=900,500,120        highscores already stored, best first (names „Gracz 1”, „Gracz 2”, …)
 // Only available in dev and in the build made for the tests (VITE_E2E=1), never in a release.
 import { DEFAULT_COLOR_COUNT, type HighscoreEntry } from '../highscores/ranking';
-import { type Color, type GameState, type Rng, createRng, SPAWN_COUNT } from '../rules';
+import {
+  type Color,
+  type GameState,
+  type Rng,
+  createRng,
+  DEFAULT_COLORS,
+  SPAWN_COUNT,
+} from '../rules';
 import { parseBoard } from '../rules/testing';
 
 const LETTERS: Record<string, Color> = {
@@ -69,6 +76,7 @@ export function startFromSearch(search: string, enabled = hookEnabled()): Start 
       board: parseBoard(board.replaceAll('/', '\n')),
       preview,
       score: 0,
+      colorCount: DEFAULT_COLORS,
       cleared: 0,
       gameOver: false,
     },

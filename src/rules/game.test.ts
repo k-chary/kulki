@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { type Board, type Cell, CELL_COUNT, emptyCells, setBall } from './board';
-import type { Color } from './color';
+import { type Board, type Cell, CELL_COUNT, cellAt, emptyCells, setBall } from './board';
+import { type Color, COLOR_COUNTS, colorsFor } from './color';
 import {
   type GameState,
   deserialize,
@@ -18,7 +18,15 @@ const at = (row: number, col: number): Cell => ({ row, col });
 const PREVIEW: readonly Color[] = ['green', 'blue', 'purple'];
 
 function stateOf(board: Board, extra: Partial<GameState> = {}): GameState {
-  return { board, preview: PREVIEW, score: 0, cleared: 0, gameOver: false, ...extra };
+  return {
+    board,
+    preview: PREVIEW,
+    score: 0,
+    colorCount: 6,
+    cleared: 0,
+    gameOver: false,
+    ...extra,
+  };
 }
 
 function balls(board: Board): number {
@@ -44,7 +52,7 @@ describe('newGame', () => {
       expect(balls(state.board)).toBe(START_BALLS);
       expect(findAllLines(state.board)).toEqual([]);
       expect(state.preview).toHaveLength(SPAWN_COUNT);
-      expect(state).toMatchObject({ score: 0, cleared: 0, gameOver: false });
+      expect(state).toMatchObject({ score: 0, colorCount: 6, cleared: 0, gameOver: false });
     }
   });
 
@@ -61,6 +69,79 @@ describe('newGame', () => {
     expect(calls).toBeGreaterThan(10);
     expect(balls(state.board)).toBe(START_BALLS);
     expect(findAllLines(state.board)).toEqual([]);
+  });
+});
+
+describe('newGame: color count', () => {
+  it('defaults to 6 colors and records the count', () => {
+    expect(newGame(createRng(1)).colorCount).toBe(6);
+    for (const count of COLOR_COUNTS) expect(newGame(createRng(1), count).colorCount).toBe(count);
+  });
+
+  it("draws the start balls and the preview only from the count's colors", () => {
+    for (const count of COLOR_COUNTS) {
+      const allowed = colorsFor(count);
+      for (let seed = 1; seed <= 40; seed++) {
+        const state = newGame(createRng(seed), count);
+        for (const color of [...state.board, ...state.preview]) {
+          if (color !== null) expect(allowed).toContain(color);
+        }
+      }
+    }
+  });
+
+  it('uses every color of a 9-color game across seeds', () => {
+    const seen = new Set<Color>();
+    for (let seed = 1; seed <= 200; seed++) {
+      const state = newGame(createRng(seed), 9);
+      for (const color of [...state.board, ...state.preview]) if (color) seen.add(color);
+    }
+    expect(seen.size).toBe(9);
+  });
+
+  it('deals the same board as before color counts for 6 colors', () => {
+    // Recorded from newGame(createRng(42)) before the count was added.
+    const state = newGame(createRng(42));
+    expect(state.board.flatMap((color, index) => (color ? [[index, color]] : []))).toEqual([
+      [17, 'yellow'],
+      [36, 'orange'],
+      [48, 'green'],
+      [55, 'purple'],
+      [69, 'green'],
+    ]);
+    expect(state.preview).toEqual(['orange', 'purple', 'blue']);
+  });
+
+  it('redraws a start that forms a line with 5 colors', () => {
+    const fallback = createRng(3);
+    let calls = 0;
+    const rigged: Rng = () => (calls++ < 10 ? 0 : fallback());
+    const state = newGame(rigged, 5);
+    expect(calls).toBeGreaterThan(10);
+    expect(balls(state.board)).toBe(START_BALLS);
+    expect(findAllLines(state.board)).toEqual([]);
+  });
+
+  it('rejects a count outside 5–9', () => {
+    expect(() => newGame(createRng(1), 4)).toThrow(RangeError);
+    expect(() => newGame(createRng(1), 10)).toThrow(RangeError);
+  });
+});
+
+describe('playTurn: color count', () => {
+  it("keeps the count and draws every new preview from the game's colors", () => {
+    const allowed = colorsFor(5);
+    const rng = createRng(9);
+    let state = newGame(rng, 5);
+    for (let turn = 0; turn < 40 && !state.gameOver; turn++) {
+      const from = state.board.findIndex((color) => color !== null);
+      const to = state.board.findIndex((color) => color === null);
+      const result = playTurn(state, cellAt(from), cellAt(to), rng);
+      if (result.status === 'noPath') continue;
+      state = result.state;
+      expect(state.colorCount).toBe(5);
+      for (const color of state.preview) expect(allowed).toContain(color);
+    }
   });
 });
 
@@ -152,6 +233,7 @@ describe('playTurn: a move that clears', () => {
       `),
       preview: PREVIEW,
       score: 70,
+      colorCount: 6,
       cleared: 7,
       gameOver: false,
     });
@@ -315,6 +397,7 @@ describe('serialize and deserialize', () => {
       ),
       preview: ['purple', 'yellow', 'orange'],
       score: 1240,
+      colorCount: 6,
       cleared: 124,
       gameOver: false,
     };
@@ -323,6 +406,47 @@ describe('serialize and deserialize', () => {
     expect(deserialize(serialize(over))).toEqual(over);
     const fresh = newGame(createRng(11));
     expect(deserialize(serialize(fresh))).toEqual(fresh);
+  });
+
+  it('round-trips the color count', () => {
+    for (const count of COLOR_COUNTS) {
+      const state = newGame(createRng(5), count);
+      expect(deserialize(serialize(state))).toEqual(state);
+    }
+  });
+
+  it('reads a save without a color count as a 6-color game', () => {
+    const state = newGame(createRng(2));
+    const old = { ...state, colorCount: undefined };
+    expect(deserialize(JSON.stringify(old))).toEqual({ ...state, colorCount: 6 });
+  });
+
+  it('rejects a color count outside 5–9 or not a whole number', () => {
+    const good = JSON.parse(serialize(newGame(createRng(1)))) as Record<string, unknown>;
+    for (const colorCount of [4, 10, 0, 6.5, '6', null]) {
+      expect(() => deserialize(JSON.stringify({ ...good, colorCount }))).toThrow(Error);
+    }
+  });
+
+  it("rejects balls or preview outside the count's colors", () => {
+    const good = JSON.parse(serialize(newGame(createRng(1), 9))) as Record<string, unknown>;
+    const empty = Array.from({ length: 81 }, () => null);
+    for (const outside of ['orange', 'pink', 'white', 'black']) {
+      const ball = JSON.stringify({ ...good, colorCount: 5, board: [outside, ...empty.slice(1)] });
+      expect(() => deserialize(ball)).toThrow(Error);
+      const preview = JSON.stringify({
+        ...good,
+        colorCount: 5,
+        board: empty,
+        preview: [outside, 'red', 'red'],
+      });
+      expect(() => deserialize(preview)).toThrow(Error);
+    }
+    // A 7-color save may hold pink but not white.
+    const seven = { ...good, colorCount: 7, board: empty, preview: ['pink', 'red', 'red'] };
+    expect(deserialize(JSON.stringify(seven)).preview[0]).toBe('pink');
+    const white = JSON.stringify({ ...seven, preview: ['white', 'red', 'red'] });
+    expect(() => deserialize(white)).toThrow(Error);
   });
 
   it('rejects text that is not a saved game', () => {

@@ -21,7 +21,6 @@ import {
   sameCell,
 } from '../rules';
 import {
-  DEFAULT_COLOR_COUNT,
   type HighscoreEntry,
   type HighscoreRow,
   normalizeName,
@@ -121,8 +120,7 @@ export function finishedEntry(
     name: normalizeName(lastName ?? ''),
     score: game.score,
     date,
-    // Games have no color count yet; the game screen change passes the game's own.
-    colorCount: DEFAULT_COLOR_COUNT,
+    colorCount: game.colorCount,
   };
 }
 

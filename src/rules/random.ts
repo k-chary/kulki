@@ -1,4 +1,4 @@
-import { CLASSIC_COLORS, type Color } from './color';
+import type { Color } from './color';
 
 /** A random generator: returns a float in [0, 1), like Math.random. */
 export type Rng = () => number;
@@ -23,8 +23,9 @@ export function randomInt(rng: Rng, max: number): number {
   return Math.floor(rng() * max);
 }
 
-export function randomColor(rng: Rng): Color {
-  return CLASSIC_COLORS[randomInt(rng, CLASSIC_COLORS.length)] as Color;
+/** A color picked uniformly from `colors`. */
+export function randomColor(rng: Rng, colors: readonly Color[]): Color {
+  return colors[randomInt(rng, colors.length)] as Color;
 }
 
 /** `count` distinct items picked uniformly from `items`, in pick order. */
