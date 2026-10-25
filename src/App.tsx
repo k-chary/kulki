@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import styles from './App.module.css';
 import { UpdateBanner } from './components/UpdateBanner/UpdateBanner';
 import { startFromSearch } from './game/testHook';
-import { type GameState, newGame } from './rules';
+import { DEFAULT_COLORS, type GameState, newGame } from './rules';
 import { GameScreen } from './screen/GameScreen';
 import { MemoryStorage } from './storage/MemoryStorage';
 import type { Storage } from './storage/Storage';
@@ -44,11 +44,17 @@ export function App() {
   // A new game is drawn here, once, rather than in a render StrictMode repeats.
   useEffect(() => {
     let current = true;
-    void loadSavedGame(storage).then((saved) => {
+    void loadSavedGame(storage).then(async (saved) => {
       if (!current) return;
       if (saved) setLaunch({ game: saved, intro: false, resumed: true });
       else if (start.game) setLaunch({ game: start.game, intro: false, resumed: false });
-      else setLaunch({ game: newGame(start.rng), intro: true, resumed: false });
+      else {
+        // Without a save the last count played is used, 6 the very first time.
+        const last = await storage.getLastColorCount().catch(() => null);
+        if (!current) return;
+        const colorCount = start.colorCount ?? last ?? DEFAULT_COLORS;
+        setLaunch({ game: newGame(start.rng, colorCount), intro: true, resumed: false });
+      }
     });
     return () => {
       current = false;

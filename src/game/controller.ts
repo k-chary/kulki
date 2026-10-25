@@ -49,9 +49,9 @@ export interface ControllerState {
   /** A one-off status message; `noticeId` changes with every new one. */
   readonly notice: 'noPath' | 'loaded' | null;
   readonly noticeId: number;
-  /** Turns played in this game; „Nowa gra” asks for confirmation once it is above 0. */
+  /** Turns played in this game; once it is above 0 the „Nowa gra” dialog warns the game is lost. */
   readonly moves: number;
-  readonly confirming: boolean;
+  readonly choosing: boolean;
   /** Set once the score of a finished game is saved; rings its row until the next game. */
   readonly saved: { readonly name: string; readonly place: number } | null;
 }
@@ -64,7 +64,7 @@ export type ControllerAction =
   | { type: 'clearNotice'; noticeId: number }
   | { type: 'requestNewGame' }
   | { type: 'cancelNewGame' }
-  | { type: 'confirmNewGame' }
+  | { type: 'startNewGame'; colorCount: number }
   | { type: 'scoreSaved'; name: string; place: number };
 
 export function initialState(
@@ -81,7 +81,7 @@ export function initialState(
     notice,
     noticeId: notice ? 1 : 0,
     moves,
-    confirming: false,
+    choosing: false,
     saved: null,
   };
 }
@@ -126,7 +126,7 @@ export function finishedEntry(
 
 /** True while the board takes no input: a turn is animating, a dialog is open or the game is over. */
 export function isLocked(state: ControllerState): boolean {
-  return state.turn !== null || state.confirming || state.game.gameOver;
+  return state.turn !== null || state.choosing || state.game.gameOver;
 }
 
 /**
@@ -142,8 +142,8 @@ export function withIntro(state: ControllerState): ControllerState {
   return { ...state, turn: { before, events: [{ type: 'spawn', cells, colors }] } };
 }
 
-function freshGame(state: ControllerState, rng: Rng): ControllerState {
-  return { ...withIntro(initialState(newGame(rng))), noticeId: state.noticeId };
+function freshGame(state: ControllerState, rng: Rng, colorCount: number): ControllerState {
+  return { ...withIntro(initialState(newGame(rng, colorCount))), noticeId: state.noticeId };
 }
 
 /**
@@ -152,8 +152,8 @@ function freshGame(state: ControllerState, rng: Rng): ControllerState {
  * clears, nor spawns, nor is the ball on its way.
  */
 export function selectableDuringTurn(state: ControllerState, cell: Cell): boolean {
-  const { turn, confirming, game } = state;
-  if (turn === null || confirming || game.gameOver) return false;
+  const { turn, choosing, game } = state;
+  if (turn === null || choosing || game.gameOver) return false;
   const color = getBall(turn.before.board, cell);
   if (color === null || color !== getBall(game.board, cell)) return false;
   return !turn.events.some(
@@ -206,7 +206,7 @@ export function reduce(
     case 'hover':
       // Tracked during a turn too, so the path preview is right when the turn ends;
       // boardView shows nothing for it while the board is locked.
-      if (state.confirming || state.game.gameOver) return state;
+      if (state.choosing || state.game.gameOver) return state;
       if (action.cell === state.hover) return state;
       if (action.cell && state.hover && sameCell(action.cell, state.hover)) return state;
       return { ...state, hover: action.cell };
@@ -217,15 +217,13 @@ export function reduce(
     case 'clearNotice':
       return state.noticeId === action.noticeId ? { ...state, notice: null } : state;
     case 'requestNewGame':
-      if (state.confirming || state.turn !== null) return state;
-      // Before the first move, or after the game ended, nothing is lost.
-      return state.moves > 0 && !state.game.gameOver
-        ? { ...state, confirming: true, hover: null }
-        : freshGame(state, rng);
+      if (state.choosing || state.turn !== null) return state;
+      // Every new game goes through the dialog, which picks the color count.
+      return { ...state, choosing: true, hover: null };
     case 'cancelNewGame':
-      return { ...state, confirming: false };
-    case 'confirmNewGame':
-      return state.confirming ? freshGame(state, rng) : state;
+      return { ...state, choosing: false };
+    case 'startNewGame':
+      return state.choosing ? freshGame(state, rng, action.colorCount) : state;
     case 'scoreSaved':
       return state.game.gameOver && state.saved === null
         ? { ...state, saved: { name: action.name, place: action.place } }

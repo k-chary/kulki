@@ -174,36 +174,39 @@ describe('new game', () => {
     return reduce(state, { type: 'turnDone' }, rng);
   };
 
-  it('starts at once before the first move', () => {
+  it('opens the dialog before the first move too and locks the board', () => {
     const state = reduce(initialState(game(OPEN)), { type: 'requestNewGame' }, createRng(3));
-    expect(state.confirming).toBe(false);
-    expect(state.game.board.filter((square) => square !== null)).toHaveLength(5);
-  });
-
-  it('asks for confirmation after the first move and locks the board', () => {
-    const state = reduce(played(), { type: 'requestNewGame' }, rng);
-    expect(state.confirming).toBe(true);
+    expect(state.choosing).toBe(true);
     expect(reduce(state, { type: 'click', cell: at(0, 1) }, rng)).toBe(state);
   });
 
-  it('keeps the game on cancel and resets it on confirm', () => {
+  it('keeps the game on cancel and starts a game with the chosen count', () => {
     const asking = reduce(played(), { type: 'requestNewGame' }, rng);
+    expect(asking.choosing).toBe(true);
     const cancelled = reduce(asking, { type: 'cancelNewGame' }, rng);
-    expect(cancelled.confirming).toBe(false);
+    expect(cancelled.choosing).toBe(false);
     expect(cancelled.game).toBe(asking.game);
 
-    const fresh = reduce(asking, { type: 'confirmNewGame' }, createRng(5));
-    expect(fresh.confirming).toBe(false);
+    const fresh = reduce(asking, { type: 'startNewGame', colorCount: 9 }, createRng(5));
+    expect(fresh.choosing).toBe(false);
     expect(fresh.moves).toBe(0);
     expect(fresh.game.score).toBe(0);
+    expect(fresh.game.colorCount).toBe(9);
     expect(fresh.game.board.filter((square) => square !== null)).toHaveLength(5);
   });
 
-  it('starts at once after the game ended', () => {
+  it('ignores startNewGame while the dialog is closed', () => {
+    const state = initialState(game(OPEN));
+    expect(reduce(state, { type: 'startNewGame', colorCount: 9 }, rng)).toBe(state);
+  });
+
+  it('opens the dialog after the game ended and starts from there', () => {
     const over = initialState(game(OPEN, { gameOver: true }));
-    const state = reduce({ ...over, moves: 4 }, { type: 'requestNewGame' }, createRng(3));
-    expect(state.confirming).toBe(false);
+    const asking = reduce({ ...over, moves: 4 }, { type: 'requestNewGame' }, createRng(3));
+    expect(asking.choosing).toBe(true);
+    const state = reduce(asking, { type: 'startNewGame', colorCount: 5 }, createRng(3));
     expect(state.game.gameOver).toBe(false);
+    expect(state.game.colorCount).toBe(5);
   });
 });
 
@@ -306,7 +309,7 @@ describe('turn playback', () => {
       { type: 'requestNewGame' },
       rng,
     );
-    expect(dialog.confirming).toBe(true);
+    expect(dialog.choosing).toBe(true);
     expect(reduce(dialog, { type: 'click', cell: at(0, 1) }, rng)).toBe(dialog);
   });
 
@@ -375,14 +378,16 @@ describe('saveEffect', () => {
     const asking = reduce(playing, { type: 'requestNewGame' }, rng);
     expect(saveEffect(playing, asking)).toBeNull();
     expect(saveEffect(asking, reduce(asking, { type: 'cancelNewGame' }, rng))).toBeNull();
-    expect(saveEffect(asking, reduce(asking, { type: 'confirmNewGame' }, rng))).toEqual({
+    expect(
+      saveEffect(asking, reduce(asking, { type: 'startNewGame', colorCount: 6 }, rng)),
+    ).toEqual({
       type: 'delete',
     });
   });
 
   it('asks before discarding a resumed game', () => {
     const resumed = initialState(game(OPEN), 'loaded', 1);
-    expect(reduce(resumed, { type: 'requestNewGame' }, rng).confirming).toBe(true);
+    expect(reduce(resumed, { type: 'requestNewGame' }, rng).choosing).toBe(true);
     expect(statusOf(resumed).lead).toBe('Wczytano zapisaną grę');
   });
 });
@@ -434,12 +439,14 @@ describe('game over dialog', () => {
     expect(reduce(running, { type: 'scoreSaved', name: 'Ola', place: 1 }, rng)).toBe(running);
   });
 
-  it('„Nowa gra” starts at once and drops the saved ring', () => {
+  it('starting from „Nowa gra” drops the saved ring', () => {
     const saved = reduce(over(800), { type: 'scoreSaved', name: 'Ola', place: 22 }, rng);
-    const next = reduce(saved, { type: 'requestNewGame' }, rng);
+    const asking = reduce(saved, { type: 'requestNewGame' }, rng);
+    expect(asking.choosing).toBe(true);
+    const next = reduce(asking, { type: 'startNewGame', colorCount: 6 }, rng);
     expect(next.game.gameOver).toBe(false);
     expect(next.saved).toBeNull();
-    expect(next.confirming).toBe(false);
+    expect(next.choosing).toBe(false);
   });
 
   it('locks the board', () => {
@@ -532,7 +539,7 @@ describe('pop-in of a new game', () => {
     const resumed = initialState(game(OPEN), 'loaded', 1);
     expect(resumed.turn).toBeNull();
     const asking = reduce({ ...resumed, moves: 2 }, { type: 'requestNewGame' }, rng);
-    const fresh = reduce(asking, { type: 'confirmNewGame' }, createRng(5));
+    const fresh = reduce(asking, { type: 'startNewGame', colorCount: 6 }, createRng(5));
     expect(fresh.turn?.events[0]?.type).toBe('spawn');
   });
 });

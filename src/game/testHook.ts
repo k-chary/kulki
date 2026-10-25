@@ -3,8 +3,9 @@
 //   ?board=<9 rows split by />  a fixture board, e.g. rrrr...../......... (r o y g b p, . empty)
 //   &preview=rgb               the colors of the next balls (default: red, red, red)
 //   ?scores=900,500,120        highscores already stored, best first (names „Gracz 1”, „Gracz 2”, …)
+//   &colors=9                  the color count of the game and of the scores (default 6)
 // Only available in dev and in the build made for the tests (VITE_E2E=1), never in a release.
-import { DEFAULT_COLOR_COUNT, type HighscoreEntry } from '../highscores/ranking';
+import type { HighscoreEntry } from '../highscores/ranking';
 import {
   type Color,
   type GameState,
@@ -28,6 +29,8 @@ export interface Start {
   rng: Rng;
   /** A fixture game; without one the screen starts a new game. */
   game?: GameState;
+  /** The color count of the first game; without one the last count played is used. */
+  colorCount?: number;
   /** Highscores to start with; empty without `scores`. */
   highscores: HighscoreEntry[];
 }
@@ -44,7 +47,7 @@ export function parsePreview(text: string): Color[] {
   return colors as Color[];
 }
 
-export function parseScores(text: string): HighscoreEntry[] {
+export function parseScores(text: string, colorCount = DEFAULT_COLORS): HighscoreEntry[] {
   return text
     .split(',')
     .filter((part) => part !== '')
@@ -52,7 +55,7 @@ export function parseScores(text: string): HighscoreEntry[] {
       name: `Gracz ${i + 1}`,
       score: Number(part),
       date: '2026-01-15T12:00:00.000Z',
-      colorCount: DEFAULT_COLOR_COUNT,
+      colorCount,
     }));
 }
 
@@ -61,13 +64,17 @@ export function startFromSearch(search: string, enabled = hookEnabled()): Start 
   const seed = params.get('seed');
   const board = params.get('board');
   const scores = params.get('scores');
-  if (!enabled || (seed === null && board === null && scores === null)) {
+  const colors = params.get('colors');
+  if (!enabled || (seed === null && board === null && scores === null && colors === null)) {
     return { rng: Math.random, highscores: [] };
   }
 
   const rng = seed === null ? Math.random : createRng(Number(seed));
-  const highscores = parseScores(scores ?? '');
-  if (board === null) return { rng, highscores };
+  const colorCount = colors === null ? DEFAULT_COLORS : Number(colors);
+  const highscores = parseScores(scores ?? '', colorCount);
+  if (board === null) {
+    return { rng, highscores, colorCount: colors === null ? undefined : colorCount };
+  }
   const preview = parsePreview(params.get('preview') ?? 'rrr');
   return {
     rng,
@@ -76,7 +83,7 @@ export function startFromSearch(search: string, enabled = hookEnabled()): Start 
       board: parseBoard(board.replaceAll('/', '\n')),
       preview,
       score: 0,
-      colorCount: DEFAULT_COLORS,
+      colorCount,
       cleared: 0,
       gameOver: false,
     },

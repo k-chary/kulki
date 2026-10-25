@@ -31,9 +31,13 @@ test.describe('game over', () => {
     await expect(scoreRows(page, 'saved')).toContainText('Ola');
     await expect(scoreRows(page, 'current')).toHaveCount(0);
 
-    // „Nowa gra” starts at once and the ring goes away.
+    // „Nowa gra” opens the new-game dialog; „Zacznij” starts and the ring goes away.
     await dialog.getByRole('button', { name: 'Nowa gra' }).click();
     await expect(dialog).toHaveCount(0);
+    await page
+      .getByRole('dialog', { name: 'Nowa gra' })
+      .getByRole('button', { name: 'Zacznij' })
+      .click();
     await expect(scoreRows(page, 'saved')).toHaveCount(0);
     await expect(scoreRows(page, 'stored')).toHaveCount(1);
   });
@@ -78,6 +82,10 @@ test.describe('game over', () => {
 
     await dialog.getByRole('button', { name: 'Nowa gra' }).click();
     await expect(dialog).toHaveCount(0);
+    await page
+      .getByRole('dialog', { name: 'Nowa gra' })
+      .getByRole('button', { name: 'Zacznij' })
+      .click();
     await expect(scoreRows(page, 'stored')).toHaveCount(30);
   });
 

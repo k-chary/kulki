@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Board } from '../components/Board/Board';
 import { Button } from '../components/Button/Button';
-import { ConfirmDialog } from '../components/ConfirmDialog/ConfirmDialog';
 import { GameOver } from '../components/GameOver/GameOver';
 import { HighscoreList } from '../components/HighscoreList/HighscoreList';
 import { Logo } from '../components/Logo/Logo';
+import { NewGameDialog } from '../components/NewGameDialog/NewGameDialog';
 import { NextBalls } from '../components/NextBalls/NextBalls';
 import { ScorePanel } from '../components/ScorePanel/ScorePanel';
 import { StatusLine } from '../components/StatusLine/StatusLine';
@@ -25,7 +25,7 @@ import {
 } from '../game/controller';
 import { type PlaybackView, buildSteps, restingView } from '../game/playback';
 import { type Sequence, playSequence } from '../game/sequencer';
-import { DEFAULT_COLOR_COUNT, type HighscoreEntry, rowsWithLive } from '../highscores/ranking';
+import { type HighscoreEntry, rowsWithLive } from '../highscores/ranking';
 import { type GameState, type Rng, cellIndex, newGame } from '../rules';
 import type { InsertResult, Storage } from '../storage/Storage';
 import { readDuration, readTurnDurations } from '../styles/motion';
@@ -39,7 +39,7 @@ export interface GameScreenProps {
   game?: GameState;
   /** Pop the balls of `game` in, as for a new game. Defaults to true without a `game`. */
   intro?: boolean;
-  /** `game` was read from the save: shows „Wczytano zapisaną grę” and asks before „Nowa gra”. */
+  /** `game` was read from the save: shows „Wczytano zapisaną grę” and warns before „Nowa gra”. */
   resumed?: boolean;
 }
 
@@ -82,7 +82,21 @@ export function GameScreen({
     return intro && !resumed ? withIntro(start) : start;
   }, rng);
   // The list before the finished game's own row went in; the dialog and the live row use it.
-  const [highscores, setHighscores] = useState<HighscoreEntry[]>([]);
+  // It belongs to one color count; after a new game with another count it reads empty
+  // until that count's list is loaded.
+  const { colorCount } = state.game;
+  const [stored, setStored] = useState<{ colorCount: number; entries: HighscoreEntry[] }>({
+    colorCount,
+    entries: [],
+  });
+  const highscores = useMemo(
+    () => (stored.colorCount === colorCount ? stored.entries : []),
+    [stored, colorCount],
+  );
+  const setHighscores = useCallback(
+    (entries: HighscoreEntry[], forCount: number) => setStored({ colorCount: forCount, entries }),
+    [],
+  );
   const [lastName, setLastName] = useState<string | null>(null);
   const [saveFailed, setSaveFailed] = useState(false);
   const saving = useRef(false);
@@ -96,17 +110,17 @@ export function GameScreen({
 
   useEffect(() => {
     let current = true;
-    void Promise.all([storage.listHighscores(DEFAULT_COLOR_COUNT), storage.getLastName()]).then(
+    void Promise.all([storage.listHighscores(colorCount), storage.getLastName()]).then(
       ([list, name]) => {
         if (!current) return;
-        setHighscores(list);
+        setHighscores(list, colorCount);
         setLastName(name);
       },
     );
     return () => {
       current = false;
     };
-  }, [storage]);
+  }, [storage, colorCount, setHighscores]);
 
   // Every turn is saved as soon as the reducer has computed it, before anything
   // is played back. The turn that ends the game drops the save and stores the score
@@ -137,10 +151,10 @@ export function GameScreen({
     writes.current = stored
       .then((result) => {
         // The storage kept no row after all: the dialog shows „outside the top 30”.
-        if (result.id === null) setHighscores(result.highscores);
+        if (result.id === null) setHighscores(result.highscores, effect.game.colorCount);
       })
       .catch(logStorageError);
-  }, [state, storage]);
+  }, [state, storage, setHighscores]);
 
   // One-off messages leave the status line after --dur-status.
   const { notice, noticeId } = state;
@@ -213,8 +227,14 @@ export function GameScreen({
     () => (turn ? rowsWithLive(highscores, view.score) : highscoreRows(state, highscores)),
     [state, highscores, turn, view.score],
   );
-  const gameOver = turn ? null : gameOverView(state, highscores, lastName);
-  const startNewGame = () => dispatch({ type: 'requestNewGame' });
+  // The „Nowa gra” dialog replaces „Koniec gry” while it is open; „Anuluj” brings it back.
+  const gameOver = turn || state.choosing ? null : gameOverView(state, highscores, lastName);
+  const requestNewGame = () => dispatch({ type: 'requestNewGame' });
+  const startNewGame = (count: number) => {
+    // Only the next launch depends on it; the game starts regardless.
+    void storage.setLastColorCount(count).catch(logStorageError);
+    dispatch({ type: 'startNewGame', colorCount: count });
+  };
 
   // Renames the row stored at game over. If storing it failed, the row is inserted
   // now; either way a retry renames, so a score is never stored twice.
@@ -236,11 +256,11 @@ export function GameScreen({
         result = await inserted;
       }
       if (result.id === null || result.place === null) {
-        setHighscores(result.highscores);
+        setHighscores(result.highscores, state.game.colorCount);
         return;
       }
       const list = await storage.renameHighscore(result.id, name);
-      setHighscores(list);
+      setHighscores(list, state.game.colorCount);
       setLastName(name);
       dispatch({ type: 'scoreSaved', name, place: result.place });
       // Only the next default depends on it; the score is already stored.
@@ -276,12 +296,13 @@ export function GameScreen({
           onFieldClick={(cell) => dispatch({ type: 'click', cell })}
           onFieldHover={(cell) => dispatch({ type: 'hover', cell })}
         >
-          {state.confirming && (
-            <ConfirmDialog
-              score={state.game.score}
+          {state.choosing && (
+            <NewGameDialog
+              colorCount={colorCount}
+              score={state.moves > 0 && !state.game.gameOver ? state.game.score : null}
               returnFocusRef={newGameButton}
               onCancel={() => dispatch({ type: 'cancelNewGame' })}
-              onConfirm={() => dispatch({ type: 'confirmNewGame' })}
+              onStart={startNewGame}
             />
           )}
           {gameOver?.state === 'entry' && (
@@ -298,7 +319,7 @@ export function GameScreen({
               {...gameOver}
               score={state.game.score}
               returnFocusRef={newGameButton}
-              onNewGame={startNewGame}
+              onNewGame={requestNewGame}
             />
           )}
         </Board>
@@ -315,12 +336,16 @@ export function GameScreen({
             ref={newGameButton}
             variant="secondary"
             block
-            disabled={state.confirming || turn !== null || gameOver !== null}
-            onClick={startNewGame}
+            disabled={state.choosing || turn !== null || gameOver !== null}
+            onClick={requestNewGame}
           >
             Nowa gra
           </Button>
-          <HighscoreList rows={rows} savedPlace={state.saved?.place ?? null} />
+          <HighscoreList
+            rows={rows}
+            savedPlace={state.saved?.place ?? null}
+            colorCount={colorCount}
+          />
         </aside>
       </div>
     </main>
