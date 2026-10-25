@@ -10,7 +10,14 @@ import {
   isInside,
   setBall,
 } from './board';
-import { COLORS, type Color } from './color';
+import {
+  type Color,
+  DEFAULT_COLORS,
+  MAX_COLORS,
+  MIN_COLORS,
+  colorsFor,
+  drawColorsFor,
+} from './color';
 import { findAllLines, findLines, lineCells, scoreFor } from './lines';
 import { findPath } from './path';
 import { type Rng, randomColor, sample } from './random';
@@ -27,6 +34,8 @@ export interface GameState {
   /** Colors of the next SPAWN_COUNT balls, in the order they appear. */
   readonly preview: readonly Color[];
   readonly score: number;
+  /** How many colors this game uses (MIN_COLORS..MAX_COLORS); fixed for the whole game. */
+  readonly colorCount: number;
   /** Balls cleared so far. */
   readonly cleared: number;
   /** True once the board is full; no further moves are accepted. */
@@ -54,24 +63,34 @@ export type TurnResult =
   | { readonly status: 'played'; readonly state: GameState; readonly events: readonly GameEvent[] }
   | { readonly status: 'noPath'; readonly state: GameState };
 
-function drawPreview(rng: Rng): Color[] {
-  return Array.from({ length: SPAWN_COUNT }, () => randomColor(rng));
+function drawPreview(rng: Rng, colorCount: number): Color[] {
+  const colors = drawColorsFor(colorCount);
+  return Array.from({ length: SPAWN_COUNT }, () => randomColor(rng, colors));
 }
 
 /**
  * A new game: START_BALLS balls on random squares with random colors (not taken
- * from the preview), redrawn until they form no line, and a fresh preview.
+ * from the preview), redrawn until they form no line, and a fresh preview. All
+ * colors come from the game's `colorCount` colors (default 6, the classic game).
  */
-export function newGame(rng: Rng): GameState {
+export function newGame(rng: Rng, colorCount: number = DEFAULT_COLORS): GameState {
+  const colors = drawColorsFor(colorCount);
   const squares = Array.from({ length: CELL_COUNT }, (_, index) => cellAt(index));
   let board: Board;
   do {
     board = sample(rng, squares, START_BALLS).reduce<Board>(
-      (next, cell) => setBall(next, cell, randomColor(rng)),
+      (next, cell) => setBall(next, cell, randomColor(rng, colors)),
       emptyBoard(),
     );
   } while (findAllLines(board).length > 0);
-  return { board, preview: drawPreview(rng), score: 0, cleared: 0, gameOver: false };
+  return {
+    board,
+    preview: drawPreview(rng, colorCount),
+    score: 0,
+    colorCount,
+    cleared: 0,
+    gameOver: false,
+  };
 }
 
 /**
@@ -117,13 +136,20 @@ export function playTurn(state: GameState, from: Cell, to: Cell, rng: Rng): Turn
     cells.forEach((cell, index) => {
       board = setBall(board, cell, colors[index] as Color);
     });
-    preview = drawPreview(rng);
+    preview = drawPreview(rng, state.colorCount);
     events.push({ type: 'spawn', cells, colors });
     clearLines(cells);
     if (isFull(board)) events.push({ type: 'gameOver' });
   }
 
-  const next: GameState = { board, preview, score, cleared, gameOver: isFull(board) };
+  const next: GameState = {
+    board,
+    preview,
+    score,
+    colorCount: state.colorCount,
+    cleared,
+    gameOver: isFull(board),
+  };
   return { status: 'played', state: next, events };
 }
 
@@ -136,13 +162,15 @@ function isCount(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value >= 0;
 }
 
-function isColor(value: unknown): value is Color {
-  return COLORS.includes(value as Color);
+function isColorIn(colors: readonly Color[]) {
+  return (value: unknown): value is Color => colors.includes(value as Color);
 }
 
 /**
- * Reads a state written by `serialize`. Throws an Error if the text is not a valid
- * saved game, including one whose `gameOver` disagrees with a full board.
+ * Reads a state written by `serialize`. A save without `colorCount` is a 6-color
+ * game. Throws an Error if the text is not a valid saved game, including one whose
+ * `gameOver` disagrees with a full board, whose count is outside MIN_COLORS..MAX_COLORS
+ * or whose balls or preview use a color outside that count's set.
  */
 export function deserialize(text: string): GameState {
   let data: Record<string, unknown>;
@@ -152,6 +180,16 @@ export function deserialize(text: string): GameState {
     throw new Error('Saved game is not valid JSON');
   }
   const { board, preview, score, cleared, gameOver } = data ?? {};
+  const colorCount = data?.colorCount === undefined ? DEFAULT_COLORS : data.colorCount;
+  if (
+    typeof colorCount !== 'number' ||
+    !Number.isInteger(colorCount) ||
+    colorCount < MIN_COLORS ||
+    colorCount > MAX_COLORS
+  ) {
+    throw new Error('Saved game has an invalid color count');
+  }
+  const isColor = isColorIn(colorsFor(colorCount));
   if (
     !Array.isArray(board) ||
     board.length !== CELL_COUNT ||
@@ -168,5 +206,5 @@ export function deserialize(text: string): GameState {
   if (gameOver !== isFull(board as Board)) {
     throw new Error('Saved game is over on a board with room, or running on a full one');
   }
-  return { board: board as Board, preview, score, cleared, gameOver };
+  return { board: board as Board, preview, score, colorCount, cleared, gameOver };
 }
