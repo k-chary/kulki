@@ -17,7 +17,7 @@ export const COLORS = [
 export type Color = (typeof COLORS)[number];
 
 /** The fewest and most colors a game can use, and the default (the classic game). */
-export const MIN_COLORS = 4;
+export const MIN_COLORS = 5;
 export const MAX_COLORS = 9;
 export const DEFAULT_COLORS = 6;
 

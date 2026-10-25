@@ -6,7 +6,7 @@ Approved 2026-10-22. Source: https://claude.ai/code/artifact/2c36446e-f3a3-4162-
 
 Kulki v1 is a single-player desktop game (Tauri) in Polish: move balls on a 9×9 board and line up 5 or more of one color to clear them. It follows the classic Lines rules. The look, layout, motion and components come from the [Kulki visual design](https://claude.ai/artifact/Rg7LMfMFpU8usuiQCrqQF4) canvas, which replaces the earlier design draft. For game rules this spec wins; for how things look and move, the canvas does.
 
-In scope for v1: the full game loop, next-balls preview, current score, a top-30 highscore list, save and resume, and installers for Windows, macOS and Linux. Added after v1: difficulty, chosen as the number of ball colors (4 to 9). Its look (the three new balls and the „Kolory” row) was designed after the canvas, in Storybook, and those stories are its visual reference.
+In scope for v1: the full game loop, next-balls preview, current score, a top-30 highscore list, save and resume, and installers for Windows, macOS and Linux. Added after v1: difficulty, chosen as the number of ball colors (5 to 9). Its look (the three new balls and the „Kolory” row) was designed after the canvas, in Storybook, and those stories are its visual reference.
 
 ## Game rules
 
@@ -16,7 +16,7 @@ A turn is one move; new balls appear only after a move that clears nothing.
 
 - The board is 9×9 = 81 squares; each square holds at most one ball.
 - There are 9 colors: czerwony, żółty, zielony, niebieski, fioletowy, pomarańczowy, różowy, biały, czarny.
-- Each game uses 4 to 9 of them, chosen by the player before the game (see Difficulty). The count picks the first colors of that list: 4 is czerwony, żółty, zielony and niebieski; 6 is the classic set; 7 adds różowy, 8 biały and 9 czarny.
+- Each game uses 5 to 9 of them, chosen by the player before the game (see Difficulty). The count picks the first colors of that list: 5 is czerwony, żółty, zielony, niebieski and fioletowy; 6 is the classic set; 7 adds różowy, 8 biały and 9 czarny.
 - Every ball's color is drawn uniformly at random from the game's colors, independently.
 - A new game places 5 balls on random squares. Their colors are random and do not come from the preview. If the 5 already form a line, the start is redrawn.
 - From the start, the preview ("Następne") shows the colors of the next 3 balls to appear. Their squares are chosen only when they appear.
@@ -41,7 +41,7 @@ The rules module computes the whole turn at once and returns it as a list of eve
 **Difficulty**
 
 - Fewer colors make lines easier: the color count is the game's difficulty. The default is 6, the classic game.
-- Each count has a name, shown in its tooltip: 4 bardzo łatwy, 5 łatwy, 6 klasyczny, 7 trudny, 8 bardzo trudny, 9 mistrzowski.
+- Each count has a name, shown in its tooltip: 5 łatwy, 6 klasyczny, 7 trudny, 8 bardzo trudny, 9 mistrzowski.
 - The count is fixed for a whole game. It is part of the game state, the saved game and the highscore entry.
 - Scoring is the same for every count: 10 points per ball.
 
@@ -63,7 +63,7 @@ The game is played with a mouse; Kulki has one screen, and everything else is a 
 
 **Choosing the color count**
 
-- The „Kolory” row in the rail shows the counts 4 to 9 with the current game's count chosen. Each count's tooltip says „6 kolorów · klasyczny”.
+- The „Kolory” row in the rail shows the counts 5 to 9 with the current game's count chosen. Each count's tooltip says „6 kolorów · klasyczny”.
 - Clicking another count starts a new game with it, by the same rule as „Nowa gra”: at once before the first move or after a game ends, otherwise after „Zacząć nową grę z {n} kolorami?” is confirmed. Cancelling leaves the game and the chosen count as they were.
 - „Nowa gra” starts a game with the current count. The last count played is remembered and used on the next launch when there is no saved game.
 - Like „Nowa gra”, the row is disabled during animations and dialogs.
@@ -106,7 +106,7 @@ One window shows a header, the board and a side rail as one centered block. The 
 | Board | — | Largest square that fits | 9×9 fields in a 6 px frame with 4 px gaps; balls are 80% of a field |
 | Score | Wynik | Rail, 280 px wide | Current points and balls cleared, with Polish plural forms (1 kulka zbita, 2–4 kulki zbite, 5 kulek zbitych) |
 | Preview | Następne | Three 44 px slots | The next 3 colors, with „pojawią się po ruchu bez zbicia” always visible |
-| Colors | Kolory | 44 px row | The color count 4–9 as a segmented control, current game's count in the accent |
+| Colors | Kolory | 44 px row | The color count 5–9 as a segmented control, current game's count in the accent |
 | New game | Nowa gra | 44 px secondary button | Restart; disabled during animations and dialogs |
 | Highscores | Najlepsze wyniki · {n} kolorów | Fills the rest of the rail, scrolls | Top 30 for the current game's color count, with rank, name, date (dd.mm.rrrr) and points |
 
@@ -123,7 +123,7 @@ One window shows a header, the board and a side rail as one centered block. The 
 - Native title bar titled „Kulki”, no menu bar in v1. The page never scrolls; only the highscore list does.
 - Text is not selectable except in the name field, and the context menu is off. Text never scales; only the board does.
 - Light and dark themes follow the OS.
-- Colors are the only way to tell balls apart in v1 (no symbols). White balls get a grey rim on light fields and black balls a light rim on dark fields, so neither melts into the board; their path dots and target ring use the same grey or light grey.
+- Colors are the only way to tell balls apart in v1 (no symbols). White balls are shaded from a small lit spot to a cool grey and get a grey rim on light fields and black balls a light rim on dark fields, so neither melts into the board; their path dots and target ring use the same grey or light grey.
 
 ## Persistence
 

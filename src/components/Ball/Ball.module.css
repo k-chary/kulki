@@ -2,6 +2,11 @@
   --ball-color: var(--ball-red);
   --ball-edge: transparent;
 
+  /* Where the light falls, how far the flat color reaches, and the color at the edge. */
+  --ball-light-at: 50% 55%;
+  --ball-core: 55%;
+  --ball-dark: color-mix(in srgb, var(--ball-color) 62%, var(--ball-shade));
+
   display: block;
   width: var(--ball-size);
   aspect-ratio: 1;
@@ -9,9 +14,9 @@
   background:
     radial-gradient(circle at 34% 30%, var(--ball-highlight) 0 12%, transparent 40%),
     radial-gradient(
-      circle at 50% 55%,
-      var(--ball-color) 55%,
-      color-mix(in srgb, var(--ball-color) 62%, var(--ball-shade)) 100%
+      circle at var(--ball-light-at),
+      var(--ball-color) var(--ball-core),
+      var(--ball-dark) 100%
     );
   box-shadow: var(--shadow-ball);
 
@@ -51,10 +56,17 @@
   --ball-color: var(--ball-pink);
 }
 
-/* White and black get a rim where they would melt into the field (light and dark theme). */
+/*
+ * White and black get a rim where they would melt into the field (light and dark theme).
+ * White also shades from a small lit spot to a cool grey, so it reads as a sphere on a
+ * light field where the usual highlight is invisible.
+ */
 .ball[data-color='white'] {
   --ball-color: var(--ball-white);
   --ball-edge: var(--ball-white-edge);
+  --ball-light-at: 36% 32%;
+  --ball-core: 8%;
+  --ball-dark: var(--ball-white-shade);
 }
 
 .ball[data-color='black'] {

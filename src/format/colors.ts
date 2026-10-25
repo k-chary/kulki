@@ -16,7 +16,6 @@ export const COLOR_NAMES: Record<Color, string> = {
 
 /** The difficulty each color count stands for, as the „Kolory” panel names it. */
 export const COLOR_COUNT_LEVELS: Readonly<Record<number, string>> = {
-  4: 'bardzo łatwy',
   5: 'łatwy',
   6: 'klasyczny',
   7: 'trudny',
@@ -24,7 +23,7 @@ export const COLOR_COUNT_LEVELS: Readonly<Record<number, string>> = {
   9: 'mistrzowski',
 };
 
-/** „4 kolory”, „6 kolorów”. */
+/** „1 kolor”, „4 kolory”, „6 kolorów”. */
 export function formatColorCount(count: number): string {
   return `${count} ${plural(count, 'kolor', 'kolory', 'kolorów')}`;
 }

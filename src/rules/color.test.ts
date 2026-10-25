@@ -12,12 +12,12 @@ describe('colorsFor', () => {
     expect(colorsFor(9)).toEqual(COLORS);
   });
 
-  it('keeps red, yellow, green and blue in the smallest game', () => {
-    expect(colorsFor(4)).toEqual(['red', 'yellow', 'green', 'blue']);
+  it('drops orange in the smallest game', () => {
+    expect(colorsFor(5)).toEqual(['red', 'yellow', 'green', 'blue', 'purple']);
   });
 
-  it('offers 4 to 9 and rejects anything else', () => {
-    expect(COLOR_COUNTS).toEqual([4, 5, 6, 7, 8, 9]);
-    for (const count of [3, 10, 6.5, NaN]) expect(() => colorsFor(count)).toThrow(RangeError);
+  it('offers 5 to 9 and rejects anything else', () => {
+    expect(COLOR_COUNTS).toEqual([5, 6, 7, 8, 9]);
+    for (const count of [4, 10, 6.5, NaN]) expect(() => colorsFor(count)).toThrow(RangeError);
   });
 });

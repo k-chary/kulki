@@ -15,7 +15,7 @@ export interface ColorCountPickerProps {
 }
 
 /**
- * „Kolory”: how many colors the game uses, 4 to 9, as one control-height row in
+ * „Kolory”: how many colors the game uses, 5 to 9, as one control-height row in
  * the rail. Each count's tooltip names its difficulty.
  */
 export function ColorCountPicker({

@@ -8,7 +8,7 @@ const meta = {
   title: 'Rail/ColorCountPicker',
   component: ColorCountPicker,
   args: { value: 6, onChange: fn(), disabled: false },
-  argTypes: { value: { control: 'inline-radio', options: [4, 5, 6, 7, 8, 9] } },
+  argTypes: { value: { control: 'inline-radio', options: [5, 6, 7, 8, 9] } },
   decorators: [(Story) => <RailFrame>{Story()}</RailFrame>],
 } satisfies Meta<typeof ColorCountPicker>;
 
@@ -18,7 +18,7 @@ type Story = StoryObj<typeof meta>;
 /** The classic game: six colors. */
 export const Classic: Story = {};
 
-export const Easiest: Story = { args: { value: 4 } };
+export const Easiest: Story = { args: { value: 5 } };
 
 /** All nine colors, pink, white and black included. Each tooltip names the difficulty. */
 export const Hardest: Story = { args: { value: 9 } };
@@ -35,7 +35,7 @@ export const Disabled: Story = { args: { disabled: true } };
 export const AllCounts: Story = {
   render: () => (
     <>
-      {[4, 5, 6, 7, 8, 9].map((count) => (
+      {[5, 6, 7, 8, 9].map((count) => (
         <ColorCountPicker key={count} value={count} />
       ))}
     </>
