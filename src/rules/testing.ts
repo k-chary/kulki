@@ -8,11 +8,14 @@ const LETTERS: Record<string, Color> = {
   g: 'green',
   b: 'blue',
   p: 'purple',
+  i: 'pink',
+  w: 'white',
+  k: 'black',
 };
 
 /**
  * Test helper: builds a board from nine rows of nine characters, `.` for an
- * empty square and r, o, y, g, b, p for a ball. Whitespace is ignored.
+ * empty square and r, o, y, g, b, p, i (pink), w (white) or k (black) for a ball. Whitespace is ignored.
  */
 export function parseBoard(text: string): Board {
   const rows = text

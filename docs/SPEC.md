@@ -6,7 +6,7 @@ Approved 2026-10-22. Source: https://claude.ai/code/artifact/2c36446e-f3a3-4162-
 
 Kulki v1 is a single-player desktop game (Tauri) in Polish: move balls on a 9×9 board and line up 5 or more of one color to clear them. It follows the classic Lines rules. The look, layout, motion and components come from the [Kulki visual design](https://claude.ai/artifact/Rg7LMfMFpU8usuiQCrqQF4) canvas, which replaces the earlier design draft. For game rules this spec wins; for how things look and move, the canvas does.
 
-In scope for v1: the full game loop, next-balls preview, current score, a top-30 highscore list, save and resume, and installers for Windows, macOS and Linux.
+In scope for v1: the full game loop, next-balls preview, current score, a top-30 highscore list, save and resume, and installers for Windows, macOS and Linux. Added after v1: difficulty, chosen as the number of ball colors (5 to 9). Its look (the three new balls and the „Nowa gra” dialog with its color picker) was designed after the canvas, in Storybook, and those stories are its visual reference.
 
 ## Game rules
 
@@ -15,8 +15,9 @@ A turn is one move; new balls appear only after a move that clears nothing.
 **Board and balls**
 
 - The board is 9×9 = 81 squares; each square holds at most one ball.
-- There are 6 colors: czerwony, pomarańczowy, żółty, zielony, niebieski, fioletowy.
-- Every ball's color is drawn uniformly at random from the 6, independently.
+- There are 9 colors: czerwony, żółty, zielony, niebieski, fioletowy, pomarańczowy, różowy, biały, czarny.
+- Each game uses 5 to 9 of them, chosen by the player before the game (see Difficulty). The count picks the first colors of that list: 5 is czerwony, żółty, zielony, niebieski and fioletowy; 6 is the classic set; 7 adds różowy, 8 biały and 9 czarny.
+- Every ball's color is drawn uniformly at random from the game's colors, independently.
 - A new game places 5 balls on random squares. Their colors are random and do not come from the preview. If the 5 already form a line, the start is redrawn.
 - From the start, the preview ("Następne") shows the colors of the next 3 balls to appear. Their squares are chosen only when they appear.
 
@@ -37,6 +38,13 @@ The rules module computes the whole turn at once and returns it as a list of eve
 - Each cleared ball is worth 10 points, with no bonus for longer lines or several lines.
 - When lines cross, all of them clear at once and a shared ball counts once. Two crossing lines of 5 give 90 points.
 
+**Difficulty**
+
+- Fewer colors make lines easier: the color count is the game's difficulty. The default is 6, the classic game.
+- Each count has a name, shown under the picker: 5 łatwy, 6 klasyczny, 7 trudny, 8 bardzo trudny, 9 mistrzowski.
+- The count is fixed for a whole game. It is part of the game state, the saved game and the highscore entry.
+- Scoring is the same for every count: 10 points per ball.
+
 **Game end**
 
 - If fewer than 3 squares are free when balls must appear, only the free squares are filled. Those balls are checked for lines first.
@@ -52,6 +60,12 @@ The game is played with a mouse; Kulki has one screen, and everything else is a 
 - Hovering a ball when nothing is selected lightens its field and scales the ball to 1.06. Hovering an empty field with nothing selected does nothing.
 - With a ball selected, hovering a reachable empty field shows path dots in the ball's color on every square it will pass, and a dashed ring on the target. An unreachable field shows a not-allowed cursor. The preview hides on pointer leave and when the move starts.
 - Clicking an unreachable field shakes the ball and shows „Tam nie ma przejścia”. The ball stays selected and no turn passes.
+
+**Choosing the color count**
+
+- The color count is chosen only when a game starts, never during one. Every new game goes through the „Nowa gra” dialog (see Dialogs).
+- The dialog opens on the current game's count. The last count played is remembered and used on the next launch when there is no saved game; the very first game uses 6.
+- The game in progress always shows its count in the highscore heading („Najlepsze wyniki · 6 kolorów”).
 
 **Status line**
 
@@ -78,7 +92,8 @@ The game is played with a mouse; Kulki has one screen, and everything else is a 
 
 - Dialogs sit over the board only, never over the rail, so the highscore list stays readable beside them. A scrim dims the board; the card is up to 380 px wide.
 - While a dialog is open the board is locked and „Nowa gra” in the rail is disabled. Focus moves into the dialog and returns to „Nowa gra” on close.
-- „Nowa gra” after at least one move opens „Zacząć nową grę?” with „Obecna gra ({score} pkt) zostanie utracona.” and the buttons „Anuluj” (focused) and „Nowa gra”. Esc, a scrim click and „Anuluj” close it with the game untouched. Before the first move, or after a game ends, „Nowa gra” starts a game at once.
+- „Nowa gra” (in the rail or in „Koniec gry”) opens the „Nowa gra” dialog: „Liczba kolorów” as a segmented control 5–9, a strip of the colors in play with the level's name, then „Anuluj” and „Zacznij”. „Zacznij” starts a new game with the chosen count.
+- After at least one move the dialog also says „Obecna gra ({score} pkt) zostanie utracona.” and „Anuluj” is focused; otherwise „Zacznij” is focused. Esc, a scrim click and „Anuluj” close it with the game and its count untouched.
 - Game over shows „Koniec gry” with the final score over the finished board. Its three states are name entry, saved and outside the top 30, described under Persistence.
 
 ## Screen layout and UI text
@@ -92,7 +107,7 @@ One window shows a header, the board and a side rail as one centered block. The 
 | Score | Wynik | Rail, 280 px wide | Current points and balls cleared, with Polish plural forms (1 kulka zbita, 2–4 kulki zbite, 5 kulek zbitych) |
 | Preview | Następne | Three 44 px slots | The next 3 colors, with „pojawią się po ruchu bez zbicia” always visible |
 | New game | Nowa gra | 44 px secondary button | Restart; disabled during animations and dialogs |
-| Highscores | Najlepsze wyniki | Fills the rest of the rail, scrolls | Top 30 with rank, name, date (dd.mm.rrrr) and points |
+| Highscores | Najlepsze wyniki · {n} kolorów | Fills the rest of the rail, scrolls | Top 30 for the current game's color count, with rank, name, date (dd.mm.rrrr) and points |
 
 **Highscore list rows**
 
@@ -107,7 +122,7 @@ One window shows a header, the board and a side rail as one centered block. The 
 - Native title bar titled „Kulki”, no menu bar in v1. The page never scrolls; only the highscore list does.
 - Text is not selectable except in the name field, and the context menu is off. Text never scales; only the board does.
 - Light and dark themes follow the OS.
-- Colors are the only way to tell balls apart in v1 (no symbols); the six colors also differ in lightness.
+- Colors are the only way to tell balls apart in v1 (no symbols). White balls are shaded from a small lit spot to a cool grey and get a grey rim on light fields and black balls a light rim on dark fields, so neither melts into the board; their path dots and target ring use the same grey or light grey.
 
 ## Persistence
 
@@ -115,8 +130,9 @@ One SQLite file in the app's data folder holds the highscores and the unfinished
 
 **Highscores**
 
-- The top 30 stores name, score and date for each game.
-- A finished game enters the list if the list has fewer than 30 entries or the score beats the 30th; the 30th then drops off. Equal scores keep the older game higher.
+- Each color count has its own top 30. An entry stores name, score, date and color count; the rail and game over always use the list of the current game's count.
+- Scores saved before color counts existed belong to the 6-color list.
+- A finished game enters its color count's list if that list has fewer than 30 entries or the score beats the 30th; the 30th then drops off. Equal scores keep the older game higher.
 - Game over then opens „Koniec gry” in one of three states:
   - **Name entry** (made the top 30): final score, „{n}. miejsce w najlepszych wynikach”, a „Nowy rekord” badge for place 1, and the field „Twoje imię” with „Zapisz wynik”. The field is prefilled with the last name used, focused and selected, holds up to 20 characters with a counter, and is trimmed. An empty field saves as „Gracz”. The dialog cannot be dismissed; Enter or „Zapisz wynik” saves.
   - **Saved**: „Zapisano jako {name} · {n}. miejsce” and a focused „Nowa gra”.
@@ -125,7 +141,7 @@ One SQLite file in the app's data folder holds the highscores and the unfinished
 
 **Save and resume**
 
-- Each turn is saved as soon as the rules module has computed it, before playback: board, score, balls cleared and preview colors. The selected ball is not saved.
+- Each turn is saved as soon as the rules module has computed it, before playback: board, score, balls cleared, preview colors and color count. The selected ball is not saved. A save without a color count is a 6-color game.
 - On launch the save is read before the first paint. A saved game is restored without animation, nothing selected, with „Wczytano zapisaną grę”. Without one, a new game pops in its 5 balls.
 - Game over deletes the save. Confirming „Nowa gra” discards it.
 - The finished game's row is inserted (and the list trimmed to 30) the moment the game ends, under the prefilled name or „Gracz”. „Zapisz wynik” renames that row and remembers the name as the next default, so a closed window or a crash never loses the score.
@@ -149,7 +165,7 @@ Every style comes from one tokens file, and every basic piece of the screen is i
 
 **Tokens**
 
-- One file, `src/styles/tokens.css`, defines every token as a CSS custom property with light and dark values, exactly as the canvas's tokens.css: interface colors, the 6 ball colors, type, a 4 px spacing grid, radii, shadows, sizes (rail 280, header 40, controls 44, dialog 380) and motion (durations, easings and a reduced column).
+- One file, `src/styles/tokens.css`, defines every token as a CSS custom property with light and dark values, exactly as the canvas's tokens.css: interface colors, the 9 ball colors with rim and path colors for white and black, type, a 4 px spacing grid, radii, shadows, sizes (rail 280, header 40, controls 44, dialog 380) and motion (durations, easings and a reduced column).
 - Tokens are named by role, never by value (`--color-text-muted`, not `--gray-500`). Ball colors reach CSS through a `data-color` attribute, so TypeScript never holds a hex value.
 - A CSS Module never contains a hex color, px size, ms duration or font name. A Stylelint rule (declaration-strict-value) enforces it in the PR lint step.
 - The light theme is the default; dark follows the OS, and `data-theme` forces either for a subtree. Text pairs meet WCAG AA.
@@ -169,8 +185,8 @@ Each component is presentational: its own CSS Module, every state through props,
 | Board | Ball, Field (a real button), Board, MovingBall |
 | Header | Logo, StatusLine |
 | Rail | Panel, ScorePanel, NextBalls, PreviewSlot, ScoreRow, HighscoreList |
-| Controls | Button (primary, secondary), TextField |
-| Dialogs | Dialog (base), ConfirmDialog, GameOver, NameEntry |
+| Controls | Button (primary, secondary), TextField, ColorCountPicker |
+| Dialogs | Dialog (base), NewGameDialog, GameOver, NameEntry |
 
 The game screen only assembles these and connects them to the rules module. Props and states for each are drawn on the canvas.
 
@@ -187,9 +203,9 @@ The full test suite gates each release; pull requests get only a quick check of 
 
 | Suite | Tool | Covers | Runs on |
 | --- | --- | --- | --- |
-| Rules | Vitest, seeded random generator | Paths, lines in 4 directions, crossing lines, spawning, scoring, game end, start reroll | Every PR and every release |
+| Rules | Vitest, seeded random generator | Paths, lines in 4 directions, crossing lines, spawning, scoring, game end, start reroll, color counts | Every PR and every release |
 | Components | React Testing Library | Presentational components and the click-to-move flow | Every PR and every release |
-| End to end | Playwright on the web build, in-memory storage | A full move, a clear, game over, name entry | Release |
+| End to end | Playwright on the web build, in-memory storage | A full move, a clear, game over, name entry, changing the color count | Release |
 | Storage | cargo test | Highscore ranking and trimming, save and load | Release |
 
 Every PR also gets lint and type checks. A release is a git tag such as `v0.1.0`: GitHub Actions runs all suites, and only if they pass builds the Windows, macOS and Linux installers and publishes them as a GitHub Release.

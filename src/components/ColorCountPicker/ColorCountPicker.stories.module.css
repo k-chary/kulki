@@ -1,0 +1,7 @@
+/* The picker at the width it has inside a dialog card. */
+.frame {
+  width: calc(var(--dialog-width) - 2 * var(--space-6));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}

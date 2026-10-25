@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { HighscoreRow } from '../../highscores/ranking';
+import { formatColorCount } from '../../format';
 import { prefersReducedMotion } from '../../styles/motion';
 import { Panel } from '../Panel/Panel';
 import { ScoreRow } from '../ScoreRow/ScoreRow';
@@ -10,13 +11,15 @@ export interface HighscoreListProps {
   rows: readonly HighscoreRow[];
   /** The place of the entry just saved, ringed until the next game starts. */
   savedPlace?: number | null;
+  /** Each color count keeps its own top 30; the label names the one shown. */
+  colorCount?: number;
 }
 
 /**
  * „Najlepsze wyniki”: fills the rest of the rail and scrolls. The current or
  * just-saved row is scrolled into view whenever it changes.
  */
-export function HighscoreList({ rows, savedPlace = null }: HighscoreListProps) {
+export function HighscoreList({ rows, savedPlace = null, colorCount }: HighscoreListProps) {
   const markedRef = useRef<HTMLLIElement>(null);
   const live = rows.find((row) => row.kind === 'live');
   const markedKey = live
@@ -36,7 +39,14 @@ export function HighscoreList({ rows, savedPlace = null }: HighscoreListProps) {
 
   const empty = !rows.some((row) => row.kind === 'stored');
   return (
-    <Panel label="Najlepsze wyniki" grow>
+    <Panel
+      label={
+        colorCount === undefined
+          ? 'Najlepsze wyniki'
+          : `Najlepsze wyniki · ${formatColorCount(colorCount)}`
+      }
+      grow
+    >
       {empty && (
         <p className={styles.empty}>Jeszcze nie ma wyników. Twoja pierwsza gra trafi tutaj.</p>
       )}

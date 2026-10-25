@@ -113,6 +113,46 @@ const clearing = Object.fromEntries(
   [2, 3, 4, 5, 6].map((col) => [`3,${col}`, { field: 'clearing', ball: 'clearing' } as Overlay]),
 );
 
+// The sample with the three extra colors of a 9-color game mixed in.
+const NINE = parseBoard(`
+  .b..g.w.y
+  ..p.k.o..
+  g.i..b..r
+  ..rrrr.k.
+  .y..p..w.
+  o..g..b..
+  i.r..k..p
+  .b..y..w.
+  p..o.ig..
+`);
+
+/** A 9-color game: pink, white and black join; white gets a rim on light fields, black on dark. */
+export const NineColors: Story = { args: { cells: cellsOf(NINE) } };
+
+const whiteSelected = {
+  '7,7': { field: 'selected', ball: 'selected' },
+  '6,7': { field: 'path' },
+  '5,7': { field: 'path' },
+  '5,8': { field: 'target' },
+} satisfies Record<string, Overlay>;
+
+/** A white ball's path: on light fields the dots and ring use a grey that stays visible. */
+export const WhitePath: Story = {
+  args: { cells: cellsOf(NINE, whiteSelected), pathColor: 'white' },
+};
+
+const blackSelected = {
+  '6,5': { field: 'selected', ball: 'selected' },
+  '7,5': { field: 'path' },
+  '7,6': { field: 'path' },
+  '6,6': { field: 'target' },
+} satisfies Record<string, Overlay>;
+
+/** A black ball's path: on dark fields the dots and ring turn light grey. */
+export const BlackPath: Story = {
+  args: { cells: cellsOf(NINE, blackSelected), pathColor: 'black' },
+};
+
 /** A line of five fades out, locked; the board shows no hover feedback meanwhile. */
 export const Clearing: Story = { args: { cells: cellsOf(LINE, clearing), locked: true } };
 

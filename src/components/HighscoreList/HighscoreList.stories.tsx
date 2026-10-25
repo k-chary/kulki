@@ -61,3 +61,8 @@ export const JustSaved: Story = {
   },
   decorators: [(Story) => <RailFrame tall>{Story()}</RailFrame>],
 };
+
+/** Each color count keeps its own top 30; the heading names the list shown. */
+export const PerColorCount: Story = {
+  args: { rows: rowsWithLive(few, 320), colorCount: 8 },
+};

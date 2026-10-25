@@ -64,6 +64,7 @@
   --path-dot-size: 28%;        /* of the field */
   --path-dot-opacity: 0.45;
   --ring-width: 2px;
+  --ball-edge-width: 1.5px;    /* rim that keeps white and black balls apart from their field */
   --focus-width: 3px;
   --preview-slot-size: 44px;
   --logo-dot-size: 14px;
@@ -177,6 +178,14 @@
   --ball-green: #2fa84f;
   --ball-blue: #3b8cf0;
   --ball-purple: #8b4fd6;
+  --ball-pink: #f08cc0;
+  --ball-white: #f9fafc;
+  --ball-black: #1c1f26;
+  --ball-white-edge: #a3acbd;        /* a white ball on a light field needs a rim */
+  --ball-white-shade: #a7b0c2;       /* edge of the white ball's shading */
+  --ball-black-edge: transparent;
+  --path-white: #a3acbd;             /* path dots and target ring for a white ball */
+  --path-black: #1c1f26;
   --ball-highlight: rgb(255 255 255 / 0.85);
   --ball-shade: #000000;
 
@@ -216,6 +225,14 @@
     --ball-green: #3dbb5e;
     --ball-blue: #5199f2;
     --ball-purple: #a06ae6;
+    --ball-pink: #f59ac9;
+    --ball-white: #f4f6fa;
+    --ball-white-edge: transparent;
+    --ball-white-shade: #b4bccc;
+    --ball-black: #06080c;
+    --ball-black-edge: rgb(255 255 255 / 0.4); /* a black ball on a dark field needs a rim */
+    --path-white: #f4f6fa;
+    --path-black: #9aa5bd;           /* path dots and target ring for a black ball */
     --ball-highlight: rgb(255 255 255 / 0.7);
     --ball-shade: #000000;
 
@@ -253,6 +270,14 @@
   --ball-green: #3dbb5e;
   --ball-blue: #5199f2;
   --ball-purple: #a06ae6;
+  --ball-pink: #f59ac9;
+  --ball-white: #f4f6fa;
+  --ball-white-edge: transparent;
+  --ball-white-shade: #b4bccc;
+  --ball-black: #06080c;
+  --ball-black-edge: rgb(255 255 255 / 0.4); /* a black ball on a dark field needs a rim */
+  --path-white: #f4f6fa;
+  --path-black: #9aa5bd;           /* path dots and target ring for a black ball */
   --ball-highlight: rgb(255 255 255 / 0.7);
   --ball-shade: #000000;
 

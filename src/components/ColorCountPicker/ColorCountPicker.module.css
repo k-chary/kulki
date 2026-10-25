@@ -1,0 +1,97 @@
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* A segmented control: one sunken track, the chosen count raised in the accent. */
+.segments {
+  display: flex;
+  gap: var(--space-0-5);
+  padding: var(--space-0-5);
+  background: var(--color-surface-sunken);
+
+  /* thin is 1px: tokens.css has no border-width token. */
+  border: thin solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+/* data-force exists only so Storybook can show hover and focus. */
+.segment {
+  appearance: none;
+  flex: 1;
+  height: calc(var(--control-height) - 2 * var(--space-0-5));
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-hover) var(--ease-standard),
+    color var(--dur-hover) var(--ease-standard);
+}
+
+.segment:focus-visible,
+.segment[data-force='focus'] {
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: var(--space-0-5);
+}
+
+.segment:hover:not([aria-checked='true']),
+.segment[data-force='hover'] {
+  background: var(--color-field-hover);
+  color: var(--color-text);
+}
+
+.segment[aria-checked='true'] {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  cursor: default;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.strip {
+  display: flex;
+  gap: var(--space-1);
+}
+
+/* A ball at logo size; a color not in play leaves an empty ring. */
+.dot {
+  --ball-size: 100%;
+
+  width: var(--logo-dot-size);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+
+.dot[data-off='true'] {
+  border: thin dashed var(--color-border-strong);
+  border-radius: var(--radius-full);
+}
+
+.level {
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--color-text-muted);
+}

@@ -81,8 +81,8 @@ describe('tokens.css', () => {
     expect([...dark.keys()].sort()).toEqual([...light.keys()].sort());
   });
 
-  it('has the six ball colors', () => {
-    const balls = ['red', 'orange', 'yellow', 'green', 'blue', 'purple'];
+  it('has the nine ball colors', () => {
+    const balls = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'white', 'black'];
     for (const ball of balls) expect(light.has(`--ball-${ball}`)).toBe(true);
   });
 
