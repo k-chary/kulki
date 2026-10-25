@@ -1,34 +1,28 @@
 import { useId } from 'react';
-import { COLOR_COUNT_LEVELS, formatColorCount } from '../../format';
-import { COLOR_COUNTS } from '../../rules/color';
+import { COLOR_COUNT_LEVELS, COLOR_NAMES, formatColorCount } from '../../format';
+import { COLOR_COUNTS, COLORS, colorsFor } from '../../rules/color';
+import { Ball } from '../Ball/Ball';
 import styles from './ColorCountPicker.module.css';
 
 export interface ColorCountPickerProps {
-  /** The color count of the game on the board. */
+  /** The chosen color count. */
   value: number;
-  /** Reports a different count; the screen starts a new game with it (or asks first). */
   onChange?: (count: number) => void;
-  /** During an animation or a dialog, like „Nowa gra”. */
-  disabled?: boolean;
   /** Storybook only: shows hover or focus on this count. */
   force?: { count: number; state: 'hover' | 'focus' };
 }
 
 /**
- * „Kolory”: how many colors the game uses, 5 to 9, as one control-height row in
- * the rail. Each count's tooltip names its difficulty.
+ * „Liczba kolorów” in the „Nowa gra” dialog: 5 to 9 as a segmented control, then
+ * the colors in play and the difficulty's name.
  */
-export function ColorCountPicker({
-  value,
-  onChange,
-  disabled = false,
-  force,
-}: ColorCountPickerProps) {
+export function ColorCountPicker({ value, onChange, force }: ColorCountPickerProps) {
   const labelId = useId();
+  const inPlay = colorsFor(value);
   return (
-    <div className={styles.picker} data-disabled={disabled}>
+    <div className={styles.picker}>
       <span className={styles.label} id={labelId}>
-        Kolory
+        Liczba kolorów
       </span>
       <div className={styles.segments} role="radiogroup" aria-labelledby={labelId}>
         {COLOR_COUNTS.map((count) => (
@@ -39,16 +33,30 @@ export function ColorCountPicker({
             className={styles.segment}
             aria-checked={count === value}
             aria-label={formatColorCount(count)}
-            title={`${formatColorCount(count)} · ${COLOR_COUNT_LEVELS[count] ?? ''}`}
-            disabled={disabled}
             data-force={force?.count === count ? force.state : undefined}
-            onClick={() => {
-              if (count !== value) onChange?.(count);
-            }}
+            onClick={() => onChange?.(count)}
           >
             {count}
           </button>
         ))}
+      </div>
+      <div className={styles.footer}>
+        <span
+          className={styles.strip}
+          role="img"
+          aria-label={inPlay.map((color) => COLOR_NAMES[color]).join(', ')}
+        >
+          {COLORS.map((color) =>
+            inPlay.includes(color) ? (
+              <span key={color} className={styles.dot}>
+                <Ball color={color} />
+              </span>
+            ) : (
+              <span key={color} className={styles.dot} data-off="true" />
+            ),
+          )}
+        </span>
+        <span className={styles.level}>{COLOR_COUNT_LEVELS[value]}</span>
       </div>
     </div>
   );

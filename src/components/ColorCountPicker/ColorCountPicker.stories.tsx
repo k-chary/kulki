@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
-import { RailFrame } from '../../storybook/RailFrame';
 import { ColorCountPicker } from './ColorCountPicker';
+import styles from './ColorCountPicker.stories.module.css';
 
 const meta = {
-  title: 'Rail/ColorCountPicker',
+  title: 'Controls/ColorCountPicker',
   component: ColorCountPicker,
-  args: { value: 6, onChange: fn(), disabled: false },
+  args: { value: 6, onChange: fn() },
   argTypes: { value: { control: 'inline-radio', options: [5, 6, 7, 8, 9] } },
-  decorators: [(Story) => <RailFrame>{Story()}</RailFrame>],
+  decorators: [(Story) => <div className={styles.frame}>{Story()}</div>],
 } satisfies Meta<typeof ColorCountPicker>;
 
 export default meta;
@@ -20,7 +20,7 @@ export const Classic: Story = {};
 
 export const Easiest: Story = { args: { value: 5 } };
 
-/** All nine colors, pink, white and black included. Each tooltip names the difficulty. */
+/** All nine colors, pink, white and black included. */
 export const Hardest: Story = { args: { value: 9 } };
 
 /** Hovering a count that is not chosen. */
@@ -28,10 +28,7 @@ export const Hover: Story = { args: { force: { count: 8, state: 'hover' } } };
 
 export const Focus: Story = { args: { force: { count: 7, state: 'focus' } } };
 
-/** During an animation or a dialog, like „Nowa gra”. */
-export const Disabled: Story = { args: { disabled: true } };
-
-/** Every count, as the rail shows it. */
+/** Every count, to compare the strips and level names. */
 export const AllCounts: Story = {
   render: () => (
     <>
@@ -42,7 +39,7 @@ export const AllCounts: Story = {
   ),
 };
 
-/** Click to switch; in the game a switch starts a new game (or asks first). */
+/** Click to switch. */
 export const Playground: Story = {
   render: function Render(args) {
     const [value, setValue] = useState(args.value);

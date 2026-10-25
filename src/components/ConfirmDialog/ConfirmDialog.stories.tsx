@@ -17,6 +17,3 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 export const SmallScore: Story = { args: { score: 20 } };
-
-/** After picking another count in „Kolory” mid-game. */
-export const ColorCount: Story = { args: { colorCount: 8 } };

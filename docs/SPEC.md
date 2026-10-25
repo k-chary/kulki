@@ -6,7 +6,7 @@ Approved 2026-10-22. Source: https://claude.ai/code/artifact/2c36446e-f3a3-4162-
 
 Kulki v1 is a single-player desktop game (Tauri) in Polish: move balls on a 9×9 board and line up 5 or more of one color to clear them. It follows the classic Lines rules. The look, layout, motion and components come from the [Kulki visual design](https://claude.ai/artifact/Rg7LMfMFpU8usuiQCrqQF4) canvas, which replaces the earlier design draft. For game rules this spec wins; for how things look and move, the canvas does.
 
-In scope for v1: the full game loop, next-balls preview, current score, a top-30 highscore list, save and resume, and installers for Windows, macOS and Linux. Added after v1: difficulty, chosen as the number of ball colors (5 to 9). Its look (the three new balls and the „Kolory” row) was designed after the canvas, in Storybook, and those stories are its visual reference.
+In scope for v1: the full game loop, next-balls preview, current score, a top-30 highscore list, save and resume, and installers for Windows, macOS and Linux. Added after v1: difficulty, chosen as the number of ball colors (5 to 9). Its look (the three new balls and the „Nowa gra” dialog with its color picker) was designed after the canvas, in Storybook, and those stories are its visual reference.
 
 ## Game rules
 
@@ -41,7 +41,7 @@ The rules module computes the whole turn at once and returns it as a list of eve
 **Difficulty**
 
 - Fewer colors make lines easier: the color count is the game's difficulty. The default is 6, the classic game.
-- Each count has a name, shown in its tooltip: 5 łatwy, 6 klasyczny, 7 trudny, 8 bardzo trudny, 9 mistrzowski.
+- Each count has a name, shown under the picker: 5 łatwy, 6 klasyczny, 7 trudny, 8 bardzo trudny, 9 mistrzowski.
 - The count is fixed for a whole game. It is part of the game state, the saved game and the highscore entry.
 - Scoring is the same for every count: 10 points per ball.
 
@@ -63,10 +63,9 @@ The game is played with a mouse; Kulki has one screen, and everything else is a 
 
 **Choosing the color count**
 
-- The „Kolory” row in the rail shows the counts 5 to 9 with the current game's count chosen. Each count's tooltip says „6 kolorów · klasyczny”.
-- Clicking another count starts a new game with it, by the same rule as „Nowa gra”: at once before the first move or after a game ends, otherwise after „Zacząć nową grę z {n} kolorami?” is confirmed. Cancelling leaves the game and the chosen count as they were.
-- „Nowa gra” starts a game with the current count. The last count played is remembered and used on the next launch when there is no saved game.
-- Like „Nowa gra”, the row is disabled during animations and dialogs.
+- The color count is chosen only when a game starts, never during one. Every new game goes through the „Nowa gra” dialog (see Dialogs).
+- The dialog opens on the current game's count. The last count played is remembered and used on the next launch when there is no saved game; the very first game uses 6.
+- The game in progress always shows its count in the highscore heading („Najlepsze wyniki · 6 kolorów”).
 
 **Status line**
 
@@ -93,7 +92,8 @@ The game is played with a mouse; Kulki has one screen, and everything else is a 
 
 - Dialogs sit over the board only, never over the rail, so the highscore list stays readable beside them. A scrim dims the board; the card is up to 380 px wide.
 - While a dialog is open the board is locked and „Nowa gra” in the rail is disabled. Focus moves into the dialog and returns to „Nowa gra” on close.
-- „Nowa gra” after at least one move opens „Zacząć nową grę?” with „Obecna gra ({score} pkt) zostanie utracona.” and the buttons „Anuluj” (focused) and „Nowa gra”. Esc, a scrim click and „Anuluj” close it with the game untouched. Before the first move, or after a game ends, „Nowa gra” starts a game at once.
+- „Nowa gra” (in the rail or in „Koniec gry”) opens the „Nowa gra” dialog: „Liczba kolorów” as a segmented control 5–9, a strip of the colors in play with the level's name, then „Anuluj” and „Zacznij”. „Zacznij” starts a new game with the chosen count.
+- After at least one move the dialog also says „Obecna gra ({score} pkt) zostanie utracona.” and „Anuluj” is focused; otherwise „Zacznij” is focused. Esc, a scrim click and „Anuluj” close it with the game and its count untouched.
 - Game over shows „Koniec gry” with the final score over the finished board. Its three states are name entry, saved and outside the top 30, described under Persistence.
 
 ## Screen layout and UI text
@@ -106,7 +106,6 @@ One window shows a header, the board and a side rail as one centered block. The 
 | Board | — | Largest square that fits | 9×9 fields in a 6 px frame with 4 px gaps; balls are 80% of a field |
 | Score | Wynik | Rail, 280 px wide | Current points and balls cleared, with Polish plural forms (1 kulka zbita, 2–4 kulki zbite, 5 kulek zbitych) |
 | Preview | Następne | Three 44 px slots | The next 3 colors, with „pojawią się po ruchu bez zbicia” always visible |
-| Colors | Kolory | 44 px row | The color count 5–9 as a segmented control, current game's count in the accent |
 | New game | Nowa gra | 44 px secondary button | Restart; disabled during animations and dialogs |
 | Highscores | Najlepsze wyniki · {n} kolorów | Fills the rest of the rail, scrolls | Top 30 for the current game's color count, with rank, name, date (dd.mm.rrrr) and points |
 
@@ -185,9 +184,9 @@ Each component is presentational: its own CSS Module, every state through props,
 | --- | --- |
 | Board | Ball, Field (a real button), Board, MovingBall |
 | Header | Logo, StatusLine |
-| Rail | Panel, ScorePanel, NextBalls, PreviewSlot, ColorCountPicker, ScoreRow, HighscoreList |
-| Controls | Button (primary, secondary), TextField |
-| Dialogs | Dialog (base), ConfirmDialog, GameOver, NameEntry |
+| Rail | Panel, ScorePanel, NextBalls, PreviewSlot, ScoreRow, HighscoreList |
+| Controls | Button (primary, secondary), TextField, ColorCountPicker |
+| Dialogs | Dialog (base), NewGameDialog, GameOver, NameEntry |
 
 The game screen only assembles these and connects them to the rules module. Props and states for each are drawn on the canvas.
 
