@@ -1,14 +1,53 @@
 name: Release
 
-# Run by hand from the Actions tab: "Use workflow from" is the version tag to release, e.g.
-# v0.4.0. Main already ran the full suite for that commit before tagging it, so this only
-# builds the installers and attaches them to a draft GitHub Release to review and publish.
+# Builds the Windows, macOS and Linux installers for a version tag, attaches them to its
+# GitHub Release and publishes it. main.yml calls this after you approve the tag on your
+# phone; it can also be run by hand from the Actions tab with a tag name (empty means the
+# latest tag). Main already ran the full suite for the tagged commit, so none runs here.
 on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Version tag to release, e.g. v0.4.0
+        type: string
+        required: true
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Version tag to release, e.g. v0.4.0 (empty means the latest tag)
+        type: string
+        required: false
+        default: ''
 
 jobs:
+  prepare:
+    name: Pick the tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.pick.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: pick
+        shell: bash
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          tag="$INPUT_TAG"
+          if [ -z "$tag" ]; then
+            tag="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)"
+          fi
+          if ! git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "::error::There is no tag named '$tag'."
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
   installers:
     name: Installer (${{ matrix.name }})
+    needs: prepare
     permissions:
       contents: write
     strategy:
@@ -30,13 +69,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
-      - name: Check that a version tag was chosen
-        if: github.ref_type != 'tag'
-        shell: bash
-        run: |
-          echo "::error::Run this workflow from a version tag (Use workflow from: Tags), not from a branch."
-          exit 1
       - uses: actions/checkout@v7
+        with:
+          ref: refs/tags/${{ needs.prepare.outputs.tag }}
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
@@ -55,7 +90,9 @@ jobs:
       # The tag is the version: stamp it into the app's version files for this build.
       - name: Stamp the tag's version
         shell: bash
-        run: node scripts/release.ts stamp "$GITHUB_REF_NAME"
+        env:
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: node scripts/release.ts stamp "$TAG"
       # The installed app only accepts updates signed with this key; see README, "Updates".
       - name: Check updater signing is set up
         shell: bash
@@ -76,11 +113,26 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: Kulki ${{ github.ref_name }}
+          tagName: ${{ needs.prepare.outputs.tag }}
+          releaseName: Kulki ${{ needs.prepare.outputs.tag }}
           releaseBody: Instalatory dla Windows, macOS i Linuksa.
           releaseDraft: true
           # Signed update bundles and latest.json, merged across the matrix jobs.
           uploadUpdaterJson: true
           prerelease: false
           args: ${{ matrix.args }}
+
+  # Publishing makes latest.json live, which is what installed apps look for. Reaching this
+  # job means every installer built, and approving the tag was the decision to release it.
+  publish:
+    name: Publish the release
+    needs: [prepare, installers]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ needs.prepare.outputs.tag }}
+    steps:
+      - run: gh release edit "$TAG" --draft=false --repo "$GITHUB_REPOSITORY"

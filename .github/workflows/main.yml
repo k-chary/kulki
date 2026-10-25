@@ -1,15 +1,11 @@
 name: Main
 
-# Every merge to main runs the full suite and, if it passes, gets the next version tag.
-# Building and publishing installers is the manual Release workflow, run on a chosen tag.
+# Every merge to main runs the full suite and, if it passes, gets the next version tag and a
+# draft GitHub Release. The installers are built only after you approve the "release"
+# environment (a tap in the GitHub mobile app); ignore the request to skip that version.
 on:
   push:
     branches: [main]
-
-# One merge at a time, so tags are made in order.
-concurrency:
-  group: main
-  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -24,6 +20,12 @@ jobs:
     needs: suite
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # One tag at a time, in order. A release waiting for approval does not hold this up.
+    concurrency:
+      group: tag
+      cancel-in-progress: false
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
     permissions:
       contents: write
     env:
@@ -36,6 +38,7 @@ jobs:
         with:
           node-version-file: .nvmrc
       - name: Tag the new version
+        id: tag
         run: |
           if [ -n "$(git tag --points-at HEAD --list 'v*')" ]; then
             echo "HEAD is already tagged."
@@ -69,3 +72,29 @@ jobs:
           git tag -a "v$next" -m "Kulki $next" "$GITHUB_SHA"
           git push origin "v$next"
           echo "Tagged v$next (was $last)."
+          # The installers job attaches to this draft once the release is approved.
+          notes=(--generate-notes)
+          if [ "$last" != v0.0.0 ]; then notes+=(--notes-start-tag "$last"); fi
+          gh release create "v$next" --draft --verify-tag --title "Kulki $next" "${notes[@]}"
+          echo "tag=v$next" >> "$GITHUB_OUTPUT"
+
+  # Waits here until the reviewer set on the "release" environment approves, then builds.
+  approve:
+    name: Approve the release
+    needs: tag
+    if: needs.tag.outputs.tag != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: release
+    steps:
+      - run: echo "Releasing ${{ needs.tag.outputs.tag }}"
+
+  release:
+    name: Build and publish ${{ needs.tag.outputs.tag }}
+    needs: [tag, approve]
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ needs.tag.outputs.tag }}
+    secrets: inherit
