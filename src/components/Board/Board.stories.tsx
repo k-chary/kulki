@@ -153,6 +153,18 @@ export const BlackPath: Story = {
   args: { cells: cellsOf(NINE, blackSelected), pathColor: 'black' },
 };
 
+/** The candy theme over the same nine colors: M&M's-like shells, the black ball brown. */
+export const CandyNineColors: Story = {
+  args: { cells: cellsOf(NINE) },
+  decorators: [(Story) => <div data-ball-theme="candy">{Story()}</div>],
+};
+
+/** A candy brown ball's path: brown dots on light fields, light brown on dark. */
+export const CandyBrownPath: Story = {
+  args: { cells: cellsOf(NINE, blackSelected), pathColor: 'black' },
+  decorators: [(Story) => <div data-ball-theme="candy">{Story()}</div>],
+};
+
 /** A line of five fades out, locked; the board shows no hover feedback meanwhile. */
 export const Clearing: Story = { args: { cells: cellsOf(LINE, clearing), locked: true } };
 

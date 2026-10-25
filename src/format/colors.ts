@@ -27,3 +27,24 @@ export const COLOR_COUNT_LEVELS: Readonly<Record<number, string>> = {
 export function formatColorCount(count: number): string {
   return `${count} ${plural(count, 'kolor', 'kolory', 'kolorów')}`;
 }
+
+/** The look of the balls, picked in „Opcje”. Only the look: the rules never see it. */
+export type BallTheme = 'classic' | 'candy';
+
+export const BALL_THEMES: readonly BallTheme[] = ['classic', 'candy'];
+
+export const BALL_THEME_NAMES: Record<BallTheme, string> = {
+  classic: 'Klasyczne',
+  candy: 'Cukierkowe',
+};
+
+/** One line under each theme's name in „Opcje”. */
+export const BALL_THEME_HINTS: Record<BallTheme, string> = {
+  classic: 'Spokojne barwy',
+  candy: 'Żywe jak draże czekoladowe',
+};
+
+/** COLOR_NAMES as the balls look in a theme: the candy black ball is brown. */
+export function colorNames(theme: BallTheme): Record<Color, string> {
+  return theme === 'candy' ? { ...COLOR_NAMES, black: 'brązowa' } : COLOR_NAMES;
+}
