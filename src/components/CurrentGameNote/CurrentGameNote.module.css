@@ -1,0 +1,60 @@
+/* Laid out like the „Ta gra” score row, as a button pinned to the panel's foot. */
+.note {
+  appearance: none;
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: var(--rank-width) minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: center;
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: thin dashed var(--color-accent);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--dur-hover) var(--ease-standard);
+}
+
+/* data-force exists only so Storybook can show hover and focus. */
+.note:hover,
+.note[data-force='hover'] {
+  border-style: solid;
+}
+
+.note:focus-visible,
+.note[data-force='focus'] {
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: var(--space-0-5);
+}
+
+.rank {
+  font-family: var(--font-mono);
+}
+
+.who {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.name {
+  font-weight: var(--weight-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hint {
+  font-size: var(--text-xs);
+}
+
+.points {
+  font-family: var(--font-mono);
+  font-weight: var(--weight-medium);
+}

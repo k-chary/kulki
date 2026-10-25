@@ -69,6 +69,7 @@
   --preview-slot-size: 44px;
   --logo-dot-size: 14px;
   --control-height: 44px;
+  --filter-height: 30px;       /* compact segmented control above the highscore list */
   --rank-width: 28px;
   --dialog-width: 380px;
   --opacity-disabled: 0.45;
