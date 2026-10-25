@@ -45,8 +45,12 @@ The version lives in git tags. Agents never push tags by hand; CI does.
 
 1. **Every PR gets a suggested version** in a comment (`.github/workflows/version-suggestion.yml`), from the PR title: `feat:` is a minor bump, `feat!:` or `fix!:` a breaking one (a minor bump while the app is below 1.0), and anything else a patch. A label overrides the title: `release:major`, `release:minor`, `release:patch` or `release:none` (no tag). Merging is the approval.
 2. **Every merge to `main`** runs the full suite (`full-suite.yml`: lint, typecheck, Vitest and component tests, Playwright, `cargo test`) in `.github/workflows/main.yml`. If it passes, the job tags the commit with the next version, taking the largest bump of the PRs merged since the last tag. A failing suite means no tag; the next merge covers it.
-3. **Releasing is manual.** In the Actions tab open **Release**, press "Run workflow" and pick the tag under "Use workflow from" (Tags, for example `v0.4.0`). The workflow stamps the tag's version into `package.json`, `Cargo.toml` and `tauri.conf.json` for that build only (the copies on `main` are not updated and can look stale), builds installers for Windows, macOS (Apple silicon and Intel) and Linux, and attaches them to a **draft** GitHub Release.
-4. Open the draft under Releases, check the installers, and publish it. The in-app update banner appears for installed copies once the release is published.
+3. **The merge also creates a draft GitHub Release** with generated notes, and asks for your approval. The `release` environment (Settings › Environments) has you as a required reviewer, so GitHub sends a push notification to the mobile app: open the run and tap **Review deployments › Approve and deploy**. Ignoring the request skips that version; it expires after 30 days.
+4. **After the approval** `release.yml` stamps the tag's version into `package.json`, `Cargo.toml` and `tauri.conf.json` for that build only (the copies on `main` are not updated and can look stale), builds installers for Windows, macOS (Apple silicon and Intel) and Linux, attaches them to the draft release and publishes it. The in-app update banner appears for installed copies once the release is published. If an installer build fails, the release stays a draft.
+
+To build a tag by hand (for example one made before the approval step existed), open **Release** in the Actions tab, press "Run workflow" and type the tag; an empty field means the latest tag.
+
+One-time setup: create the environment `release` under Settings › Environments, tick "Required reviewers" and add yourself. Without it the installers build and publish on every merge without asking.
 
 `node scripts/release.ts next v0.3.0 < prs.tsv` (lines of `title<TAB>labels`) shows what version a set of PRs would produce.
 
