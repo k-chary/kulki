@@ -78,11 +78,30 @@ jobs:
           gh release create "v$next" --draft --verify-tag --title "Kulki $next" "${notes[@]}"
           echo "tag=v$next" >> "$GITHUB_OUTPUT"
 
+  # Refuses to go on unless the "release" environment really asks for approval, so that a
+  # missing setting can never build and publish a release on its own.
+  gate:
+    name: Check the approval setting
+    needs: tag
+    if: needs.tag.outputs.tag != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Require reviewers on the release environment
+        run: |
+          reviewers="$(gh api "repos/$GITHUB_REPOSITORY/environments/release" \
+            --jq '[.protection_rules[]? | select(.type == "required_reviewers")] | length' || echo 0)"
+          if [ "$reviewers" = "0" ]; then
+            echo "::error::The 'release' environment has no required reviewers, so nothing was built. Add yourself under Settings > Environments > release > Required reviewers, then run Release by hand for ${{ needs.tag.outputs.tag }}."
+            exit 1
+          fi
+
   # Waits here until the reviewer set on the "release" environment approves, then builds.
   approve:
     name: Approve the release
-    needs: tag
-    if: needs.tag.outputs.tag != ''
+    needs: [tag, gate]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     environment: release
