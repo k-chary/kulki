@@ -21,6 +21,7 @@
     "playwright.config.ts",
     "eslint.config.js",
     "stylelint.config.js",
+    "scripts",
     "tests",
     "e2e"
   ]

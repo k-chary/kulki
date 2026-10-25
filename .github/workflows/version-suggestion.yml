@@ -1,0 +1,57 @@
+name: Version suggestion
+
+# Comments on each PR with the version a merge would be tagged with, from the PR title
+# (feat: minor, fix: and the rest patch, a ! breaking) or a release:major, release:minor,
+# release:patch or release:none label. Merging is the approval; change the title or label
+# to pick another version.
+on:
+  pull_request:
+    types: [opened, reopened, edited, synchronize, labeled, unlabeled]
+
+concurrency:
+  group: version-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  suggest:
+    name: Suggest the next version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Pull requests from forks get a read-only token and cannot comment.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR_TITLE: ${{ github.event.pull_request.title }}
+      PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - name: Comment with the suggested version
+        run: |
+          last="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)"
+          last="${last:-v0.0.0}"
+          next="$(printf '%s\t%s\n' "$PR_TITLE" "$PR_LABELS" | node scripts/release.ts next "$last")"
+          marker='<!-- version-suggestion -->'
+          if [ -n "$next" ]; then
+            body="$marker
+          **Suggested version: v$next** (latest tag is $last). Merging tags this version once the full suite on \`main\` passes; to pick another, change the title type (\`feat:\`, \`fix:\`, \`feat!:\`) or add a \`release:major\`, \`release:minor\`, \`release:patch\` or \`release:none\` label."
+          else
+            body="$marker
+          **No release:** this PR is labeled \`release:none\`, so merging creates no tag."
+          fi
+          id="$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --paginate \
+            --jq ".[] | select(.body | startswith(\"$marker\")) | .id" | head -n 1)"
+          if [ -n "$id" ]; then
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -f body="$body" >/dev/null
+          else
+            gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" -f body="$body" >/dev/null
+          fi

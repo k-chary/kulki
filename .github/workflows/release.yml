@@ -1,38 +1,14 @@
 name: Release
 
-# A release is a version tag such as v0.1.0, pushed by hand. The full suite must pass
-# before any installer is built; the result is a draft GitHub Release to review and publish.
+# Run by hand from the Actions tab: "Use workflow from" is the version tag to release, e.g.
+# v0.4.0. Main already ran the full suite for that commit before tagging it, so this only
+# builds the installers and attaches them to a draft GitHub Release to review and publish.
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  workflow_dispatch:
 
 jobs:
-  version:
-    name: Tag matches the app version
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v7
-      # versions.test.ts keeps package.json, Cargo.toml and tauri.conf.json in step;
-      # this keeps the tag in step with them, so v0.2.0 never ships 0.1.0 installers.
-      - name: Compare the tag with package.json
-        run: |
-          tag="${GITHUB_REF_NAME#v}"
-          version="$(node -p "require('./package.json').version")"
-          if [ "$tag" != "$version" ]; then
-            echo "::error::Tag $GITHUB_REF_NAME does not match the app version $version. Bump package.json, src-tauri/Cargo.toml and src-tauri/tauri.conf.json first."
-            exit 1
-          fi
-
-  suite:
-    name: Full suite
-    needs: version
-    uses: ./.github/workflows/full-suite.yml
-
   installers:
     name: Installer (${{ matrix.name }})
-    needs: suite
     permissions:
       contents: write
     strategy:
@@ -54,6 +30,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
+      - name: Check that a version tag was chosen
+        if: github.ref_type != 'tag'
+        shell: bash
+        run: |
+          echo "::error::Run this workflow from a version tag (Use workflow from: Tags), not from a branch."
+          exit 1
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
@@ -70,6 +52,10 @@ jobs:
         if: matrix.os == 'ubuntu-22.04'
         uses: ./.github/actions/tauri-deps
       - run: npm ci
+      # The tag is the version: stamp it into the app's version files for this build.
+      - name: Stamp the tag's version
+        shell: bash
+        run: node scripts/release.ts stamp "$GITHUB_REF_NAME"
       # The installed app only accepts updates signed with this key; see README, "Updates".
       - name: Check updater signing is set up
         shell: bash

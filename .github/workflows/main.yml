@@ -1,0 +1,71 @@
+name: Main
+
+# Every merge to main runs the full suite and, if it passes, gets the next version tag.
+# Building and publishing installers is the manual Release workflow, run on a chosen tag.
+on:
+  push:
+    branches: [main]
+
+# One merge at a time, so tags are made in order.
+concurrency:
+  group: main
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  suite:
+    name: Full suite
+    uses: ./.github/workflows/full-suite.yml
+
+  tag:
+    name: Create the version tag
+    needs: suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - name: Tag the new version
+        run: |
+          if [ -n "$(git tag --points-at HEAD --list 'v*')" ]; then
+            echo "HEAD is already tagged."
+            exit 0
+          fi
+          last="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)"
+          if [ -z "$last" ]; then
+            last=v0.0.0
+            range=HEAD
+          else
+            range="$last..HEAD"
+          fi
+          # One line per merged PR since the last tag: title, tab, labels. A commit without
+          # a PR (a direct push) counts by its subject.
+          : > prs.tsv
+          for sha in $(git rev-list "$range"); do
+            line="$(gh api "repos/$GITHUB_REPOSITORY/commits/$sha/pulls" \
+              --jq '.[0] | select(. != null) | [.title, ([.labels[].name] | join(","))] | @tsv')"
+            if [ -z "$line" ]; then
+              line="$(git log -1 --format='%s' "$sha")	"
+            fi
+            printf '%s\n' "$line" >> prs.tsv
+          done
+          next="$(node scripts/release.ts next "$last" < prs.tsv)"
+          if [ -z "$next" ]; then
+            echo "Nothing to release since $last."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$next" -m "Kulki $next" "$GITHUB_SHA"
+          git push origin "v$next"
+          echo "Tagged v$next (was $last)."
