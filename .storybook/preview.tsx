@@ -1,5 +1,10 @@
 import type { Preview } from '@storybook/react-vite';
-import { ThemeFrame, type MotionChoice, type ThemeChoice } from '../src/storybook/ThemeFrame';
+import {
+  ThemeFrame,
+  type BallThemeChoice,
+  type MotionChoice,
+  type ThemeChoice,
+} from '../src/storybook/ThemeFrame';
 import '../src/styles/fonts';
 import '../src/styles/tokens.css';
 import '../src/styles/global.css';
@@ -32,13 +37,26 @@ const preview: Preview = {
         dynamicTitle: true,
       },
     },
+    balls: {
+      description: 'Ball color theme',
+      toolbar: {
+        title: 'Balls',
+        icon: 'circle',
+        items: [
+          { value: 'classic', title: 'Classic balls' },
+          { value: 'candy', title: 'Candy balls' },
+        ],
+        dynamicTitle: true,
+      },
+    },
   },
-  initialGlobals: { theme: 'light', motion: 'full' },
+  initialGlobals: { theme: 'light', motion: 'full', balls: 'classic' },
   decorators: [
     (Story, context) => (
       <ThemeFrame
         theme={context.globals.theme as ThemeChoice}
         motion={context.globals.motion as MotionChoice}
+        balls={context.globals.balls as BallThemeChoice}
       >
         <Story />
       </ThemeFrame>

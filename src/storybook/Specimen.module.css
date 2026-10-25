@@ -89,11 +89,8 @@
   --ball-color: var(--ball-pink);
 }
 
-.ball[data-color='white'] {
-  --ball-color: var(--ball-white);
-
-  outline: var(--ball-edge-width) solid var(--ball-white-edge);
-  outline-offset: calc(-1 * var(--ball-edge-width));
+.ball[data-color='brown'] {
+  --ball-color: var(--ball-brown);
 }
 
 .ball[data-color='black'] {

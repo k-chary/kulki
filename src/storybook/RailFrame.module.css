@@ -14,3 +14,13 @@
 .rail[data-short='true'] {
   height: calc(var(--rail-width) * 0.8);
 }
+
+/* „Nowa gra” and „Opcje” share a row, half each. */
+.actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.actions > * {
+  flex: 1;
+}

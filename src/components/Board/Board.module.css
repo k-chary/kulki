@@ -40,8 +40,8 @@
   --path-color: var(--ball-pink);
 }
 
-.board[data-path='white'] {
-  --path-color: var(--path-white);
+.board[data-path='brown'] {
+  --path-color: var(--ball-brown);
 }
 
 .board[data-path='black'] {
