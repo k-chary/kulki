@@ -1,6 +1,6 @@
 [package]
 name = "kulki"
-version = "0.1.0"
+version = "0.2.1"
 description = "Kulki, a Lines-style ball puzzle"
 authors = ["k-chary"]
 edition = "2021"
