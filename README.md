@@ -50,7 +50,7 @@ The version lives in git tags. Agents never push tags by hand; CI does.
 
 To build a tag by hand (for example one made before the approval step existed), open **Release** in the Actions tab, press "Run workflow" and type the tag; an empty field means the latest tag.
 
-One-time setup: create the environment `release` under Settings › Environments, tick "Required reviewers" and add yourself. Without it the installers build and publish on every merge without asking.
+One-time setup: create the environment `release` under Settings › Environments, tick "Required reviewers" and add yourself. Without it the `gate` job fails and nothing is built.
 
 `node scripts/release.ts next v0.3.0 < prs.tsv` (lines of `title<TAB>labels`) shows what version a set of PRs would produce.
 
