@@ -21,6 +21,14 @@ describe('startFromSearch', () => {
     expect(game?.preview).toEqual(['green', 'blue', 'purple']);
   });
 
+  it('takes the color count for the game and the scores', () => {
+    const start = startFromSearch(`?board=${ROWS}&colors=9&scores=500`, true);
+    expect(start.game?.colorCount).toBe(9);
+    expect(start.highscores[0]?.colorCount).toBe(9);
+    expect(startFromSearch('?seed=1&colors=8', true).colorCount).toBe(8);
+    expect(startFromSearch(`?board=${ROWS}`, true).game?.colorCount).toBe(6);
+  });
+
   it('rejects a preview that is not three colors', () => {
     expect(() => startFromSearch(`?board=${ROWS}&preview=rg`, true)).toThrow();
   });

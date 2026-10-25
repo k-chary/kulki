@@ -68,22 +68,26 @@ test('a move completing a line clears it and adds 50 points', async ({ page }) =
 });
 
 test.describe('„Nowa gra”', () => {
-  test('starts at once before the first move', async ({ page }) => {
+  test('opens the dialog before the first move without a warning', async ({ page }) => {
     await page.goto('/?seed=3');
     await expect(balls(page)).toHaveCount(5);
     await page.getByRole('button', { name: 'Nowa gra' }).click();
-    await expect(page.getByRole('dialog')).toHaveCount(0);
+    const dialog = page.getByRole('dialog', { name: 'Nowa gra' });
+    await expect(dialog).not.toContainText('zostanie utracona');
+    await expect(dialog.getByRole('button', { name: 'Zacznij' })).toBeFocused();
+    await dialog.getByRole('button', { name: 'Zacznij' }).click();
+    await expect(dialog).toHaveCount(0);
     await expect(balls(page)).toHaveCount(5);
   });
 
-  test('asks after a move: Anuluj keeps the game, Nowa gra resets it', async ({ page }) => {
+  test('warns after a move: Anuluj keeps the game, Zacznij resets it', async ({ page }) => {
     await openFixture(page, { rows: { 0: 'r' }, preview: 'bbb' });
     await field(page, 0, 0).click();
     await field(page, 2, 0).click();
     await expect(balls(page)).toHaveCount(4);
 
     await page.getByRole('button', { name: 'Nowa gra' }).click();
-    const dialog = page.getByRole('dialog', { name: 'Zacząć nową grę?' });
+    const dialog = page.getByRole('dialog', { name: 'Nowa gra' });
     await expect(dialog).toContainText('Obecna gra (0 pkt) zostanie utracona.');
     await expect(dialog.getByRole('button', { name: 'Anuluj' })).toBeFocused();
 
@@ -93,7 +97,7 @@ test.describe('„Nowa gra”', () => {
     await expect(field(page, 2, 0)).toHaveAccessibleName('Kulka czerwona, wiersz 3, kolumna 1');
 
     await page.getByRole('button', { name: 'Nowa gra' }).click();
-    await dialog.getByRole('button', { name: 'Nowa gra' }).click();
+    await dialog.getByRole('button', { name: 'Zacznij' }).click();
     await expect(dialog).toHaveCount(0);
     await expect(balls(page)).toHaveCount(5);
     await expect(scorePanel(page)).toContainText('0 kulek zbitych');
@@ -130,10 +134,7 @@ test.describe('save and resume', () => {
     await field(page, 0, 0).click();
     await field(page, 2, 0).click();
     await page.getByRole('button', { name: 'Nowa gra' }).click();
-    await page
-      .getByRole('dialog')
-      .getByRole('button', { name: /Nowa gra/ })
-      .click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Zacznij' }).click();
     await expect(balls(page)).toHaveCount(5);
 
     await page.reload();

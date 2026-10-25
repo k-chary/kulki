@@ -7,7 +7,13 @@ export function fixtureBoard(rows: Record<number, string>): string {
 
 export async function openFixture(
   page: Page,
-  options: { rows: Record<number, string>; preview?: string; seed?: number; scores?: number[] },
+  options: {
+    rows: Record<number, string>;
+    preview?: string;
+    seed?: number;
+    scores?: number[];
+    colors?: number;
+  },
 ) {
   const query = new URLSearchParams({
     seed: String(options.seed ?? 1),
@@ -15,6 +21,7 @@ export async function openFixture(
     preview: options.preview ?? 'bbb',
   });
   if (options.scores) query.set('scores', options.scores.join(','));
+  if (options.colors) query.set('colors', String(options.colors));
   await page.goto(`/?${query.toString()}`);
 }
 
