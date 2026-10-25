@@ -1,6 +1,6 @@
 name: Full suite
 
-# Run by hand from the Actions tab, and by release.yml before it builds installers.
+# Run by hand from the Actions tab, and by main.yml on every merge to main, before it tags the commit.
 # Pull requests only run pr.yml.
 on:
   workflow_dispatch:

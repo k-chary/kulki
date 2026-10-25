@@ -41,18 +41,14 @@ The e2e build reads `?seed=7` (seeded random generator) and `?board=rrrr...../..
 
 ## Releasing
 
-A release is a version tag pushed by hand (agents never tag).
+The version lives in git tags. Agents never push tags by hand; CI does.
 
-1. Set the same new version in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json` (also run `cargo update -p kulki` or build once so `Cargo.lock` follows). `tests/versions.test.ts` fails if the three differ.
-2. Merge that change to `main`, then tag it and push the tag:
-   ```sh
-   git tag v0.1.0
-   git push origin v0.1.0
-   ```
-3. `.github/workflows/release.yml` first checks that the tag (without its `v`) equals the version in `package.json` and stops if it does not. Then it runs the full suite (`full-suite.yml`: lint, typecheck, Vitest and component tests, Playwright, `cargo test`). Only if all of it passes does it build installers for Windows, macOS (Apple silicon and Intel) and Linux and attach them to a **draft** GitHub Release.
-4. Open the draft under Releases, check the three installers, and publish it.
+1. **Every PR gets a suggested version** in a comment (`.github/workflows/version-suggestion.yml`), from the PR title: `feat:` is a minor bump, `feat!:` or `fix!:` a breaking one (a minor bump while the app is below 1.0), and anything else a patch. A label overrides the title: `release:major`, `release:minor`, `release:patch` or `release:none` (no tag). Merging is the approval.
+2. **Every merge to `main`** runs the full suite (`full-suite.yml`: lint, typecheck, Vitest and component tests, Playwright, `cargo test`) in `.github/workflows/main.yml`. If it passes, the job tags the commit with the next version, taking the largest bump of the PRs merged since the last tag. A failing suite means no tag; the next merge covers it.
+3. **Releasing is manual.** In the Actions tab open **Release**, press "Run workflow" and pick the tag under "Use workflow from" (Tags, for example `v0.4.0`). The workflow stamps the tag's version into `package.json`, `Cargo.toml` and `tauri.conf.json` for that build only (the copies on `main` are not updated and can look stale), builds installers for Windows, macOS (Apple silicon and Intel) and Linux, and attaches them to a **draft** GitHub Release.
+4. Open the draft under Releases, check the installers, and publish it. The in-app update banner appears for installed copies once the release is published.
 
-To rehearse, set the version to something like `0.0.1-test` on a throwaway branch, push the tag `v0.0.1-test` from it, and delete the draft release and tag afterwards. A failing test stops the run before any installer is built.
+`node scripts/release.ts next v0.3.0 < prs.tsv` (lines of `title<TAB>labels`) shows what version a set of PRs would produce.
 
 The installers are not code-signed yet, so the first launch shows a warning:
 
