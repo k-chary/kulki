@@ -35,3 +35,15 @@
 .board[data-path='purple'] {
   --path-color: var(--ball-purple);
 }
+
+.board[data-path='pink'] {
+  --path-color: var(--ball-pink);
+}
+
+.board[data-path='white'] {
+  --path-color: var(--path-white);
+}
+
+.board[data-path='black'] {
+  --path-color: var(--path-black);
+}

@@ -85,6 +85,24 @@
   --ball-color: var(--ball-purple);
 }
 
+.ball[data-color='pink'] {
+  --ball-color: var(--ball-pink);
+}
+
+.ball[data-color='white'] {
+  --ball-color: var(--ball-white);
+
+  outline: var(--ball-edge-width) solid var(--ball-white-edge);
+  outline-offset: calc(-1 * var(--ball-edge-width));
+}
+
+.ball[data-color='black'] {
+  --ball-color: var(--ball-black);
+
+  outline: var(--ball-edge-width) solid var(--ball-black-edge);
+  outline-offset: calc(-1 * var(--ball-edge-width));
+}
+
 /* With reduced motion --dur-hop is 0ms, so the ball stands still. */
 .hop {
   animation: hop var(--dur-hop) var(--ease-hop) infinite;

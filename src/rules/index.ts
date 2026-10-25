@@ -1,5 +1,14 @@
 // Kulki game rules: plain TypeScript with no UI, DOM, Tauri or I/O code.
-export { COLORS, type Color } from './color';
+export {
+  CLASSIC_COLORS,
+  COLORS,
+  COLOR_COUNTS,
+  DEFAULT_COLORS,
+  MAX_COLORS,
+  MIN_COLORS,
+  type Color,
+  colorsFor,
+} from './color';
 export {
   BOARD_SIZE,
   CELL_COUNT,

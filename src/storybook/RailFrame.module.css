@@ -14,3 +14,8 @@
 .rail[data-short='true'] {
   height: calc(var(--rail-width) * 0.8);
 }
+
+/* The rail at the 880×600 window's 496 px board height. */
+.rail[data-minimum='true'] {
+  height: calc(var(--rail-width) * 1.77);
+}

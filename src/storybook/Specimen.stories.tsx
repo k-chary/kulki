@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { COLORS as BALLS } from '../rules';
 import styles from './Specimen.module.css';
-
-const BALLS = ['red', 'orange', 'yellow', 'green', 'blue', 'purple'] as const;
 
 /** Fonts, surfaces, ball colors and one hop, to check the Theme and Motion toolbars. */
 function Specimen() {

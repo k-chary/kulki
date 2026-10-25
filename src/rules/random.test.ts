@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COLORS } from './color';
+import { CLASSIC_COLORS } from './color';
 import { createRng, randomColor, randomInt, sample } from './random';
 
 const draw = (seed: number, count: number) => {
@@ -59,7 +59,7 @@ describe('randomColor', () => {
       const color = randomColor(rng);
       counts.set(color, (counts.get(color) ?? 0) + 1);
     }
-    expect([...counts.keys()].sort()).toEqual([...COLORS].sort());
+    expect([...counts.keys()].sort()).toEqual([...CLASSIC_COLORS].sort());
     for (const count of counts.values()) {
       expect(count / draws).toBeCloseTo(1 / 6, 1);
     }
