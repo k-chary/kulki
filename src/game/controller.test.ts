@@ -390,6 +390,7 @@ const stored = (score: number): HighscoreEntry => ({
   name: `Gracz ${score}`,
   score,
   date: '2026-01-15T12:00:00.000Z',
+  colorCount: 6,
 });
 const top30 = Array.from({ length: 30 }, (_, i) => stored(1000 - i * 10)); // 1000 .. 710
 const over = (score: number) => initialState(game(OPEN, { score, gameOver: true }));
@@ -487,6 +488,7 @@ describe('finishedEntry', () => {
       name: 'Ola',
       score: 800,
       date: NOW,
+      colorCount: 6,
     });
   });
 

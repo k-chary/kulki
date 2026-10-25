@@ -25,7 +25,7 @@ import {
 } from '../game/controller';
 import { type PlaybackView, buildSteps, restingView } from '../game/playback';
 import { type Sequence, playSequence } from '../game/sequencer';
-import { type HighscoreEntry, rowsWithLive } from '../highscores/ranking';
+import { DEFAULT_COLOR_COUNT, type HighscoreEntry, rowsWithLive } from '../highscores/ranking';
 import { type GameState, type Rng, cellIndex, newGame } from '../rules';
 import type { InsertResult, Storage } from '../storage/Storage';
 import { readDuration, readTurnDurations } from '../styles/motion';
@@ -96,11 +96,13 @@ export function GameScreen({
 
   useEffect(() => {
     let current = true;
-    void Promise.all([storage.listHighscores(), storage.getLastName()]).then(([list, name]) => {
-      if (!current) return;
-      setHighscores(list);
-      setLastName(name);
-    });
+    void Promise.all([storage.listHighscores(DEFAULT_COLOR_COUNT), storage.getLastName()]).then(
+      ([list, name]) => {
+        if (!current) return;
+        setHighscores(list);
+        setLastName(name);
+      },
+    );
     return () => {
       current = false;
     };
@@ -223,7 +225,12 @@ export function GameScreen({
     try {
       let result = finished.current ? await finished.current.catch(() => null) : null;
       if (result === null) {
-        const entry = { name, score: state.game.score, date: new Date().toISOString() };
+        const entry = {
+          name,
+          score: state.game.score,
+          date: new Date().toISOString(),
+          colorCount: DEFAULT_COLOR_COUNT,
+        };
         const inserted = storage.insertHighscore(entry);
         finished.current = inserted;
         result = await inserted;

@@ -8,10 +8,11 @@ import {
   pointsMissing,
   qualifies,
   rowsWithLive,
+  isColorCount,
 } from './ranking';
 
 function entry(score: number, name = `Gracz ${score}`): HighscoreEntry {
-  return { name, score, date: '2026-10-23T08:00:00.000Z' };
+  return { name, score, date: '2026-10-23T08:00:00.000Z', colorCount: 6 };
 }
 
 /** n entries scoring 10·n down to 10, best first. */
@@ -199,5 +200,12 @@ describe('rowsWithLive', () => {
     const rows = rowsWithLive(listOf(30), 10);
     expect(rows).toHaveLength(30);
     expect(rows.every((row) => row.kind === 'stored')).toBe(true);
+  });
+});
+
+describe('isColorCount', () => {
+  it('accepts the whole numbers 5 to 9 only', () => {
+    expect([4, 5, 6, 9, 10].map(isColorCount)).toEqual([false, true, true, true, false]);
+    expect([5.5, '6', null, undefined].map(isColorCount)).toEqual([false, false, false, false]);
   });
 });

@@ -8,14 +8,14 @@ function storageReturning(value: unknown) {
 
 describe('TauriStorage', () => {
   it('lists highscores', async () => {
-    const list = [{ name: 'Ala', score: 120, date: '2026-10-23T08:00:00.000Z' }];
+    const list = [{ name: 'Ala', score: 120, date: '2026-10-23T08:00:00.000Z', colorCount: 7 }];
     const { storage, invoke } = storageReturning(list);
-    await expect(storage.listHighscores()).resolves.toEqual(list);
-    expect(invoke).toHaveBeenCalledWith('list_highscores');
+    await expect(storage.listHighscores(7)).resolves.toEqual(list);
+    expect(invoke).toHaveBeenCalledWith('list_highscores', { colorCount: 7 });
   });
 
   it('inserts a highscore and returns place and trimmed list', async () => {
-    const entry = { name: 'Ola', score: 50, date: '2026-10-23T09:00:00.000Z' };
+    const entry = { name: 'Ola', score: 50, date: '2026-10-23T09:00:00.000Z', colorCount: 7 };
     const { storage, invoke } = storageReturning({ place: 2, id: 7, highscores: [entry] });
     await expect(storage.insertHighscore(entry)).resolves.toEqual({
       place: 2,
@@ -26,7 +26,7 @@ describe('TauriStorage', () => {
   });
 
   it('renames a highscore row by id', async () => {
-    const list = [{ name: 'Ola', score: 50, date: '2026-10-23T09:00:00.000Z' }];
+    const list = [{ name: 'Ola', score: 50, date: '2026-10-23T09:00:00.000Z', colorCount: 7 }];
     const { storage, invoke } = storageReturning(list);
     await expect(storage.renameHighscore(7, 'Ola')).resolves.toEqual(list);
     expect(invoke).toHaveBeenCalledWith('rename_highscore', { id: 7, name: 'Ola' });
@@ -35,8 +35,21 @@ describe('TauriStorage', () => {
   it('maps a score that did not make the list to place null', async () => {
     const { storage } = storageReturning({ place: null, highscores: [] });
     await expect(
-      storage.insertHighscore({ name: 'X', score: 0, date: '2026-10-23' }),
+      storage.insertHighscore({ name: 'X', score: 0, date: '2026-10-23', colorCount: 6 }),
     ).resolves.toEqual({ place: null, id: null, highscores: [] });
+  });
+
+  it('gets and sets the last color count', async () => {
+    const { storage, invoke } = storageReturning(8);
+    await expect(storage.getLastColorCount()).resolves.toBe(8);
+    expect(invoke).toHaveBeenCalledWith('get_last_color_count');
+    await storage.setLastColorCount(5);
+    expect(invoke).toHaveBeenCalledWith('set_last_color_count', { colorCount: 5 });
+  });
+
+  it('reads a missing or invalid last color count as null', async () => {
+    await expect(storageReturning(null).storage.getLastColorCount()).resolves.toBeNull();
+    await expect(storageReturning(12).storage.getLastColorCount()).resolves.toBeNull();
   });
 
   it('gets and sets the last name', async () => {
@@ -75,6 +88,6 @@ describe('TauriStorage', () => {
   it('rejects when a command fails', async () => {
     const invoke = vi.fn(() => Promise.reject(new Error('database is locked')));
     const storage = new TauriStorage(invoke as unknown as Invoke);
-    await expect(storage.listHighscores()).rejects.toThrow('database is locked');
+    await expect(storage.listHighscores(6)).rejects.toThrow('database is locked');
   });
 });

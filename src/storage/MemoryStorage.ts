@@ -1,4 +1,11 @@
-import { placeFor, MAX_ENTRIES, normalizeName, type HighscoreEntry } from '../highscores/ranking';
+import {
+  DEFAULT_COLOR_COUNT,
+  MAX_ENTRIES,
+  isColorCount,
+  normalizeName,
+  placeFor,
+  type HighscoreEntry,
+} from '../highscores/ranking';
 import type { InsertResult, Storage } from './Storage';
 
 /** The part of the browser's `localStorage` the web build needs. */
@@ -14,10 +21,11 @@ const BACKING_KEY = 'kulki:v1';
  * reload; a backing that throws or holds junk is ignored.
  */
 export class MemoryStorage<Game = unknown> implements Storage<Game> {
-  /** Best first; each row keeps the id `renameHighscore` addresses it by. */
+  /** All counts' rows, best first within a count; each keeps the id `renameHighscore` addresses it by. */
   private rows: { id: number; entry: HighscoreEntry }[] = [];
   private nextId = 1;
   private lastName: string | null = null;
+  private lastColorCount: number | null = null;
   private game: string | null = null;
   private readonly backing: Backing | undefined;
 
@@ -31,17 +39,23 @@ export class MemoryStorage<Game = unknown> implements Storage<Game> {
       const text = this.backing?.getItem(BACKING_KEY);
       if (!text) return;
       const data = JSON.parse(text) as {
-        highscores?: (HighscoreEntry & { id?: number })[];
+        highscores?: (Omit<HighscoreEntry, 'colorCount'> & { colorCount?: number; id?: number })[];
         lastName?: string | null;
+        lastColorCount?: number | null;
         game?: string | null;
       };
       const stored = Array.isArray(data.highscores) ? data.highscores : [];
       this.rows = stored.map(({ id, ...entry }, i) => ({
         id: typeof id === 'number' ? id : i + 1,
-        entry,
+        // Scores saved before color counts existed belong to the 6-color list.
+        entry: {
+          ...entry,
+          colorCount: isColorCount(entry.colorCount) ? entry.colorCount : DEFAULT_COLOR_COUNT,
+        },
       }));
       this.nextId = Math.max(0, ...this.rows.map((row) => row.id)) + 1;
       this.lastName = typeof data.lastName === 'string' ? data.lastName : null;
+      this.lastColorCount = isColorCount(data.lastColorCount) ? data.lastColorCount : null;
       this.game = typeof data.game === 'string' ? data.game : null;
     } catch {
       // Unreadable backing: start empty.
@@ -55,6 +69,7 @@ export class MemoryStorage<Game = unknown> implements Storage<Game> {
         JSON.stringify({
           highscores: this.rows.map(({ id, entry }) => ({ ...entry, id })),
           lastName: this.lastName,
+          lastColorCount: this.lastColorCount,
           game: this.game,
         }),
       );
@@ -63,23 +78,33 @@ export class MemoryStorage<Game = unknown> implements Storage<Game> {
     }
   }
 
-  async listHighscores(): Promise<HighscoreEntry[]> {
-    return this.rows.map(({ entry }) => ({ ...entry }));
+  private listRows(colorCount: number) {
+    return this.rows.filter((row) => row.entry.colorCount === colorCount);
+  }
+
+  private listOf(colorCount: number): HighscoreEntry[] {
+    return this.listRows(colorCount).map(({ entry }) => entry);
+  }
+
+  async listHighscores(colorCount: number): Promise<HighscoreEntry[]> {
+    return this.listOf(colorCount).map((entry) => ({ ...entry }));
   }
 
   async insertHighscore(entry: HighscoreEntry): Promise<InsertResult> {
-    const place = placeFor(
-      entry.score,
-      this.rows.map((row) => row.entry),
-    );
+    const { colorCount } = entry;
+    const place = placeFor(entry.score, this.listOf(colorCount));
     if (place > MAX_ENTRIES) {
-      return { place: null, id: null, highscores: await this.listHighscores() };
+      return { place: null, id: null, highscores: await this.listHighscores(colorCount) };
     }
     const id = this.nextId++;
-    this.rows.splice(place - 1, 0, { id, entry: { ...entry, name: normalizeName(entry.name) } });
-    this.rows = this.rows.slice(0, MAX_ENTRIES);
+    // Within a count the rows stay best first; the new one goes before the first row it beats.
+    const below = this.listRows(colorCount)[place - 1];
+    const row = { id, entry: { ...entry, name: normalizeName(entry.name) } };
+    this.rows.splice(below ? this.rows.indexOf(below) : this.rows.length, 0, row);
+    const dropped = this.listRows(colorCount).slice(MAX_ENTRIES);
+    this.rows = this.rows.filter((candidate) => !dropped.includes(candidate));
     this.persist();
-    return { place, id, highscores: await this.listHighscores() };
+    return { place, id, highscores: await this.listHighscores(colorCount) };
   }
 
   async renameHighscore(id: number, name: string): Promise<HighscoreEntry[]> {
@@ -87,8 +112,9 @@ export class MemoryStorage<Game = unknown> implements Storage<Game> {
     if (row) {
       row.entry = { ...row.entry, name: normalizeName(name) };
       this.persist();
+      return this.listHighscores(row.entry.colorCount);
     }
-    return this.listHighscores();
+    return [];
   }
 
   async getLastName(): Promise<string | null> {
@@ -97,6 +123,16 @@ export class MemoryStorage<Game = unknown> implements Storage<Game> {
 
   async setLastName(name: string): Promise<void> {
     this.lastName = name;
+    this.persist();
+  }
+
+  async getLastColorCount(): Promise<number | null> {
+    return this.lastColorCount;
+  }
+
+  async setLastColorCount(colorCount: number): Promise<void> {
+    if (!isColorCount(colorCount)) throw new RangeError(`bad color count: ${colorCount}`);
+    this.lastColorCount = colorCount;
     this.persist();
   }
 

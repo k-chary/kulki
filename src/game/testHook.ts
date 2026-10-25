@@ -4,7 +4,7 @@
 //   &preview=rgb               the colors of the next balls (default: red, red, red)
 //   ?scores=900,500,120        highscores already stored, best first (names „Gracz 1”, „Gracz 2”, …)
 // Only available in dev and in the build made for the tests (VITE_E2E=1), never in a release.
-import type { HighscoreEntry } from '../highscores/ranking';
+import { DEFAULT_COLOR_COUNT, type HighscoreEntry } from '../highscores/ranking';
 import { type Color, type GameState, type Rng, createRng, SPAWN_COUNT } from '../rules';
 import { parseBoard } from '../rules/testing';
 
@@ -45,6 +45,7 @@ export function parseScores(text: string): HighscoreEntry[] {
       name: `Gracz ${i + 1}`,
       score: Number(part),
       date: '2026-01-15T12:00:00.000Z',
+      colorCount: DEFAULT_COLOR_COUNT,
     }));
 }
 

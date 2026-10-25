@@ -11,6 +11,7 @@ const scores: HighscoreEntry[] = POINTS.map((score, i) => ({
   name: i % 2 ? 'Ola' : 'Harry',
   score,
   date: new Date(2026, 9, 18 - i * 3, 20).toISOString(),
+  colorCount: 6,
 }));
 
 /** The side rail as the game screen stacks it: Wynik, Następne, Nowa gra, Najlepsze wyniki. */

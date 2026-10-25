@@ -61,6 +61,8 @@ pub fn run() {
             commands::rename_highscore,
             commands::get_last_name,
             commands::set_last_name,
+            commands::get_last_color_count,
+            commands::set_last_color_count,
             commands::save_game,
             commands::load_game,
             commands::delete_game,

@@ -21,6 +21,7 @@ import {
   sameCell,
 } from '../rules';
 import {
+  DEFAULT_COLOR_COUNT,
   type HighscoreEntry,
   type HighscoreRow,
   normalizeName,
@@ -116,7 +117,13 @@ export function finishedEntry(
   lastName: string | null,
   date: string,
 ): HighscoreEntry {
-  return { name: normalizeName(lastName ?? ''), score: game.score, date };
+  return {
+    name: normalizeName(lastName ?? ''),
+    score: game.score,
+    date,
+    // Games have no color count yet; the game screen change passes the game's own.
+    colorCount: DEFAULT_COLOR_COUNT,
+  };
 }
 
 /** True while the board takes no input: a turn is animating, a dialog is open or the game is over. */

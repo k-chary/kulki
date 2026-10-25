@@ -13,11 +13,12 @@ const full: HighscoreEntry[] = POINTS.map((score, i) => ({
   name: NAMES[i % NAMES.length] ?? 'Gracz',
   score,
   date: new Date(2026, 9, 18 - i * 3, 20).toISOString(),
+  colorCount: 6,
 }));
 
 const few: HighscoreEntry[] = [
-  { name: 'Harry', score: 640, date: new Date(2026, 9, 18, 20).toISOString() },
-  { name: 'Ola', score: 150, date: new Date(2026, 9, 12, 20).toISOString() },
+  { name: 'Harry', score: 640, date: new Date(2026, 9, 18, 20).toISOString(), colorCount: 6 },
+  { name: 'Ola', score: 150, date: new Date(2026, 9, 12, 20).toISOString(), colorCount: 6 },
 ];
 
 const meta = {
@@ -52,7 +53,7 @@ export const JustSaved: Story = {
     rows: rowsWithLive(
       [
         ...full.slice(0, 22),
-        { name: 'Harry', score: 640, date: new Date(2026, 9, 21, 20).toISOString() },
+        { name: 'Harry', score: 640, date: new Date(2026, 9, 21, 20).toISOString(), colorCount: 6 },
         ...full.slice(22, 29),
       ],
       0,
