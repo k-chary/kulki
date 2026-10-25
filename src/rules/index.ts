@@ -8,6 +8,7 @@ export {
   MIN_COLORS,
   type Color,
   colorsFor,
+  drawColorsFor,
 } from './color';
 export {
   BOARD_SIZE,

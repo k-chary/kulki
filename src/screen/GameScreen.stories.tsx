@@ -28,6 +28,7 @@ const finished = (score: number): GameState => ({
     return COLORS[(row + 2 * col) % 6] as Color;
   }),
   preview: ['red', 'green', 'blue'],
+  colorCount: 6,
   score,
   cleared: score / 10,
   gameOver: true,

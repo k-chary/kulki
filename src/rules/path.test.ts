@@ -11,6 +11,7 @@ import {
   sameCell,
   setBall,
 } from './board';
+import { CLASSIC_COLORS } from './color';
 import { findPath, reachable } from './path';
 import { createRng, randomColor } from './random';
 import { parseBoard } from './testing';
@@ -222,7 +223,7 @@ describe('reachable', () => {
       const rng = createRng(seed);
       const fill = 0.3 + (seed % 5) * 0.1;
       const board: Board = Array.from({ length: CELL_COUNT }, () =>
-        rng() < fill ? randomColor(rng) : null,
+        rng() < fill ? randomColor(rng, CLASSIC_COLORS) : null,
       );
       for (let index = 0; index < CELL_COUNT; index++) {
         const from = cellAt(index);

@@ -47,3 +47,13 @@ export function colorsFor(count: number): readonly Color[] {
   }
   return COLORS.slice(0, count);
 }
+
+/**
+ * The colors of a `count`-color game in the order random draws index into them.
+ * Six keeps the classic order, so a fixed seed deals the same boards as before
+ * color counts existed; other counts use the COLORS order.
+ */
+export function drawColorsFor(count: number): readonly Color[] {
+  const colors = colorsFor(count);
+  return count === DEFAULT_COLORS ? CLASSIC_COLORS : colors;
+}
