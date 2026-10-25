@@ -18,6 +18,7 @@ function entries(count: number): HighscoreEntry[] {
     name: `Gracz ${i + 1}`,
     score: 3000 - i * 100,
     date: new Date(2026, 9, 18 - i, 12).toISOString(),
+    colorCount: 6,
   }));
 }
 

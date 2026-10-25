@@ -116,7 +116,12 @@ export function finishedEntry(
   lastName: string | null,
   date: string,
 ): HighscoreEntry {
-  return { name: normalizeName(lastName ?? ''), score: game.score, date };
+  return {
+    name: normalizeName(lastName ?? ''),
+    score: game.score,
+    date,
+    colorCount: game.colorCount,
+  };
 }
 
 /** True while the board takes no input: a turn is animating, a dialog is open or the game is over. */

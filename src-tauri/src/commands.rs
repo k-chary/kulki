@@ -19,8 +19,11 @@ fn with_store<T>(
 }
 
 #[tauri::command]
-pub fn list_highscores(state: State<StoreState>) -> Result<Vec<HighscoreEntry>, String> {
-    with_store(&state, |store| store.list_highscores())
+pub fn list_highscores(
+    state: State<StoreState>,
+    color_count: u8,
+) -> Result<Vec<HighscoreEntry>, String> {
+    with_store(&state, |store| store.list_highscores(color_count))
 }
 
 #[tauri::command]
@@ -48,6 +51,16 @@ pub fn get_last_name(state: State<StoreState>) -> Result<Option<String>, String>
 #[tauri::command]
 pub fn set_last_name(state: State<StoreState>, name: String) -> Result<(), String> {
     with_store(&state, |store| store.set_last_name(&name))
+}
+
+#[tauri::command]
+pub fn get_last_color_count(state: State<StoreState>) -> Result<Option<u8>, String> {
+    with_store(&state, |store| store.last_color_count())
+}
+
+#[tauri::command]
+pub fn set_last_color_count(state: State<StoreState>, color_count: u8) -> Result<(), String> {
+    with_store(&state, |store| store.set_last_color_count(color_count))
 }
 
 #[tauri::command]

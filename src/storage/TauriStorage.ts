@@ -1,4 +1,5 @@
 import { invoke as tauriInvoke } from '@tauri-apps/api/core';
+import { isColorCount } from '../highscores/ranking';
 import type { HighscoreEntry, InsertResult, Storage } from './Storage';
 
 export type Invoke = <T>(command: string, args?: Record<string, unknown>) => Promise<T>;
@@ -11,8 +12,8 @@ export class TauriStorage<Game = unknown> implements Storage<Game> {
     this.invoke = invoke;
   }
 
-  listHighscores(): Promise<HighscoreEntry[]> {
-    return this.invoke<HighscoreEntry[]>('list_highscores');
+  listHighscores(colorCount: number): Promise<HighscoreEntry[]> {
+    return this.invoke<HighscoreEntry[]>('list_highscores', { colorCount });
   }
 
   async insertHighscore(entry: HighscoreEntry): Promise<InsertResult> {
@@ -30,6 +31,15 @@ export class TauriStorage<Game = unknown> implements Storage<Game> {
 
   async setLastName(name: string): Promise<void> {
     await this.invoke('set_last_name', { name });
+  }
+
+  async getLastColorCount(): Promise<number | null> {
+    const count = await this.invoke<number | null>('get_last_color_count');
+    return isColorCount(count) ? count : null;
+  }
+
+  async setLastColorCount(colorCount: number): Promise<void> {
+    await this.invoke('set_last_color_count', { colorCount });
   }
 
   async saveGame(game: Game): Promise<void> {

@@ -1,17 +1,32 @@
 // Top-30 highscore ranking. Pure functions, no storage or UI code.
 //
-// A list is always ordered best first. Equal scores keep the older game
+// Each color count has its own list; every function here works on one list,
+// so the caller passes the list of the game's count. A list is always ordered
+// best first. Equal scores keep the older game
 // higher, so a new score goes below every stored score it ties with.
 
 export const MAX_ENTRIES = 30;
 export const MAX_NAME_LENGTH = 20;
 export const DEFAULT_NAME = 'Gracz';
+/** The classic game, and the list that scores saved before color counts belong to. */
+export const DEFAULT_COLOR_COUNT = 6;
+export const MIN_COLOR_COUNT = 5;
+export const MAX_COLOR_COUNT = 9;
 
 export interface HighscoreEntry {
   name: string;
   score: number;
   /** When the game ended, as an ISO 8601 string. */
   date: string;
+  /** How many ball colors the game used (5 to 9); it picks the list the score belongs to. */
+  colorCount: number;
+}
+
+/** Whether `n` is a color count a game can use. */
+export function isColorCount(n: unknown): n is number {
+  return (
+    Number.isInteger(n) && (n as number) >= MIN_COLOR_COUNT && (n as number) <= MAX_COLOR_COUNT
+  );
 }
 
 export type HighscoreRow =

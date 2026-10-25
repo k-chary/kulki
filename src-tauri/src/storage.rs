@@ -1,5 +1,5 @@
-//! SQLite persistence: the top-30 highscores, the last name used and the
-//! unfinished game. Everything here is plain Rust so it can be tested
+//! SQLite persistence: the top-30 highscores of each color count, the last
+//! name and color count used and the unfinished game. Everything here is plain Rust so it can be tested
 //! without Tauri; `commands.rs` exposes it to the frontend.
 
 use std::fs;
@@ -39,9 +39,16 @@ const MIGRATIONS: &[&str] = &[
          id   INTEGER PRIMARY KEY CHECK (id = 1),
          data TEXT NOT NULL
      );",
+    // 2: a list per color count. Rows saved before it belong to the 6-color list.
+    "ALTER TABLE highscores ADD COLUMN color_count INTEGER NOT NULL DEFAULT 6;
+     CREATE INDEX highscores_by_count ON highscores (color_count, score DESC, id ASC);",
 ];
 
 const LAST_NAME_KEY: &str = "last_name";
+const LAST_COLOR_COUNT_KEY: &str = "last_color_count";
+/// The fewest and most ball colors a game can use.
+pub const MIN_COLOR_COUNT: u8 = 5;
+pub const MAX_COLOR_COUNT: u8 = 9;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HighscoreEntry {
@@ -49,6 +56,9 @@ pub struct HighscoreEntry {
     pub score: u32,
     /// When the game ended, as the ISO 8601 string the frontend sent.
     pub date: String,
+    /// How many ball colors the game used; the score goes in that count's list.
+    #[serde(rename = "colorCount")]
+    pub color_count: u8,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -115,34 +125,40 @@ impl Store {
         Ok(())
     }
 
-    /// Best first; equal scores keep the older game higher.
-    pub fn list_highscores(&self) -> rusqlite::Result<Vec<HighscoreEntry>> {
+    /// The list of one color count, best first; equal scores keep the older game higher.
+    pub fn list_highscores(&self, color_count: u8) -> rusqlite::Result<Vec<HighscoreEntry>> {
         let mut stmt = self.conn.prepare(
-            "SELECT name, score, date FROM highscores ORDER BY score DESC, id ASC LIMIT ?1",
+            "SELECT name, score, date, color_count FROM highscores
+             WHERE color_count = ?1 ORDER BY score DESC, id ASC LIMIT ?2",
         )?;
-        let rows = stmt.query_map([LIMIT], |row| {
+        let rows = stmt.query_map(params![color_count, LIMIT], |row| {
             Ok(HighscoreEntry {
                 name: row.get(0)?,
                 score: row.get(1)?,
                 date: row.get(2)?,
+                color_count: row.get(3)?,
             })
         })?;
         rows.collect()
     }
 
-    /// Inserts a finished game and trims the list to 30. The name is
-    /// normalised the same way as on the frontend.
+    /// Inserts a finished game into its color count's list and trims that
+    /// list to 30; other counts are untouched. The name is normalised the
+    /// same way as on the frontend.
     pub fn insert_highscore(&mut self, entry: &HighscoreEntry) -> rusqlite::Result<InsertResult> {
+        check_color_count(entry.color_count)?;
+        let count = entry.color_count;
         let tx = self.conn.transaction()?;
         tx.execute(
-            "INSERT INTO highscores (name, score, date) VALUES (?1, ?2, ?3)",
-            params![normalize_name(&entry.name), entry.score, entry.date],
+            "INSERT INTO highscores (name, score, date, color_count) VALUES (?1, ?2, ?3, ?4)",
+            params![normalize_name(&entry.name), entry.score, entry.date, count],
         )?;
         let id = tx.last_insert_rowid();
         tx.execute(
-            "DELETE FROM highscores WHERE id NOT IN
-                 (SELECT id FROM highscores ORDER BY score DESC, id ASC LIMIT ?1)",
-            [LIMIT],
+            "DELETE FROM highscores WHERE color_count = ?1 AND id NOT IN
+                 (SELECT id FROM highscores WHERE color_count = ?1
+                  ORDER BY score DESC, id ASC LIMIT ?2)",
+            params![count, LIMIT],
         )?;
         let kept: bool = tx.query_row(
             "SELECT EXISTS (SELECT 1 FROM highscores WHERE id = ?1)",
@@ -152,7 +168,7 @@ impl Store {
         let place = if kept {
             Some(tx.query_row(
                 "SELECT COUNT(*) + 1 FROM highscores h, highscores me
-                 WHERE me.id = ?1
+                 WHERE me.id = ?1 AND h.color_count = me.color_count
                    AND (h.score > me.score OR (h.score = me.score AND h.id < me.id))",
                 [id],
                 |row| row.get(0),
@@ -164,18 +180,30 @@ impl Store {
         Ok(InsertResult {
             place,
             id: kept.then_some(id),
-            highscores: self.list_highscores()?,
+            highscores: self.list_highscores(count)?,
         })
     }
 
     /// Gives the row `id` a new name (normalised like on insert) and returns
-    /// the list. Renaming a row that is gone changes nothing.
+    /// the list of its color count. Renaming a row that is gone changes
+    /// nothing and returns an empty list.
     pub fn rename_highscore(&self, id: i64, name: &str) -> rusqlite::Result<Vec<HighscoreEntry>> {
         self.conn.execute(
             "UPDATE highscores SET name = ?1 WHERE id = ?2",
             params![normalize_name(name), id],
         )?;
-        self.list_highscores()
+        let count: Option<u8> = self
+            .conn
+            .query_row(
+                "SELECT color_count FROM highscores WHERE id = ?1",
+                [id],
+                |row| row.get(0),
+            )
+            .optional()?;
+        match count {
+            Some(count) => self.list_highscores(count),
+            None => Ok(Vec::new()),
+        }
     }
 
     pub fn last_name(&self) -> rusqlite::Result<Option<String>> {
@@ -193,6 +221,32 @@ impl Store {
             "INSERT INTO settings (key, value) VALUES (?1, ?2)
              ON CONFLICT (key) DO UPDATE SET value = excluded.value",
             params![LAST_NAME_KEY, normalize_name(name)],
+        )?;
+        Ok(())
+    }
+
+    /// The color count of the last game started, or `None` if none was
+    /// chosen yet (or the stored value is not a valid count).
+    pub fn last_color_count(&self) -> rusqlite::Result<Option<u8>> {
+        let value: Option<String> = self
+            .conn
+            .query_row(
+                "SELECT value FROM settings WHERE key = ?1",
+                [LAST_COLOR_COUNT_KEY],
+                |row| row.get(0),
+            )
+            .optional()?;
+        Ok(value
+            .and_then(|text| text.parse::<u8>().ok())
+            .filter(|count| (MIN_COLOR_COUNT..=MAX_COLOR_COUNT).contains(count)))
+    }
+
+    pub fn set_last_color_count(&self, color_count: u8) -> rusqlite::Result<()> {
+        check_color_count(color_count)?;
+        self.conn.execute(
+            "INSERT INTO settings (key, value) VALUES (?1, ?2)
+             ON CONFLICT (key) DO UPDATE SET value = excluded.value",
+            params![LAST_COLOR_COUNT_KEY, color_count.to_string()],
         )?;
         Ok(())
     }
@@ -230,6 +284,17 @@ impl Store {
     pub fn delete_game(&self) -> rusqlite::Result<()> {
         self.conn.execute("DELETE FROM saved_game", [])?;
         Ok(())
+    }
+}
+
+/// Rejects a color count outside 5 to 9, so no stray list is ever created.
+fn check_color_count(color_count: u8) -> rusqlite::Result<()> {
+    if (MIN_COLOR_COUNT..=MAX_COLOR_COUNT).contains(&color_count) {
+        Ok(())
+    } else {
+        Err(rusqlite::Error::InvalidParameterName(format!(
+            "color count {color_count} is not {MIN_COLOR_COUNT} to {MAX_COLOR_COUNT}"
+        )))
     }
 }
 
@@ -282,6 +347,14 @@ mod tests {
             name: name.to_string(),
             score,
             date: date.to_string(),
+            color_count: 6,
+        }
+    }
+
+    fn entry_of(count: u8, name: &str, score: u32) -> HighscoreEntry {
+        HighscoreEntry {
+            color_count: count,
+            ..entry(name, score, "d")
         }
     }
 
@@ -319,7 +392,7 @@ mod tests {
 
         assert_eq!(result.place, Some(3));
         assert_eq!(names(&result.highscores), ["Ola", "Ala", "Ela"]);
-        assert_eq!(store.list_highscores().unwrap(), result.highscores);
+        assert_eq!(store.list_highscores(6).unwrap(), result.highscores);
     }
 
     #[test]
@@ -355,7 +428,7 @@ mod tests {
                 .insert_highscore(&entry(&format!("P{i}"), 100 + i * 10, "d"))
                 .unwrap();
         }
-        assert_eq!(store.list_highscores().unwrap().len(), MAX_HIGHSCORES);
+        assert_eq!(store.list_highscores(6).unwrap().len(), MAX_HIGHSCORES);
 
         // Beats the 30th (score 100): the 30th drops off.
         let result = store.insert_highscore(&entry("New", 105, "d")).unwrap();
@@ -446,7 +519,7 @@ mod tests {
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .unwrap();
         assert_eq!(version as usize, MIGRATIONS.len());
-        assert!(store.list_highscores().unwrap().is_empty());
+        assert!(store.list_highscores(6).unwrap().is_empty());
         assert_eq!(discarded(&path), 0);
     }
 
@@ -461,7 +534,7 @@ mod tests {
             store.save_game(&json!({ "score": 70 })).unwrap();
         }
         let store = Store::open(&path).unwrap();
-        assert_eq!(names(&store.list_highscores().unwrap()), ["Ala"]);
+        assert_eq!(names(&store.list_highscores(6).unwrap()), ["Ala"]);
         assert_eq!(store.last_name().unwrap().as_deref(), Some("Ala"));
         assert_eq!(store.load_game().unwrap(), Some(json!({ "score": 70 })));
     }
@@ -477,13 +550,13 @@ mod tests {
         .unwrap();
 
         let mut store = Store::open(&path).unwrap();
-        assert!(store.list_highscores().unwrap().is_empty());
+        assert!(store.list_highscores(6).unwrap().is_empty());
         store.insert_highscore(&entry("Ala", 10, "d")).unwrap();
         assert_eq!(discarded(&path), 1);
 
         drop(store);
         let store = Store::open(&path).unwrap();
-        assert_eq!(store.list_highscores().unwrap().len(), 1);
+        assert_eq!(store.list_highscores(6).unwrap().len(), 1);
     }
 
     #[test]
@@ -504,7 +577,7 @@ mod tests {
         fs::write(&path, &bytes).unwrap();
 
         let store = Store::open(&path).unwrap();
-        assert!(store.list_highscores().unwrap().is_empty());
+        assert!(store.list_highscores(6).unwrap().is_empty());
     }
 
     #[test]
@@ -527,7 +600,7 @@ mod tests {
 
         let store = Store::open(&path).unwrap();
         holder.join().unwrap();
-        assert_eq!(names(&store.list_highscores().unwrap()), ["Ala"]);
+        assert_eq!(names(&store.list_highscores(6).unwrap()), ["Ala"]);
         assert_eq!(discarded(&path), 0);
     }
 
@@ -553,5 +626,136 @@ mod tests {
         assert!(is_corrupt(&not_a_database));
         assert!(!is_corrupt(&busy));
         assert!(!is_corrupt(&read_only));
+    }
+
+    #[test]
+    fn keeps_a_separate_list_per_color_count() {
+        let mut store = Store::open_in_memory().unwrap();
+        store.insert_highscore(&entry_of(6, "Six", 100)).unwrap();
+        let result = store.insert_highscore(&entry_of(9, "Nine", 50)).unwrap();
+
+        // 50 is the best of the 9-color list although it trails the 6-color one.
+        assert_eq!(result.place, Some(1));
+        assert_eq!(names(&result.highscores), ["Nine"]);
+        assert_eq!(names(&store.list_highscores(6).unwrap()), ["Six"]);
+        assert!(store.list_highscores(5).unwrap().is_empty());
+    }
+
+    #[test]
+    fn trims_and_breaks_ties_within_one_count_only() {
+        let mut store = Store::open_in_memory().unwrap();
+        for i in 0..MAX_HIGHSCORES as u32 {
+            store
+                .insert_highscore(&entry_of(7, &format!("S{i}"), 100 + i * 10))
+                .unwrap();
+        }
+        // The full 7-color list does not make room demands on another count.
+        let result = store.insert_highscore(&entry_of(8, "Eight", 1)).unwrap();
+        assert_eq!(result.place, Some(1));
+
+        let result = store.insert_highscore(&entry_of(7, "Tie", 100)).unwrap();
+        assert_eq!(result.place, None);
+        let result = store.insert_highscore(&entry_of(7, "Beat", 105)).unwrap();
+        assert_eq!(result.place, Some(30));
+        assert_eq!(store.list_highscores(7).unwrap().len(), MAX_HIGHSCORES);
+        assert_eq!(store.list_highscores(8).unwrap().len(), 1);
+
+        // Equal scores in different counts do not tie with each other.
+        let result = store.insert_highscore(&entry_of(8, "Same", 1)).unwrap();
+        assert_eq!(result.place, Some(2));
+    }
+
+    #[test]
+    fn renames_within_the_rows_own_list() {
+        let mut store = Store::open_in_memory().unwrap();
+        store.insert_highscore(&entry_of(6, "Six", 100)).unwrap();
+        let id = store
+            .insert_highscore(&entry_of(9, "Gracz", 50))
+            .unwrap()
+            .id
+            .unwrap();
+        let list = store.rename_highscore(id, "Ola").unwrap();
+        assert_eq!(names(&list), ["Ola"]);
+        assert_eq!(list[0].color_count, 9);
+        assert!(store
+            .rename_highscore(id + 100, "Nobody")
+            .unwrap()
+            .is_empty());
+    }
+
+    #[test]
+    fn rejects_a_color_count_outside_five_to_nine() {
+        let mut store = Store::open_in_memory().unwrap();
+        assert!(store.insert_highscore(&entry_of(4, "A", 10)).is_err());
+        assert!(store.insert_highscore(&entry_of(10, "A", 10)).is_err());
+        assert!(store.set_last_color_count(4).is_err());
+        assert!(store.set_last_color_count(10).is_err());
+        assert_eq!(store.last_color_count().unwrap(), None);
+    }
+
+    #[test]
+    fn remembers_last_color_count() {
+        let store = Store::open_in_memory().unwrap();
+        assert_eq!(store.last_color_count().unwrap(), None);
+        store.set_last_color_count(8).unwrap();
+        store.set_last_color_count(5).unwrap();
+        assert_eq!(store.last_color_count().unwrap(), Some(5));
+
+        // A stored value that is not a valid count reads as never set.
+        store
+            .conn
+            .execute(
+                "UPDATE settings SET value = 'many' WHERE key = ?1",
+                [LAST_COLOR_COUNT_KEY],
+            )
+            .unwrap();
+        assert_eq!(store.last_color_count().unwrap(), None);
+    }
+
+    #[test]
+    fn migrates_a_database_made_by_the_current_version() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("kulki.db");
+        {
+            // The schema as version 1 left it, with scores and a saved game.
+            let conn = Connection::open(&path).unwrap();
+            conn.execute_batch(MIGRATIONS[0]).unwrap();
+            conn.pragma_update(None, "user_version", 1).unwrap();
+            conn.execute(
+                "INSERT INTO highscores (name, score, date) VALUES ('Ala', 300, 'd1'), ('Ola', 200, 'd2')",
+                [],
+            )
+            .unwrap();
+            conn.execute(
+                "INSERT INTO settings (key, value) VALUES ('last_name', 'Ola')",
+                [],
+            )
+            .unwrap();
+            conn.execute(
+                "INSERT INTO saved_game (id, data) VALUES (1, '{\"score\":70}')",
+                [],
+            )
+            .unwrap();
+        }
+
+        let mut store = Store::open(&path).unwrap();
+        assert_eq!(discarded(&path), 0);
+        let version: i64 = store
+            .conn
+            .query_row("PRAGMA user_version", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(version as usize, MIGRATIONS.len());
+
+        // Old scores joined the 6-color list; nothing else was touched.
+        let list = store.list_highscores(6).unwrap();
+        assert_eq!(names(&list), ["Ala", "Ola"]);
+        assert!(list.iter().all(|e| e.color_count == 6));
+        assert!(store.list_highscores(7).unwrap().is_empty());
+        assert_eq!(store.last_name().unwrap().as_deref(), Some("Ola"));
+        assert_eq!(store.load_game().unwrap(), Some(json!({ "score": 70 })));
+
+        // The migrated list ranks new scores as before.
+        let result = store.insert_highscore(&entry_of(6, "Ela", 250)).unwrap();
+        assert_eq!(result.place, Some(2));
     }
 }
