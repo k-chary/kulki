@@ -4,7 +4,6 @@ export {
   BALL_THEMES,
   COLOR_COUNT_LEVELS,
   COLOR_NAMES,
-  colorNames,
   formatColorCount,
   type BallTheme,
 } from './colors';

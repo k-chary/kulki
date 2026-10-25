@@ -3,7 +3,7 @@ import {
   BALL_THEME_HINTS,
   BALL_THEME_NAMES,
   BALL_THEMES,
-  colorNames,
+  COLOR_NAMES,
   type BallTheme,
 } from '../../format';
 import { COLORS } from '../../rules/color';
@@ -46,7 +46,7 @@ export function BallThemePicker({ value, onChange, force }: BallThemePickerProps
             <span
               className={styles.strip}
               role="img"
-              aria-label={COLORS.map((color) => colorNames(theme)[color]).join(', ')}
+              aria-label={COLORS.map((color) => COLOR_NAMES[color]).join(', ')}
             >
               {COLORS.map((color) => (
                 <span key={color} className={styles.dot}>

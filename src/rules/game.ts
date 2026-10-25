@@ -162,13 +162,18 @@ function isCount(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value >= 0;
 }
 
+// Brown took white's place as the 8th color; a save from before still says white.
+function renamed(square: unknown): unknown {
+  return square === 'white' ? 'brown' : square;
+}
+
 function isColorIn(colors: readonly Color[]) {
   return (value: unknown): value is Color => colors.includes(value as Color);
 }
 
 /**
  * Reads a state written by `serialize`. A save without `colorCount` is a 6-color
- * game. Throws an Error if the text is not a valid saved game, including one whose
+ * game, and white balls (from before brown replaced white) read as brown. Throws an Error if the text is not a valid saved game, including one whose
  * `gameOver` disagrees with a full board, whose count is outside MIN_COLORS..MAX_COLORS
  * or whose balls or preview use a color outside that count's set.
  */
@@ -179,7 +184,9 @@ export function deserialize(text: string): GameState {
   } catch {
     throw new Error('Saved game is not valid JSON');
   }
-  const { board, preview, score, cleared, gameOver } = data ?? {};
+  const { score, cleared, gameOver } = data ?? {};
+  const board = Array.isArray(data?.board) ? data.board.map(renamed) : data?.board;
+  const preview = Array.isArray(data?.preview) ? data.preview.map(renamed) : data?.preview;
   const colorCount = data?.colorCount === undefined ? DEFAULT_COLORS : data.colorCount;
   if (
     typeof colorCount !== 'number' ||

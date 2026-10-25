@@ -431,7 +431,7 @@ describe('serialize and deserialize', () => {
   it("rejects balls or preview outside the count's colors", () => {
     const good = JSON.parse(serialize(newGame(createRng(1), 9))) as Record<string, unknown>;
     const empty = Array.from({ length: 81 }, () => null);
-    for (const outside of ['orange', 'pink', 'white', 'black']) {
+    for (const outside of ['orange', 'pink', 'brown', 'black']) {
       const ball = JSON.stringify({ ...good, colorCount: 5, board: [outside, ...empty.slice(1)] });
       expect(() => deserialize(ball)).toThrow(Error);
       const preview = JSON.stringify({
@@ -442,11 +442,24 @@ describe('serialize and deserialize', () => {
       });
       expect(() => deserialize(preview)).toThrow(Error);
     }
-    // A 7-color save may hold pink but not white.
+    // A 7-color save may hold pink but not brown.
     const seven = { ...good, colorCount: 7, board: empty, preview: ['pink', 'red', 'red'] };
     expect(deserialize(JSON.stringify(seven)).preview[0]).toBe('pink');
-    const white = JSON.stringify({ ...seven, preview: ['white', 'red', 'red'] });
-    expect(() => deserialize(white)).toThrow(Error);
+    const brown = JSON.stringify({ ...seven, preview: ['brown', 'red', 'red'] });
+    expect(() => deserialize(brown)).toThrow(Error);
+  });
+
+  it('reads white balls in an older save as brown', () => {
+    const good = JSON.parse(serialize(newGame(createRng(1), 9))) as Record<string, unknown>;
+    const empty = Array.from({ length: 81 }, () => null);
+    const old = {
+      ...good,
+      board: ['white', ...empty.slice(1)],
+      preview: ['white', 'red', 'black'],
+    };
+    const game = deserialize(JSON.stringify(old));
+    expect(game.board[0]).toBe('brown');
+    expect(game.preview).toEqual(['brown', 'red', 'black']);
   });
 
   it('rejects text that is not a saved game', () => {

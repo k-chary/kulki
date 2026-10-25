@@ -15,8 +15,8 @@ A turn is one move; new balls appear only after a move that clears nothing.
 **Board and balls**
 
 - The board is 9×9 = 81 squares; each square holds at most one ball.
-- There are 9 colors: czerwony, żółty, zielony, niebieski, fioletowy, pomarańczowy, różowy, biały, czarny.
-- Each game uses 5 to 9 of them, chosen by the player before the game (see Difficulty). The count picks the first colors of that list: 5 is czerwony, żółty, zielony, niebieski and fioletowy; 6 is the classic set; 7 adds różowy, 8 biały and 9 czarny.
+- There are 9 colors: czerwony, żółty, zielony, niebieski, fioletowy, pomarańczowy, różowy, brązowy, czarny. Brązowy replaced biały because white balls were hard to see; saved games read their white balls as brown.
+- Each game uses 5 to 9 of them, chosen by the player before the game (see Difficulty). The count picks the first colors of that list: 5 is czerwony, żółty, zielony, niebieski and fioletowy; 6 is the classic set; 7 adds różowy, 8 brązowy and 9 czarny.
 - Every ball's color is drawn uniformly at random from the game's colors, independently.
 - A new game places 5 balls on random squares. Their colors are random and do not come from the preview. If the 5 already form a line, the start is redrawn.
 - From the start, the preview ("Następne") shows the colors of the next 3 balls to appear. Their squares are chosen only when they appear.
@@ -123,16 +123,16 @@ One window shows a header, the board and a side rail as one centered block. The 
 - Text is not selectable except in the name field, and the context menu is off. Text never scales; only the board does.
 - Light and dark themes follow the OS.
 - Ball colors follow the ball theme chosen in „Opcje” (see below), classic by default.
-- Colors are the only way to tell balls apart in v1 (no symbols). White balls are shaded from a small lit spot to a cool grey and get a grey rim on light fields and black balls a light rim on dark fields, so neither melts into the board; their path dots and target ring use the same grey or light grey.
+- Colors are the only way to tell balls apart in v1 (no symbols). Black balls get a light rim on dark fields so they don't melt into the board, and their path dots and target ring turn light grey there. Yellow is light and lemony so it never reads as orange.
 
 **Options („Opcje”)**
 
 - „Opcje” opens a dialog over the board, like „Nowa gra”. It holds settings that change only the look, so it works mid-game and never touches the game or its score.
 - „Kolory kulek” picks the ball theme from two cards, each showing all nine balls in its own theme:
   - **Klasyczne** („Spokojne barwy”): the current palette, with its own light and dark values. The default.
-  - **Cukierkowe** („Żywe jak draże czekoladowe”): vivid colors as close to M&M's shells as possible, the same in light and dark. The six classic candies (red, orange, yellow, green, blue, brown) plus the limited-edition purple, pink and white. There is no black candy, so the black ball is brown.
+  - **Cukierkowe** („Żywe jak draże czekoladowe”): vivid colors as close to M&M's shells as possible, the same in light and dark. The six classic candies (red, orange, yellow, green, blue, brown) plus the limited-edition purple and pink, and a glossy licorice black.
 - A picked theme applies at once (the board behind the dialog changes) and is remembered. „Gotowe” (focused), Esc and a scrim click close the dialog.
-- The theme changes only how balls look: the rules, saves and highscores never see it. Color names in the status line and screen-reader labels follow the look, so the candy black ball is „brązowa”.
+- The theme changes only how balls look: the rules, saves and highscores never see it.
 - The UI never names the brand; the theme is „Cukierkowe”.
 
 ## Persistence
@@ -180,7 +180,7 @@ Every style comes from one tokens file, and every basic piece of the screen is i
 
 **Tokens**
 
-- One file, `src/styles/tokens.css`, defines every token as a CSS custom property with light and dark values, exactly as the canvas's tokens.css: interface colors, the 9 ball colors of each ball theme with rim and path colors for white and black, type, a 4 px spacing grid, radii, shadows, sizes (rail 280, header 40, controls 44, dialog 380) and motion (durations, easings and a reduced column).
+- One file, `src/styles/tokens.css`, defines every token as a CSS custom property with light and dark values, exactly as the canvas's tokens.css: interface colors, the 9 ball colors of each ball theme with a rim and path color for black, type, a 4 px spacing grid, radii, shadows, sizes (rail 280, header 40, controls 44, dialog 380) and motion (durations, easings and a reduced column).
 - Tokens are named by role, never by value (`--color-text-muted`, not `--gray-500`). Ball colors reach CSS through a `data-color` attribute, so TypeScript never holds a hex value.
 - A CSS Module never contains a hex color, px size, ms duration or font name. A Stylelint rule (declaration-strict-value) enforces it in the PR lint step.
 - The light theme is the default; dark follows the OS, and `data-theme` forces either for a subtree. Text pairs meet WCAG AA.

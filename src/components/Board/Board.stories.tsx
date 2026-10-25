@@ -115,30 +115,30 @@ const clearing = Object.fromEntries(
 
 // The sample with the three extra colors of a 9-color game mixed in.
 const NINE = parseBoard(`
-  .b..g.w.y
+  .b..g.n.y
   ..p.k.o..
   g.i..b..r
   ..rrrr.k.
-  .y..p..w.
+  .y..p..n.
   o..g..b..
   i.r..k..p
-  .b..y..w.
+  .b..y..n.
   p..o.ig..
 `);
 
-/** A 9-color game: pink, white and black join; white gets a rim on light fields, black on dark. */
+/** A 9-color game: pink, brown and black join; black gets a rim on dark fields. */
 export const NineColors: Story = { args: { cells: cellsOf(NINE) } };
 
-const whiteSelected = {
+const brownSelected = {
   '7,7': { field: 'selected', ball: 'selected' },
   '6,7': { field: 'path' },
   '5,7': { field: 'path' },
   '5,8': { field: 'target' },
 } satisfies Record<string, Overlay>;
 
-/** A white ball's path: on light fields the dots and ring use a grey that stays visible. */
-export const WhitePath: Story = {
-  args: { cells: cellsOf(NINE, whiteSelected), pathColor: 'white' },
+/** A brown ball's path: dots and ring in the ball's own brown. */
+export const BrownPath: Story = {
+  args: { cells: cellsOf(NINE, brownSelected), pathColor: 'brown' },
 };
 
 const blackSelected = {
@@ -153,15 +153,15 @@ export const BlackPath: Story = {
   args: { cells: cellsOf(NINE, blackSelected), pathColor: 'black' },
 };
 
-/** The candy theme over the same nine colors: M&M's-like shells, the black ball brown. */
+/** The candy theme over the same nine colors: M&M's-like shells and a licorice black. */
 export const CandyNineColors: Story = {
   args: { cells: cellsOf(NINE) },
   decorators: [(Story) => <div data-ball-theme="candy">{Story()}</div>],
 };
 
-/** A candy brown ball's path: brown dots on light fields, light brown on dark. */
+/** A candy brown ball's path. */
 export const CandyBrownPath: Story = {
-  args: { cells: cellsOf(NINE, blackSelected), pathColor: 'black' },
+  args: { cells: cellsOf(NINE, brownSelected), pathColor: 'brown' },
   decorators: [(Story) => <div data-ball-theme="candy">{Story()}</div>],
 };
 

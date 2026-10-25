@@ -20,7 +20,7 @@ export const Classic: Story = {};
 
 export const Easiest: Story = { args: { value: 5 } };
 
-/** All nine colors, pink, white and black included. */
+/** All nine colors, pink, brown and black included. */
 export const Hardest: Story = { args: { value: 9 } };
 
 /** Hovering a count that is not chosen. */

@@ -82,7 +82,7 @@ describe('tokens.css', () => {
   });
 
   it('has the nine ball colors in both ball themes', () => {
-    const balls = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'white', 'black'];
+    const balls = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'brown', 'black'];
     const base = tokenValues(blocks, 'base');
     for (const ball of balls) {
       expect(light.has(`--ball-classic-${ball}`)).toBe(true);

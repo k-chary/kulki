@@ -23,7 +23,7 @@ describe('BallThemePicker', () => {
     expect(classic?.getAttribute('data-ball-theme')).toBe('classic');
     expect(candy?.getAttribute('data-ball-theme')).toBe('candy');
     const [, candyStrip] = screen.getAllByRole('img');
-    expect(candyStrip?.getAttribute('aria-label')).toMatch(/, biała, brązowa$/);
+    expect(candyStrip?.getAttribute('aria-label')).toMatch(/, brązowa, czarna$/);
   });
 
   it('reports the clicked theme', async () => {

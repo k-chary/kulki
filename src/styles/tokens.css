@@ -64,7 +64,7 @@
   --path-dot-size: 28%;        /* of the field */
   --path-dot-opacity: 0.45;
   --ring-width: 2px;
-  --ball-edge-width: 1.5px;    /* rim that keeps white and black balls apart from their field */
+  --ball-edge-width: 1.5px;    /* rim that keeps a black ball apart from a dark field */
   --focus-width: 3px;
   --preview-slot-size: 44px;
   --logo-dot-size: 14px;
@@ -103,8 +103,8 @@
   --ball-candy-blue: #1384d6;
   --ball-candy-purple: #6b2fa0;
   --ball-candy-pink: #f2559b;
-  --ball-candy-white: #f6f3ea;
-  --ball-candy-black: #5c2c1a; /* there is no black candy, so this ball is brown */
+  --ball-candy-brown: #6a3420;
+  --ball-candy-black: #141414; /* no black M&M's: a glossy licorice black */
 
 }
 
@@ -192,14 +192,10 @@
   --ball-classic-blue: #3b8cf0;
   --ball-classic-purple: #8b4fd6;
   --ball-classic-pink: #f08cc0;
-  --ball-classic-white: #f9fafc;
+  --ball-classic-brown: #8a5a32;
   --ball-classic-black: #1c1f26;
-  --ball-white-edge: #a3acbd;        /* a white ball on a light field needs a rim */
-  --ball-white-shade: #a7b0c2;       /* edge of the white ball's shading */
   --ball-black-edge: transparent;
-  --path-classic-white: #a3acbd;             /* path dots and target ring for a white ball */
-  --path-classic-black: #1c1f26;
-  --path-candy-black: #5c2c1a;               /* the candy theme's black ball is brown */
+  --path-black: #1c1f26;             /* path dots and target ring for a black ball */
   --ball-highlight: rgb(255 255 255 / 0.85);
   --ball-shade: #000000;
 
@@ -240,14 +236,10 @@
     --ball-classic-blue: #5199f2;
     --ball-classic-purple: #a06ae6;
     --ball-classic-pink: #f59ac9;
-    --ball-classic-white: #f4f6fa;
-    --ball-white-edge: transparent;
-    --ball-white-shade: #b4bccc;
+    --ball-classic-brown: #a8703f;
     --ball-classic-black: #06080c;
     --ball-black-edge: rgb(255 255 255 / 0.4); /* a black ball on a dark field needs a rim */
-    --path-classic-white: #f4f6fa;
-    --path-classic-black: #9aa5bd;           /* path dots and target ring for a black ball */
-    --path-candy-black: #b07a62;
+    --path-black: #9aa5bd;           /* path dots and target ring for a black ball */
     --ball-highlight: rgb(255 255 255 / 0.7);
     --ball-shade: #000000;
 
@@ -286,14 +278,10 @@
   --ball-classic-blue: #5199f2;
   --ball-classic-purple: #a06ae6;
   --ball-classic-pink: #f59ac9;
-  --ball-classic-white: #f4f6fa;
-  --ball-white-edge: transparent;
-  --ball-white-shade: #b4bccc;
+  --ball-classic-brown: #a8703f;
   --ball-classic-black: #06080c;
   --ball-black-edge: rgb(255 255 255 / 0.4); /* a black ball on a dark field needs a rim */
-  --path-classic-white: #f4f6fa;
-  --path-classic-black: #9aa5bd;           /* path dots and target ring for a black ball */
-  --path-candy-black: #b07a62;
+  --path-black: #9aa5bd;           /* path dots and target ring for a black ball */
   --ball-highlight: rgb(255 255 255 / 0.7);
   --ball-shade: #000000;
 
@@ -303,9 +291,9 @@
 
 /* ---------- Ball color theme ---------- */
 /*
- * Components read --ball-<color> and --path-<color>; these blocks point them at the
- * classic or candy values. Candy has the six classic M&M's plus the limited-edition
- * purple, pink and white; the black ball is a brown one. data-ball-theme="classic" | "candy" on any element picks
+ * Components read --ball-<color>; these blocks point it at the classic or candy
+ * values. Candy has the six classic M&M's plus the limited-edition purple and pink,
+ * and a licorice black. data-ball-theme="classic" | "candy" on any element picks
  * the theme for its subtree (the app sets it on the root; the theme picker on each
  * card). Every [data-theme] element repeats the mapping so its own light or dark
  * classic values win over the ones inherited from the root.
@@ -320,10 +308,8 @@
   --ball-blue: var(--ball-classic-blue);
   --ball-purple: var(--ball-classic-purple);
   --ball-pink: var(--ball-classic-pink);
-  --ball-white: var(--ball-classic-white);
+  --ball-brown: var(--ball-classic-brown);
   --ball-black: var(--ball-classic-black);
-  --path-white: var(--path-classic-white);
-  --path-black: var(--path-classic-black);
 }
 
 :root[data-ball-theme="candy"],
@@ -336,8 +322,6 @@
   --ball-blue: var(--ball-candy-blue);
   --ball-purple: var(--ball-candy-purple);
   --ball-pink: var(--ball-candy-pink);
-  --ball-white: var(--ball-candy-white);
+  --ball-brown: var(--ball-candy-brown);
   --ball-black: var(--ball-candy-black);
-  --path-white: var(--path-classic-white);
-  --path-black: var(--path-candy-black);
 }

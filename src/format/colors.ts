@@ -10,7 +10,7 @@ export const COLOR_NAMES: Record<Color, string> = {
   blue: 'niebieska',
   purple: 'fioletowa',
   pink: 'różowa',
-  white: 'biała',
+  brown: 'brązowa',
   black: 'czarna',
 };
 
@@ -43,8 +43,3 @@ export const BALL_THEME_HINTS: Record<BallTheme, string> = {
   classic: 'Spokojne barwy',
   candy: 'Żywe jak draże czekoladowe',
 };
-
-/** COLOR_NAMES as the balls look in a theme: the candy black ball is brown. */
-export function colorNames(theme: BallTheme): Record<Color, string> {
-  return theme === 'candy' ? { ...COLOR_NAMES, black: 'brązowa' } : COLOR_NAMES;
-}
