@@ -98,7 +98,7 @@
   /* Candy balls (M&M's shells sampled from photos, the same in light and dark) */
   --ball-candy-red: #cf1020;
   --ball-candy-orange: #f5761a;
-  --ball-candy-yellow: #fcd300;
+  --ball-candy-yellow: #ffe11f;
   --ball-candy-green: #12a64a;
   --ball-candy-blue: #1384d6;
   --ball-candy-purple: #6b2fa0;
@@ -187,7 +187,7 @@
 
   --ball-classic-red: #e2453c;
   --ball-classic-orange: #f08a24;
-  --ball-classic-yellow: #f2c418;
+  --ball-classic-yellow: #f7dc3c; /* light and lemony, so it never reads as orange */
   --ball-classic-green: #2fa84f;
   --ball-classic-blue: #3b8cf0;
   --ball-classic-purple: #8b4fd6;
@@ -235,7 +235,7 @@
 
     --ball-classic-red: #f05a50;
     --ball-classic-orange: #f7983a;
-    --ball-classic-yellow: #f5cf35;
+    --ball-classic-yellow: #f9e352;
     --ball-classic-green: #3dbb5e;
     --ball-classic-blue: #5199f2;
     --ball-classic-purple: #a06ae6;
@@ -281,7 +281,7 @@
 
   --ball-classic-red: #f05a50;
   --ball-classic-orange: #f7983a;
-  --ball-classic-yellow: #f5cf35;
+  --ball-classic-yellow: #f9e352;
   --ball-classic-green: #3dbb5e;
   --ball-classic-blue: #5199f2;
   --ball-classic-purple: #a06ae6;
