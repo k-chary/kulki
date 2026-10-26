@@ -34,3 +34,13 @@
   gap: var(--space-3);
   min-height: 0;
 }
+
+/* „Nowa gra” and „Opcje” share a row, half each. */
+.actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.actions > * {
+  flex: 1;
+}
