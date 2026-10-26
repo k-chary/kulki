@@ -6,7 +6,7 @@ Approved 2026-10-22. Source: https://claude.ai/code/artifact/2c36446e-f3a3-4162-
 
 Kulki v1 is a single-player desktop game (Tauri) in Polish: move balls on a 9×9 board and line up 5 or more of one color to clear them. It follows the classic Lines rules. The look, layout, motion and components come from the [Kulki visual design](https://claude.ai/artifact/Rg7LMfMFpU8usuiQCrqQF4) canvas, which replaces the earlier design draft. For game rules this spec wins; for how things look and move, the canvas does.
 
-In scope for v1: the full game loop, next-balls preview, current score, a top-30 highscore list, save and resume, and installers for Windows, macOS and Linux. Added after v1: difficulty, chosen as the number of ball colors (5 to 9). Its look (the three new balls and the „Nowa gra” dialog with its color picker) was designed after the canvas, in Storybook, and those stories are its visual reference.
+In scope for v1: the full game loop, next-balls preview, current score, a top-30 highscore list, save and resume, and installers for Windows, macOS and Linux. Added after v1: difficulty, chosen as the number of ball colors (5 to 9). Its look (the three new balls and the „Nowa gra” dialog with its color picker) was designed after the canvas, in Storybook, and those stories are its visual reference. The same goes for the highscore filter added after it (HighscoreFilter and CurrentGameNote).
 
 ## Game rules
 
@@ -65,7 +65,7 @@ The game is played with a mouse; Kulki has one screen, and everything else is a 
 
 - The color count is chosen only when a game starts, never during one. Every new game goes through the „Nowa gra” dialog (see Dialogs).
 - The dialog opens on the current game's count. The last count played is remembered and used on the next launch when there is no saved game; the very first game uses 6.
-- The game in progress always shows its count in the highscore heading („Najlepsze wyniki · 6 kolorów”).
+- The highscore heading always names the list shown („Najlepsze wyniki · 6 kolorów”); see Browsing other color counts.
 
 **Status line**
 
@@ -107,13 +107,21 @@ One window shows a header, the board and a side rail as one centered block. The 
 | Score | Wynik | Rail, 280 px wide | Current points and balls cleared, with Polish plural forms (1 kulka zbita, 2–4 kulki zbite, 5 kulek zbitych) |
 | Preview | Następne | Three 44 px slots | The next 3 colors, with „pojawią się po ruchu bez zbicia” always visible |
 | New game, options | Nowa gra, Opcje | Two 44 px secondary buttons sharing one row | „Nowa gra” restarts, „Opcje” opens the options dialog; both are disabled during animations and dialogs |
-| Highscores | Najlepsze wyniki · {n} kolorów | Fills the rest of the rail, scrolls | Top 30 for the current game's color count, with rank, name, date (dd.mm.rrrr) and points |
+| Highscores | Najlepsze wyniki · {n} kolorów | Fills the rest of the rail, scrolls | A 5–9 filter, then the top 30 for the chosen color count, with rank, name, date (dd.mm.rrrr) and points |
 
 **Highscore list rows**
 
 - Stored games are striped. The game in progress shows as „Ta gra · teraz” in the accent color at the place it would take, and moves up as the score grows; it is absent if the score would not make the top 30.
 - The entry just saved gets an accent ring until the next game starts. The current or saved row is scrolled into view when it changes.
 - On first launch the list says „Jeszcze nie ma wyników. Twoja pierwsza gra trafi tutaj.” and shows only the current game.
+
+**Browsing other color counts**
+
+- Under the heading sits a compact 5–9 segmented control (HighscoreFilter, „Pokaż wyniki dla”). It only picks which top 30 the panel shows; the game in progress, its count and its score are untouched. A small dot under a number marks the current game's count.
+- It shows the current game's count at launch and whenever a game starts or ends, so „Koniec gry” and the saved row always appear in their own list. It is not remembered across launches. Otherwise it stays where the player put it, and it stays usable during animations and dialogs.
+- Every count can be chosen, even one with no scores. Another count's empty list says „Brak wyników dla {n} kolorów.”
+- Another count's list has no „Ta gra” row, since scores across counts do not compare. Instead the current game is pinned at the foot of the panel (CurrentGameNote): „Ta gra · {n} kolorów” with its place in its own list and its points, styled like the „Ta gra” row with a dashed accent border. Outside its own top 30 it shows „–” and „poza top 30”. It updates as the score grows, and clicking it shows the current game's list again.
+- After game over there is no game in progress, so nothing is pinned.
 
 **Window**
 
@@ -141,7 +149,7 @@ One SQLite file in the app's data folder holds the highscores and the unfinished
 
 **Highscores**
 
-- Each color count has its own top 30. An entry stores name, score, date and color count; the rail and game over always use the list of the current game's count.
+- Each color count has its own top 30. An entry stores name, score, date and color count. Game over always uses the list of the game's count; the rail shows the count chosen in its filter.
 - Scores saved before color counts existed belong to the 6-color list.
 - A finished game enters its color count's list if that list has fewer than 30 entries or the score beats the 30th; the 30th then drops off. Equal scores keep the older game higher.
 - Game over then opens „Koniec gry” in one of three states:
@@ -200,7 +208,7 @@ Each component is presentational: its own CSS Module, every state through props,
 | --- | --- |
 | Board | Ball, Field (a real button), Board, MovingBall |
 | Header | Logo, StatusLine |
-| Rail | Panel, ScorePanel, NextBalls, PreviewSlot, ScoreRow, HighscoreList |
+| Rail | Panel, ScorePanel, NextBalls, PreviewSlot, ScoreRow, HighscoreList, HighscoreFilter, CurrentGameNote |
 | Controls | Button (primary, secondary), TextField, ColorCountPicker, BallThemePicker |
 | Dialogs | Dialog (base), NewGameDialog, OptionsDialog, GameOver, NameEntry |
 
@@ -221,7 +229,7 @@ The full test suite gates each release; pull requests get only a quick check of 
 | --- | --- | --- | --- |
 | Rules | Vitest, seeded random generator | Paths, lines in 4 directions, crossing lines, spawning, scoring, game end, start reroll, color counts | Every PR and every release |
 | Components | React Testing Library | Presentational components and the click-to-move flow | Every PR and every release |
-| End to end | Playwright on the web build, in-memory storage | A full move, a clear, game over, name entry, changing the color count | Release |
+| End to end | Playwright on the web build, in-memory storage | A full move, a clear, game over, name entry, changing the color count, browsing another count's highscores | Release |
 | Storage | cargo test | Highscore ranking and trimming, save and load | Release |
 
 Every PR also gets lint and type checks. A release is a git tag such as `v0.1.0`: GitHub Actions runs all suites, and only if they pass builds the Windows, macOS and Linux installers and publishes them as a GitHub Release.

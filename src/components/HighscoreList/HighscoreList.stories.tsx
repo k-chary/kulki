@@ -1,5 +1,12 @@
+import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { rowsWithLive, type HighscoreEntry } from '../../highscores/ranking';
+import { fn } from 'storybook/test';
+import {
+  placeFor,
+  rowsWithLive,
+  type HighscoreEntry,
+  type HighscoreRow,
+} from '../../highscores/ranking';
 import { RailFrame } from '../../storybook/RailFrame';
 import { HighscoreList } from './HighscoreList';
 
@@ -66,4 +73,83 @@ export const JustSaved: Story = {
 /** Each color count keeps its own top 30; the heading names the list shown. */
 export const PerColorCount: Story = {
   args: { rows: rowsWithLive(few, 320), colorCount: 8 },
+};
+
+/** Another count's list: stored rows only, the game in progress is not in it. */
+const storedRows = (list: readonly HighscoreEntry[]): HighscoreRow[] =>
+  list.map((entry, i) => ({ kind: 'stored', place: i + 1, entry }));
+
+const eightColors: HighscoreEntry[] = full.slice(0, 9).map((entry) => ({
+  ...entry,
+  score: Math.round(entry.score / 3 / 10) * 10,
+  colorCount: 8,
+}));
+
+/** The filter on the current game's list: the same rows as without it. */
+export const FilterOnGameList: Story = {
+  args: {
+    rows: rowsWithLive(few, 320),
+    colorCount: 6,
+    gameColorCount: 6,
+    onColorCountChange: fn(),
+    current: { place: 2, score: 320 },
+  },
+};
+
+/**
+ * Browsing the 8-color list during a 6-color game: no „Ta gra” row in it, the
+ * game's own place is pinned underneath instead.
+ */
+export const FilterOnOtherList: Story = {
+  args: {
+    rows: storedRows(eightColors),
+    colorCount: 8,
+    gameColorCount: 6,
+    onColorCountChange: fn(),
+    current: { place: placeFor(1240, full), score: 1240 },
+  },
+  decorators: [(Story) => <RailFrame tall>{Story()}</RailFrame>],
+};
+
+/** The game is outside its own top 30, so the pinned line says so. */
+export const FilterOtherListOutsideTop30: Story = {
+  args: { ...FilterOnOtherList.args, current: { place: null, score: 100 } },
+  decorators: [(Story) => <RailFrame tall>{Story()}</RailFrame>],
+};
+
+/** Nobody has played 9 colors yet. */
+export const FilterOnEmptyList: Story = {
+  args: {
+    rows: [],
+    colorCount: 9,
+    gameColorCount: 6,
+    onColorCountChange: fn(),
+    current: { place: 2, score: 320 },
+  },
+};
+
+const lists: Record<number, HighscoreEntry[]> = {
+  5: few.map((e) => ({ ...e, colorCount: 5 })),
+  6: full,
+  8: eightColors,
+};
+
+/** Click through the counts; the pinned line jumps back to the 6-color list. */
+export const Interactive: Story = {
+  args: { rows: [] },
+  render: function Render() {
+    const [shown, setShown] = useState(6);
+    const score = 1240;
+    const list = lists[shown] ?? [];
+    return (
+      <HighscoreList
+        rows={shown === 6 ? rowsWithLive(list, score) : storedRows(list)}
+        colorCount={shown}
+        gameColorCount={6}
+        onColorCountChange={setShown}
+        current={{ place: placeFor(score, full), score }}
+      />
+    );
+  },
+  decorators: [(Story) => <RailFrame tall>{Story()}</RailFrame>],
 };
