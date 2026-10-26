@@ -46,6 +46,9 @@ const MIGRATIONS: &[&str] = &[
 
 const LAST_NAME_KEY: &str = "last_name";
 const LAST_COLOR_COUNT_KEY: &str = "last_color_count";
+const BALL_THEME_KEY: &str = "ball_theme";
+/// The ball themes the frontend knows (`BallTheme` in `src/format/colors.ts`).
+pub const BALL_THEMES: [&str; 2] = ["classic", "candy"];
 /// The fewest and most ball colors a game can use.
 pub const MIN_COLOR_COUNT: u8 = 5;
 pub const MAX_COLOR_COUNT: u8 = 9;
@@ -247,6 +250,34 @@ impl Store {
             "INSERT INTO settings (key, value) VALUES (?1, ?2)
              ON CONFLICT (key) DO UPDATE SET value = excluded.value",
             params![LAST_COLOR_COUNT_KEY, color_count.to_string()],
+        )?;
+        Ok(())
+    }
+
+    /// The ball theme picked in „Opcje”, or `None` if none was picked yet (or
+    /// the stored value is not a known theme); the caller treats that as classic.
+    pub fn ball_theme(&self) -> rusqlite::Result<Option<String>> {
+        let value: Option<String> = self
+            .conn
+            .query_row(
+                "SELECT value FROM settings WHERE key = ?1",
+                [BALL_THEME_KEY],
+                |row| row.get(0),
+            )
+            .optional()?;
+        Ok(value.filter(|theme| BALL_THEMES.contains(&theme.as_str())))
+    }
+
+    pub fn set_ball_theme(&self, theme: &str) -> rusqlite::Result<()> {
+        if !BALL_THEMES.contains(&theme) {
+            return Err(rusqlite::Error::InvalidParameterName(format!(
+                "ball theme {theme:?} is not one of {BALL_THEMES:?}"
+            )));
+        }
+        self.conn.execute(
+            "INSERT INTO settings (key, value) VALUES (?1, ?2)
+             ON CONFLICT (key) DO UPDATE SET value = excluded.value",
+            params![BALL_THEME_KEY, theme],
         )?;
         Ok(())
     }
@@ -710,6 +741,33 @@ mod tests {
             )
             .unwrap();
         assert_eq!(store.last_color_count().unwrap(), None);
+    }
+
+    #[test]
+    fn remembers_the_ball_theme() {
+        let store = Store::open_in_memory().unwrap();
+        assert_eq!(store.ball_theme().unwrap(), None);
+        store.set_ball_theme("candy").unwrap();
+        assert_eq!(store.ball_theme().unwrap().as_deref(), Some("candy"));
+        store.set_ball_theme("classic").unwrap();
+        assert_eq!(store.ball_theme().unwrap().as_deref(), Some("classic"));
+    }
+
+    #[test]
+    fn rejects_an_unknown_ball_theme_and_reads_a_stored_one_as_unset() {
+        let store = Store::open_in_memory().unwrap();
+        store.set_ball_theme("candy").unwrap();
+        assert!(store.set_ball_theme("neon").is_err());
+        assert_eq!(store.ball_theme().unwrap().as_deref(), Some("candy"));
+
+        store
+            .conn
+            .execute(
+                "UPDATE settings SET value = 'neon' WHERE key = ?1",
+                [BALL_THEME_KEY],
+            )
+            .unwrap();
+        assert_eq!(store.ball_theme().unwrap(), None);
     }
 
     #[test]

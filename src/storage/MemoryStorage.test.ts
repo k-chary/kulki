@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MemoryStorage } from './MemoryStorage';
+import type { BallTheme } from '../format/colors';
 
 const entry = (name: string, score: number, colorCount = 6) => ({
   name,
@@ -102,6 +103,15 @@ describe('MemoryStorage', () => {
     expect(await storage.getLastColorCount()).toBe(8);
   });
 
+  it('remembers the ball theme and rejects an unknown one', async () => {
+    const storage = new MemoryStorage();
+    expect(await storage.getBallTheme()).toBeNull();
+    await storage.setBallTheme('candy');
+    expect(await storage.getBallTheme()).toBe('candy');
+    await expect(storage.setBallTheme('neon' as BallTheme)).rejects.toThrow(RangeError);
+    expect(await storage.getBallTheme()).toBe('candy');
+  });
+
   it('does not let callers change stored rows', async () => {
     const storage = new MemoryStorage();
     await storage.insertHighscore(entry('Ala', 100));
@@ -126,6 +136,7 @@ describe('MemoryStorage with a backing', () => {
     await first.insertHighscore(entry('Ala', 100));
     await first.setLastName('Ala');
     await first.setLastColorCount(7);
+    await first.setBallTheme('candy');
     await first.saveGame({ n: 1 });
 
     const second = new MemoryStorage<{ n: number }>(shared);
@@ -138,6 +149,7 @@ describe('MemoryStorage with a backing', () => {
     ]);
     expect(await second.getLastName()).toBe('Ala');
     expect(await second.getLastColorCount()).toBe(7);
+    expect(await second.getBallTheme()).toBe('candy');
     expect(await second.loadGame()).toEqual({ n: 1 });
 
     await second.deleteGame();
@@ -155,6 +167,12 @@ describe('MemoryStorage with a backing', () => {
     ]);
     expect(await storage.listHighscores(7)).toEqual([]);
     expect(await storage.getLastColorCount()).toBeNull();
+  });
+
+  it('reads a stored unknown ball theme as unset', async () => {
+    const stored = JSON.stringify({ ballTheme: 'neon' });
+    const storage = new MemoryStorage({ getItem: () => stored, setItem: () => undefined });
+    expect(await storage.getBallTheme()).toBeNull();
   });
 
   it('ignores junk and a backing that throws', async () => {
