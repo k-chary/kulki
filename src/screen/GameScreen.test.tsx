@@ -71,22 +71,32 @@ describe('„Nowa gra” dialog', () => {
     const { storage } = setup(6);
     expect(await screen.findByText('Najlepsze wyniki · 6 kolorów')).toBeTruthy();
     await userEvent.click(newGameButton());
-    await userEvent.click(screen.getByRole('radio', { name: '9 kolorów' }));
+    await userEvent.click(
+      within(screen.getByRole('dialog', { name: 'Nowa gra' })).getByRole('radio', {
+        name: '9 kolorów',
+      }),
+    );
     await userEvent.click(screen.getByRole('button', { name: 'Zacznij' }));
 
     expect(screen.queryByRole('dialog', { name: 'Nowa gra' })).toBeNull();
     expect(await screen.findByText('Najlepsze wyniki · 9 kolorów')).toBeTruthy();
     expect(await storage.getLastColorCount()).toBe(9);
     await userEvent.click(newGameButton());
-    expect(screen.getByRole('radio', { name: '9 kolorów' }).getAttribute('aria-checked')).toBe(
-      'true',
-    );
+    expect(
+      within(screen.getByRole('dialog', { name: 'Nowa gra' }))
+        .getByRole('radio', { name: '9 kolorów' })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
   });
 
   it('„Anuluj” keeps the game before the first move', async () => {
     const { storage } = setup(6);
     await userEvent.click(newGameButton());
-    await userEvent.click(screen.getByRole('radio', { name: '9 kolorów' }));
+    await userEvent.click(
+      within(screen.getByRole('dialog', { name: 'Nowa gra' })).getByRole('radio', {
+        name: '9 kolorów',
+      }),
+    );
     await userEvent.click(screen.getByRole('button', { name: 'Anuluj' }));
 
     expect(screen.queryByRole('dialog')).toBeNull();
@@ -113,7 +123,11 @@ describe('„Nowa gra” dialog', () => {
     setup(6);
     await playOneMove();
     await userEvent.click(newGameButton());
-    await userEvent.click(screen.getByRole('radio', { name: '5 kolorów' }));
+    await userEvent.click(
+      within(screen.getByRole('dialog', { name: 'Nowa gra' })).getByRole('radio', {
+        name: '5 kolorów',
+      }),
+    );
     await userEvent.click(screen.getByRole('button', { name: 'Zacznij' }));
 
     expect(screen.queryByRole('dialog')).toBeNull();
@@ -133,6 +147,70 @@ describe('highscore list', () => {
     expect(await screen.findByText('Dziewiątka')).toBeTruthy();
     expect(screen.queryByText('Szóstka')).toBeNull();
     expect(screen.getByText('Najlepsze wyniki · 9 kolorów')).toBeTruthy();
+  });
+});
+
+describe('browsing other color counts', () => {
+  const date = '2026-01-15T12:00:00.000Z';
+  const radio = (name: string) =>
+    within(screen.getByRole('radiogroup', { name: 'Pokaż wyniki dla' })).getByRole('radio', {
+      name: new RegExp(`^${name}`),
+    });
+  const note = () => screen.getByRole('button', { name: /^Ta gra:/ });
+
+  async function browsable(colorCount = 6) {
+    const storage = new MemoryStorage<GameState>();
+    await storage.insertHighscore({ name: 'Szóstka', score: 300, date, colorCount: 6 });
+    await storage.insertHighscore({ name: 'Dziewiątka', score: 700, date, colorCount: 9 });
+    render(<GameScreen storage={storage} rng={createRng(4)} game={fixture(colorCount)} />);
+    await screen.findByText('Szóstka');
+    return { storage };
+  }
+
+  it("shows another count's list with the game pinned, and the note switches back", async () => {
+    await browsable();
+    await userEvent.click(radio('9 kolorów'));
+
+    expect(await screen.findByText('Dziewiątka')).toBeTruthy();
+    expect(screen.queryByText('Szóstka')).toBeNull();
+    expect(screen.queryByText('Ta gra')).toBeNull();
+    expect(screen.getByText('Najlepsze wyniki · 9 kolorów')).toBeTruthy();
+    expect(note().getAttribute('aria-label')).toContain('2. miejsce');
+
+    await userEvent.click(note());
+    expect(await screen.findByText('Szóstka')).toBeTruthy();
+    expect(screen.queryByText('Dziewiątka')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Ta gra:/ })).toBeNull();
+  });
+
+  it('says so when the chosen count has no scores', async () => {
+    await browsable();
+    await userEvent.click(radio('7 kolorów'));
+    expect(await screen.findByText('Brak wyników dla 7 kolorów.')).toBeTruthy();
+  });
+
+  it('keeps the pinned note in step with the score', async () => {
+    await browsable();
+    await userEvent.click(radio('9 kolorów'));
+    expect(note().getAttribute('aria-label')).toContain('0 pkt');
+    await playOneMove();
+    expect(screen.getByText('Dziewiątka')).toBeTruthy();
+  });
+
+  it('snaps back to the game when a new game starts', async () => {
+    await browsable();
+    await userEvent.click(radio('9 kolorów'));
+    await screen.findByText('Dziewiątka');
+
+    await userEvent.click(newGameButton());
+    await userEvent.click(
+      within(screen.getByRole('dialog', { name: 'Nowa gra' })).getByRole('radio', {
+        name: '6 kolorów',
+      }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Zacznij' }));
+    expect(await screen.findByText('Szóstka')).toBeTruthy();
+    expect(screen.getByText('Najlepsze wyniki · 6 kolorów')).toBeTruthy();
   });
 });
 
