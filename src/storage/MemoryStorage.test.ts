@@ -108,6 +108,9 @@ describe('MemoryStorage', () => {
     expect(await storage.getBallTheme()).toBeNull();
     await storage.setBallTheme('candy');
     expect(await storage.getBallTheme()).toBe('candy');
+    await storage.setBallTheme('cats');
+    expect(await storage.getBallTheme()).toBe('cats');
+    await storage.setBallTheme('candy');
     await expect(storage.setBallTheme('neon' as BallTheme)).rejects.toThrow(RangeError);
     expect(await storage.getBallTheme()).toBe('candy');
   });

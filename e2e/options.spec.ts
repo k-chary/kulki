@@ -16,4 +16,19 @@ test.describe('„Opcje”', () => {
     await page.reload();
     await expect(root).toHaveAttribute('data-ball-theme', 'candy');
   });
+
+  test('„Kotki” survive a reload', async ({ page }) => {
+    await page.goto('/?seed=5');
+    const root = page.locator('html');
+
+    await page.getByRole('button', { name: 'Opcje' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Opcje' });
+    await dialog.getByRole('radio', { name: /Kotki/ }).click();
+    await expect(root).toHaveAttribute('data-ball-theme', 'cats');
+    await dialog.getByRole('button', { name: 'Gotowe' }).click();
+    await expect(dialog).toHaveCount(0);
+
+    await page.reload();
+    await expect(root).toHaveAttribute('data-ball-theme', 'cats');
+  });
 });

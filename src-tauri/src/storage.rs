@@ -48,7 +48,7 @@ const LAST_NAME_KEY: &str = "last_name";
 const LAST_COLOR_COUNT_KEY: &str = "last_color_count";
 const BALL_THEME_KEY: &str = "ball_theme";
 /// The ball themes the frontend knows (`BallTheme` in `src/format/colors.ts`).
-pub const BALL_THEMES: [&str; 2] = ["classic", "candy"];
+pub const BALL_THEMES: [&str; 3] = ["classic", "candy", "cats"];
 /// The fewest and most ball colors a game can use.
 pub const MIN_COLOR_COUNT: u8 = 5;
 pub const MAX_COLOR_COUNT: u8 = 9;
@@ -751,6 +751,8 @@ mod tests {
         assert_eq!(store.ball_theme().unwrap().as_deref(), Some("candy"));
         store.set_ball_theme("classic").unwrap();
         assert_eq!(store.ball_theme().unwrap().as_deref(), Some("classic"));
+        store.set_ball_theme("cats").unwrap();
+        assert_eq!(store.ball_theme().unwrap().as_deref(), Some("cats"));
     }
 
     #[test]

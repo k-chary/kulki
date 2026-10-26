@@ -59,6 +59,9 @@ describe('TauriStorage', () => {
     expect(invoke).toHaveBeenCalledWith('get_ball_theme');
     await storage.setBallTheme('classic');
     expect(invoke).toHaveBeenCalledWith('set_ball_theme', { theme: 'classic' });
+    await storage.setBallTheme('cats');
+    expect(invoke).toHaveBeenCalledWith('set_ball_theme', { theme: 'cats' });
+    await expect(storageReturning('cats').storage.getBallTheme()).resolves.toBe('cats');
   });
 
   it('reads a missing or unknown ball theme as null and refuses to set one', async () => {
