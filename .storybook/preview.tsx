@@ -45,6 +45,7 @@ const preview: Preview = {
         items: [
           { value: 'classic', title: 'Classic balls' },
           { value: 'candy', title: 'Candy balls' },
+          { value: 'cats', title: 'Cats' },
         ],
         dynamicTitle: true,
       },

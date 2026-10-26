@@ -165,6 +165,18 @@ export const CandyBrownPath: Story = {
   decorators: [(Story) => <div data-ball-theme="candy">{Story()}</div>],
 };
 
+/** The cats theme over the same nine colors: each ball is a cat's head in its classic color. */
+export const CatsNineColors: Story = {
+  args: { cells: cellsOf(NINE) },
+  decorators: [(Story) => <div data-ball-theme="cats">{Story()}</div>],
+};
+
+/** A black cat's path: a light face and contour keep it apart from a dark field. */
+export const CatsBlackPath: Story = {
+  args: { cells: cellsOf(NINE, blackSelected), pathColor: 'black' },
+  decorators: [(Story) => <div data-ball-theme="cats">{Story()}</div>],
+};
+
 /** A line of five fades out, locked; the board shows no hover feedback meanwhile. */
 export const Clearing: Story = { args: { cells: cellsOf(LINE, clearing), locked: true } };
 

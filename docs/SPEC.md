@@ -136,9 +136,10 @@ One window shows a header, the board and a side rail as one centered block. The 
 **Options („Opcje”)**
 
 - „Opcje” opens a dialog over the board, like „Nowa gra”. It holds settings that change only the look, so it works mid-game and never touches the game or its score.
-- „Kolory kulek” picks the ball theme from two cards, each showing all nine balls in its own theme:
+- „Kolory kulek” picks the ball theme from three cards, each showing all nine balls in its own theme:
   - **Klasyczne** („Spokojne barwy”): the current palette, with its own light and dark values. The default.
   - **Cukierkowe** („Żywe jak draże czekoladowe”): vivid colors as close to M&M's shells as possible, the same in light and dark. The six classic candies (red, orange, yellow, green, blue, brown) plus the limited-edition purple and pink, and a glossy licorice black.
+  - **Kotki** („Kocie mordki w klasycznych barwach”): every ball is a cute cat's head (two ears, eyes, nose, whiskers, pink inner ears and cheeks) with fur in the classic color; the color alone tells cats apart, all nine share one face. A dark contour outlines each cat; the black cat gets a light face and contour so it stands out on dark fields. No gloss. Clear, spawn, hop, shake and slide animate the cat exactly like a ball. The logo's three balls stay round.
 - A picked theme applies at once (the board behind the dialog changes) and is remembered. „Gotowe” (focused), Esc and a scrim click close the dialog.
 - The theme changes only how balls look: the rules, saves and highscores never see it.
 - The UI never names the brand; the theme is „Cukierkowe”.
@@ -192,7 +193,7 @@ Every style comes from one tokens file, and every basic piece of the screen is i
 - Tokens are named by role, never by value (`--color-text-muted`, not `--gray-500`). Ball colors reach CSS through a `data-color` attribute, so TypeScript never holds a hex value.
 - A CSS Module never contains a hex color, px size, ms duration or font name. A Stylelint rule (declaration-strict-value) enforces it in the PR lint step.
 - The light theme is the default; dark follows the OS, and `data-theme` forces either for a subtree. Text pairs meet WCAG AA.
-- Ball themes: the classic colors are `--ball-classic-*` (light and dark values), the candy ones `--ball-candy-*` (one value for both). Components read only `--ball-<color>` and `--path-<color>`, which `data-ball-theme="classic" | "candy"` on any element points at one theme for its subtree; the app sets it on the root element.
+- Ball themes: the classic colors are `--ball-classic-*` (light and dark values), the candy ones `--ball-candy-*` (one value for both). Cats use the classic colors; their shape comes from `--cat-head`, `--cat-face` and `--cat-blush` (SVG masks) and `--cat-ink`, `--cat-ink-on-dark`, `--cat-blush-color`, switched on by `--ball-mask`, `--ball-sheen` and `--ball-face-opacity`. Components read only `--ball-<color>` and `--path-<color>`, which `data-ball-theme="classic" | "candy" | "cats"` on any element points at one theme for its subtree; the app sets it on the root element.
 
 **Typography**
 
@@ -218,7 +219,7 @@ The game screen only assembles these and connects them to the rules module. Prop
 
 - Every component has a story for each of its states, rendered on the real background.
 - A „Tokens” docs page renders the sheet from tokens.css itself, so it cannot drift.
-- The toolbar has a Theme switch (light, dark, side by side), a Motion switch (full, reduced) and a Balls switch (classic, candy).
+- The toolbar has a Theme switch (light, dark, side by side), a Motion switch (full, reduced) and a Balls switch (classic, candy, cats).
 - A new component or state is not done until its story exists.
 
 ## Testing and release

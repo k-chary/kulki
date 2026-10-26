@@ -8,7 +8,7 @@ const meta = {
   title: 'Dialogs/OptionsDialog',
   component: OptionsDialog,
   args: { ballTheme: 'classic', onBallThemeChange: fn(), onClose: fn() },
-  argTypes: { ballTheme: { control: 'inline-radio', options: ['classic', 'candy'] } },
+  argTypes: { ballTheme: { control: 'inline-radio', options: ['classic', 'candy', 'cats'] } },
   decorators: [(Story) => <BoardStage>{Story()}</BoardStage>],
 } satisfies Meta<typeof OptionsDialog>;
 
@@ -19,6 +19,8 @@ type Story = StoryObj<typeof meta>;
 export const Classic: Story = {};
 
 export const Candy: Story = { args: { ballTheme: 'candy' } };
+
+export const Cats: Story = { args: { ballTheme: 'cats' } };
 
 /** Click a card: the board behind the dialog switches at once, as in the game. */
 export const Playground: Story = {

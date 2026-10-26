@@ -10,8 +10,12 @@
   letter-spacing: var(--tracking-display);
 }
 
+/* The logo's balls stay round in every ball theme. */
 .dots {
   --ball-size: var(--logo-dot-size);
+  --ball-mask: none;
+  --ball-sheen: var(--ball-highlight);
+  --ball-face-opacity: 0;
 
   display: flex;
   gap: var(--space-1);

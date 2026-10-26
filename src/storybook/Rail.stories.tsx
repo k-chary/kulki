@@ -74,3 +74,8 @@ export const BrowsingOtherCount: Story = { args: { browsing: 7 } };
 export const Candy: Story = {
   decorators: [(Story) => <div data-ball-theme="candy">{Story()}</div>],
 };
+
+/** The cats ball theme: the next balls are cats; the logo keeps its round balls. */
+export const Cats: Story = {
+  decorators: [(Story) => <div data-ball-theme="cats">{Story()}</div>],
+};

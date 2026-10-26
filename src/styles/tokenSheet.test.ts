@@ -90,6 +90,19 @@ describe('tokens.css', () => {
     }
   });
 
+  it('draws cats from tokens', () => {
+    const base = tokenValues(blocks, 'base');
+    for (const name of [
+      '--cat-head',
+      '--cat-face',
+      '--cat-blush',
+      '--cat-ink',
+      '--cat-ink-on-dark',
+    ]) {
+      expect(base.has(name)).toBe(true);
+    }
+  });
+
   it('only overrides motion tokens that exist in full motion', () => {
     const full = tokenValues(blocks, 'motion');
     for (const name of tokenValues(blocks, 'reduced').keys()) expect(full.has(name)).toBe(true);
