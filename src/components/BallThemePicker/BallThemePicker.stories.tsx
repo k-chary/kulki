@@ -8,7 +8,7 @@ const meta = {
   title: 'Controls/BallThemePicker',
   component: BallThemePicker,
   args: { value: 'classic', onChange: fn() },
-  argTypes: { value: { control: 'inline-radio', options: ['classic', 'candy'] } },
+  argTypes: { value: { control: 'inline-radio', options: ['classic', 'candy', 'cats'] } },
   decorators: [(Story) => <div className={styles.frame}>{Story()}</div>],
 } satisfies Meta<typeof BallThemePicker>;
 
@@ -20,6 +20,9 @@ export const Classic: Story = {};
 
 /** Candy chosen: the M&M's-like colors, with brown in place of black. */
 export const Candy: Story = { args: { value: 'candy' } };
+
+/** Cats chosen: a cat's head per color, in the classic colors. */
+export const Cats: Story = { args: { value: 'cats' } };
 
 /** Hovering the card that is not chosen. */
 export const Hover: Story = { args: { force: { theme: 'candy', state: 'hover' } } };

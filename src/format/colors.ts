@@ -29,17 +29,19 @@ export function formatColorCount(count: number): string {
 }
 
 /** The look of the balls, picked in „Opcje”. Only the look: the rules never see it. */
-export type BallTheme = 'classic' | 'candy';
+export type BallTheme = 'classic' | 'candy' | 'cats';
 
-export const BALL_THEMES: readonly BallTheme[] = ['classic', 'candy'];
+export const BALL_THEMES: readonly BallTheme[] = ['classic', 'candy', 'cats'];
 
 export const BALL_THEME_NAMES: Record<BallTheme, string> = {
   classic: 'Klasyczne',
   candy: 'Cukierkowe',
+  cats: 'Kotki',
 };
 
 /** One line under each theme's name in „Opcje”. */
 export const BALL_THEME_HINTS: Record<BallTheme, string> = {
   classic: 'Spokojne barwy',
   candy: 'Żywe jak draże czekoladowe',
+  cats: 'Kocie mordki w klasycznych barwach',
 };

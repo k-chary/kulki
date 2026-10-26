@@ -107,6 +107,15 @@
   --ball-candy-brown: #6a3420;
   --ball-candy-black: #141414; /* no black M&M's: a glossy licorice black */
 
+  /* Cat balls: a cat's head in the ball's color, drawn by three masks on a 100 x 100 grid
+     (head silhouette, ink face with a contour, pink inner ears and cheeks). */
+  --cat-head: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><g fill='black' stroke='black' stroke-width='7' stroke-linejoin='round'><path d='M10 50 L14 6 L46 24 Z M90 50 L86 6 L54 24 Z'/><ellipse cx='50' cy='59' rx='43' ry='36'/></g></svg>");
+  --cat-face: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><mask id='o'><g fill='white' stroke='white' stroke-width='7' stroke-linejoin='round'><path d='M10 50 L14 6 L46 24 Z M90 50 L86 6 L54 24 Z'/><ellipse cx='50' cy='59' rx='43' ry='36'/></g><g fill='black'><path d='M10 50 L14 6 L46 24 Z M90 50 L86 6 L54 24 Z' stroke='black' stroke-width='1' stroke-linejoin='round'/><ellipse cx='50' cy='59' rx='42.5' ry='35.5'/></g></mask><mask id='e'><rect width='100' height='100' fill='white'/><circle cx='36.5' cy='56.5' r='2.6' fill='black'/><circle cx='68.5' cy='56.5' r='2.6' fill='black'/></mask><rect width='100' height='100' fill='black' mask='url(%23o)'/><g mask='url(%23e)'><ellipse cx='34' cy='60' rx='6.5' ry='8'/><ellipse cx='66' cy='60' rx='6.5' ry='8'/></g><path d='M45.5 69 H54.5 L50 73.5 Z' stroke='black' stroke-width='2' stroke-linejoin='round'/><g fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'><path d='M50 73.5 V76 M43 76 Q46.5 80 50 76 Q53.5 80 57 76'/><path d='M22 69 L9 66 M22 74 L9 76 M78 69 L91 66 M78 74 L91 76' stroke-width='2'/></g></svg>");
+  --cat-blush: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M19 38 L20 15 L37 27 Z M81 38 L80 15 L63 27 Z' stroke='black' stroke-width='4' stroke-linejoin='round'/><ellipse cx='23' cy='72' rx='7' ry='4.5'/><ellipse cx='77' cy='72' rx='7' ry='4.5'/></svg>");
+  --cat-ink: #2a1d1a;           /* face and contour */
+  --cat-ink-on-dark: #f6e9c4;   /* the black cat's face: light, like real black cats' eyes */
+  --cat-blush-color: rgb(255 122 160 / 0.6);
+
 }
 
 /* ---------- Motion (full) ---------- */
@@ -294,14 +303,16 @@
 /*
  * Components read --ball-<color>; these blocks point it at the classic or candy
  * values. Candy has the six classic M&M's plus the limited-edition purple and pink,
- * and a licorice black. data-ball-theme="classic" | "candy" on any element picks
+ * and a licorice black. Cats use the classic colors. data-ball-theme="classic" |
+ * "candy" | "cats" on any element picks
  * the theme for its subtree (the app sets it on the root; the theme picker on each
  * card). Every [data-theme] element repeats the mapping so its own light or dark
  * classic values win over the ones inherited from the root.
  */
 :root,
 [data-theme],
-[data-ball-theme="classic"] {
+[data-ball-theme="classic"],
+[data-ball-theme="cats"] {
   --ball-red: var(--ball-classic-red);
   --ball-orange: var(--ball-classic-orange);
   --ball-yellow: var(--ball-classic-yellow);
@@ -325,4 +336,25 @@
   --ball-pink: var(--ball-candy-pink);
   --ball-brown: var(--ball-candy-brown);
   --ball-black: var(--ball-candy-black);
+}
+
+/*
+ * The ball's shape. Classic and candy are round, glossy balls; cats keep the classic
+ * colors but mask each ball to a cat's head, drop the gloss and show the face.
+ */
+:root,
+[data-theme],
+[data-ball-theme="classic"],
+[data-ball-theme="candy"] {
+  --ball-mask: none;
+  --ball-sheen: var(--ball-highlight);
+  --ball-face-opacity: 0;
+}
+
+:root[data-ball-theme="cats"],
+[data-ball-theme="cats"],
+[data-ball-theme="cats"] [data-theme] {
+  --ball-mask: var(--cat-head);
+  --ball-sheen: transparent;
+  --ball-face-opacity: 1;
 }

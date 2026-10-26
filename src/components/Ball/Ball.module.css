@@ -6,13 +6,15 @@
   --ball-light-at: 50% 55%;
   --ball-core: 55%;
   --ball-dark: color-mix(in srgb, var(--ball-color) 62%, var(--ball-shade));
+  --cat-ink-color: var(--cat-ink);
 
+  position: relative;
   display: block;
   width: var(--ball-size);
   aspect-ratio: 1;
   border-radius: var(--radius-full);
   background:
-    radial-gradient(circle at 34% 30%, var(--ball-highlight) 0 12%, transparent 40%),
+    radial-gradient(circle at 34% 30%, var(--ball-sheen) 0 12%, transparent 40%),
     radial-gradient(
       circle at var(--ball-light-at),
       var(--ball-color) var(--ball-core),
@@ -26,6 +28,32 @@
   transform: scale(var(--ball-scale, 1));
   transition: transform var(--dur-hover) var(--ease-standard);
   pointer-events: none;
+
+  /* The ball theme's shape: none for round balls, a cat's head for cats. */
+  mask-image: var(--ball-mask);
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+}
+
+/* A cat's pink inner ears and cheeks, then its face; hidden on round balls. */
+.ball::before,
+.ball::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: var(--ball-face-opacity);
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+}
+
+.ball::before {
+  background: var(--cat-blush-color);
+  mask-image: var(--cat-blush);
+}
+
+.ball::after {
+  background: var(--cat-ink-color);
+  mask-image: var(--cat-face);
 }
 
 .ball[data-color='red'] {
@@ -60,10 +88,11 @@
   --ball-color: var(--ball-brown);
 }
 
-/* Black gets a rim where it would melt into a dark field. */
+/* Black gets a rim where it would melt into a dark field; a black cat gets a light face and contour. */
 .ball[data-color='black'] {
   --ball-color: var(--ball-black);
   --ball-edge: var(--ball-black-edge);
+  --cat-ink-color: var(--cat-ink-on-dark);
 }
 
 .ball[data-state='selected'] {
