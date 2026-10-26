@@ -27,7 +27,12 @@ import {
 import { type PlaybackView, buildSteps, restingView } from '../game/playback';
 import { type Sequence, playSequence } from '../game/sequencer';
 import type { BallTheme } from '../format';
-import { type HighscoreEntry, rowsWithLive } from '../highscores/ranking';
+import {
+  type HighscoreEntry,
+  type HighscoreRow,
+  livePlace,
+  rowsWithLive,
+} from '../highscores/ranking';
 import { type GameState, type Rng, cellIndex, newGame } from '../rules';
 import type { InsertResult, Storage } from '../storage/Storage';
 import { readDuration, readTurnDurations } from '../styles/motion';
@@ -102,6 +107,27 @@ export function GameScreen({
     (entries: HighscoreEntry[], forCount: number) => setStored({ colorCount: forCount, entries }),
     [],
   );
+  // The count whose list the rail shows. It follows the game at launch and whenever a game
+  // starts or ends; in between the player may browse the other counts. Not stored anywhere.
+  const [shown, setShown] = useState(colorCount);
+  const [browsed, setBrowsed] = useState<{ colorCount: number; entries: HighscoreEntry[] }>({
+    colorCount,
+    entries: [],
+  });
+  useEffect(() => {
+    if (shown === colorCount) return;
+    let current = true;
+    void storage
+      .listHighscores(shown)
+      .then((entries) => {
+        // An answer for a count no longer shown is dropped.
+        if (current) setBrowsed({ colorCount: shown, entries });
+      })
+      .catch(logStorageError);
+    return () => {
+      current = false;
+    };
+  }, [storage, shown, colorCount]);
   const [lastName, setLastName] = useState<string | null>(null);
   const [saveFailed, setSaveFailed] = useState(false);
   const saving = useRef(false);
@@ -245,10 +271,30 @@ export function GameScreen({
   );
   // The „Nowa gra” dialog replaces „Koniec gry” while it is open; „Anuluj” brings it back.
   const gameOver = turn || state.choosing ? null : gameOverView(state, highscores, lastName);
+  // The game's own list is shown again once the game over screen is up.
+  const gameEnded = state.game.gameOver && turn === null;
+  const [wasEnded, setWasEnded] = useState(gameEnded);
+  if (gameEnded !== wasEnded) {
+    setWasEnded(gameEnded);
+    if (gameEnded) setShown(colorCount);
+  }
+  const browsing = shown !== colorCount;
+  const shownRows: HighscoreRow[] = useMemo(
+    () =>
+      browsing
+        ? (browsed.colorCount === shown ? browsed.entries : []).map((entry, i) => ({
+            kind: 'stored',
+            place: i + 1,
+            entry,
+          }))
+        : rows,
+    [browsing, browsed, shown, rows],
+  );
   const requestNewGame = () => dispatch({ type: 'requestNewGame' });
   const startNewGame = (count: number) => {
     // Only the next launch depends on it; the game starts regardless.
     void storage.setLastColorCount(count).catch(logStorageError);
+    setShown(count);
     dispatch({ type: 'startNewGame', colorCount: count });
   };
 
@@ -377,9 +423,16 @@ export function GameScreen({
             </Button>
           </div>
           <HighscoreList
-            rows={rows}
-            savedPlace={state.saved?.place ?? null}
-            colorCount={colorCount}
+            rows={shownRows}
+            savedPlace={browsing ? null : (state.saved?.place ?? null)}
+            colorCount={shown}
+            gameColorCount={colorCount}
+            onColorCountChange={setShown}
+            current={
+              state.game.gameOver
+                ? undefined
+                : { place: livePlace(view.score, highscores), score: view.score }
+            }
           />
         </aside>
       </div>
