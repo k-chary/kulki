@@ -6,6 +6,7 @@ import { NextBalls } from '../components/NextBalls/NextBalls';
 import { ScorePanel } from '../components/ScorePanel/ScorePanel';
 import { placeFor, rowsWithLive, type HighscoreEntry } from '../highscores/ranking';
 import { RailFrame } from './RailFrame';
+import styles from './RailFrame.module.css';
 
 const POINTS = [3870, 3420, 3110, 2890, 2760, 2540, 2310, 2200, 1980, 1870, 1760, 1650, 1530, 1410];
 const scores: HighscoreEntry[] = POINTS.map((score, i) => ({
@@ -21,7 +22,7 @@ const sevenColors: HighscoreEntry[] = scores.map((entry) => ({
   colorCount: 7,
 }));
 
-/** The side rail as the game screen stacks it: Wynik, Następne, Nowa gra, Najlepsze wyniki. */
+/** The side rail as the game screen stacks it: Wynik, Następne, Nowa gra and Opcje, Najlepsze wyniki. */
 function Rail({ newGameDisabled, browsing }: { newGameDisabled: boolean; browsing?: number }) {
   const [shown, setShown] = useState(browsing ?? 6);
   const list = shown === 6 ? scores : sevenColors.slice(0, shown === 7 ? 6 : 0);
@@ -29,9 +30,14 @@ function Rail({ newGameDisabled, browsing }: { newGameDisabled: boolean; browsin
     <RailFrame tall>
       <ScorePanel score={1240} cleared={124} />
       <NextBalls colors={['blue', 'yellow', 'purple']} />
-      <Button variant="secondary" disabled={newGameDisabled}>
-        Nowa gra
-      </Button>
+      <div className={styles.actions}>
+        <Button variant="secondary" disabled={newGameDisabled}>
+          Nowa gra
+        </Button>
+        <Button variant="secondary" disabled={newGameDisabled}>
+          Opcje
+        </Button>
+      </div>
       <HighscoreList
         rows={
           shown === 6
@@ -63,3 +69,8 @@ export const Locked: Story = { args: { newGameDisabled: true } };
 
 /** Browsing the 7-color list in a 6-color game; the game's place is pinned at the foot. */
 export const BrowsingOtherCount: Story = { args: { browsing: 7 } };
+
+/** The candy ball theme: only the balls change. */
+export const Candy: Story = {
+  decorators: [(Story) => <div data-ball-theme="candy">{Story()}</div>],
+};

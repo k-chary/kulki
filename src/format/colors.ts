@@ -10,7 +10,7 @@ export const COLOR_NAMES: Record<Color, string> = {
   blue: 'niebieska',
   purple: 'fioletowa',
   pink: 'różowa',
-  white: 'biała',
+  brown: 'brązowa',
   black: 'czarna',
 };
 
@@ -27,3 +27,19 @@ export const COLOR_COUNT_LEVELS: Readonly<Record<number, string>> = {
 export function formatColorCount(count: number): string {
   return `${count} ${plural(count, 'kolor', 'kolory', 'kolorów')}`;
 }
+
+/** The look of the balls, picked in „Opcje”. Only the look: the rules never see it. */
+export type BallTheme = 'classic' | 'candy';
+
+export const BALL_THEMES: readonly BallTheme[] = ['classic', 'candy'];
+
+export const BALL_THEME_NAMES: Record<BallTheme, string> = {
+  classic: 'Klasyczne',
+  candy: 'Cukierkowe',
+};
+
+/** One line under each theme's name in „Opcje”. */
+export const BALL_THEME_HINTS: Record<BallTheme, string> = {
+  classic: 'Spokojne barwy',
+  candy: 'Żywe jak draże czekoladowe',
+};

@@ -138,6 +138,8 @@ function preview(name: string): ReactNode {
       </span>
     );
   }
+  if (name.startsWith('--ball-'))
+    return <span className={styles.swatch} style={{ background: value }} />;
   if (name.startsWith('--space-')) return <span className={styles.bar} style={{ width: value }} />;
   if (name.startsWith('--radius-')) {
     return <span className={styles.radius} style={{ borderRadius: value }} />;

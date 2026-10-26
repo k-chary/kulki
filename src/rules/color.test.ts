@@ -6,9 +6,9 @@ describe('colorsFor', () => {
     expect([...colorsFor(6)].sort()).toEqual([...CLASSIC_COLORS].sort());
   });
 
-  it('adds pink, white and black for seven to nine', () => {
+  it('adds pink, brown and black for seven to nine', () => {
     expect(colorsFor(7).at(-1)).toBe('pink');
-    expect(colorsFor(8).at(-1)).toBe('white');
+    expect(colorsFor(8).at(-1)).toBe('brown');
     expect(colorsFor(9)).toEqual(COLORS);
   });
 

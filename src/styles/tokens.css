@@ -64,10 +64,11 @@
   --path-dot-size: 28%;        /* of the field */
   --path-dot-opacity: 0.45;
   --ring-width: 2px;
-  --ball-edge-width: 1.5px;    /* rim that keeps white and black balls apart from their field */
+  --ball-edge-width: 1.5px;    /* rim that keeps a black ball apart from a dark field */
   --focus-width: 3px;
   --preview-slot-size: 44px;
   --logo-dot-size: 14px;
+  --theme-dot-size: 26px;      /* balls on a theme card in „Opcje” */
   --control-height: 44px;
   --filter-height: 30px;       /* compact segmented control above the highscore list */
   --rank-width: 28px;
@@ -94,6 +95,18 @@
   --z-focus: 1;
   --z-moving: 2;
   --z-overlay: 10;
+
+  /* Candy balls (M&M's shells sampled from photos, the same in light and dark) */
+  --ball-candy-red: #cf1020;
+  --ball-candy-orange: #f5761a;
+  --ball-candy-yellow: #ffe11f;
+  --ball-candy-green: #12a64a;
+  --ball-candy-blue: #1384d6;
+  --ball-candy-purple: #6b2fa0;
+  --ball-candy-pink: #f2559b;
+  --ball-candy-brown: #6a3420;
+  --ball-candy-black: #141414; /* no black M&M's: a glossy licorice black */
+
 }
 
 /* ---------- Motion (full) ---------- */
@@ -173,20 +186,17 @@
   --color-field-hover: #f6f8fb;
   --color-ring: #1b2233;            /* selected field */
 
-  --ball-red: #e2453c;
-  --ball-orange: #f08a24;
-  --ball-yellow: #f2c418;
-  --ball-green: #2fa84f;
-  --ball-blue: #3b8cf0;
-  --ball-purple: #8b4fd6;
-  --ball-pink: #f08cc0;
-  --ball-white: #f9fafc;
-  --ball-black: #1c1f26;
-  --ball-white-edge: #a3acbd;        /* a white ball on a light field needs a rim */
-  --ball-white-shade: #a7b0c2;       /* edge of the white ball's shading */
+  --ball-classic-red: #e2453c;
+  --ball-classic-orange: #f08a24;
+  --ball-classic-yellow: #f7dc3c; /* light and lemony, so it never reads as orange */
+  --ball-classic-green: #2fa84f;
+  --ball-classic-blue: #3b8cf0;
+  --ball-classic-purple: #8b4fd6;
+  --ball-classic-pink: #f08cc0;
+  --ball-classic-brown: #8a5a32;
+  --ball-classic-black: #1c1f26;
   --ball-black-edge: transparent;
-  --path-white: #a3acbd;             /* path dots and target ring for a white ball */
-  --path-black: #1c1f26;
+  --path-black: #1c1f26;             /* path dots and target ring for a black ball */
   --ball-highlight: rgb(255 255 255 / 0.85);
   --ball-shade: #000000;
 
@@ -220,19 +230,16 @@
     --color-field-hover: #2b3449;
     --color-ring: #e8ecf5;
 
-    --ball-red: #f05a50;
-    --ball-orange: #f7983a;
-    --ball-yellow: #f5cf35;
-    --ball-green: #3dbb5e;
-    --ball-blue: #5199f2;
-    --ball-purple: #a06ae6;
-    --ball-pink: #f59ac9;
-    --ball-white: #f4f6fa;
-    --ball-white-edge: transparent;
-    --ball-white-shade: #b4bccc;
-    --ball-black: #06080c;
+    --ball-classic-red: #f05a50;
+    --ball-classic-orange: #f7983a;
+    --ball-classic-yellow: #f9e352;
+    --ball-classic-green: #3dbb5e;
+    --ball-classic-blue: #5199f2;
+    --ball-classic-purple: #a06ae6;
+    --ball-classic-pink: #f59ac9;
+    --ball-classic-brown: #a8703f;
+    --ball-classic-black: #06080c;
     --ball-black-edge: rgb(255 255 255 / 0.4); /* a black ball on a dark field needs a rim */
-    --path-white: #f4f6fa;
     --path-black: #9aa5bd;           /* path dots and target ring for a black ball */
     --ball-highlight: rgb(255 255 255 / 0.7);
     --ball-shade: #000000;
@@ -265,23 +272,57 @@
   --color-field-hover: #2b3449;
   --color-ring: #e8ecf5;
 
-  --ball-red: #f05a50;
-  --ball-orange: #f7983a;
-  --ball-yellow: #f5cf35;
-  --ball-green: #3dbb5e;
-  --ball-blue: #5199f2;
-  --ball-purple: #a06ae6;
-  --ball-pink: #f59ac9;
-  --ball-white: #f4f6fa;
-  --ball-white-edge: transparent;
-  --ball-white-shade: #b4bccc;
-  --ball-black: #06080c;
+  --ball-classic-red: #f05a50;
+  --ball-classic-orange: #f7983a;
+  --ball-classic-yellow: #f9e352;
+  --ball-classic-green: #3dbb5e;
+  --ball-classic-blue: #5199f2;
+  --ball-classic-purple: #a06ae6;
+  --ball-classic-pink: #f59ac9;
+  --ball-classic-brown: #a8703f;
+  --ball-classic-black: #06080c;
   --ball-black-edge: rgb(255 255 255 / 0.4); /* a black ball on a dark field needs a rim */
-  --path-white: #f4f6fa;
   --path-black: #9aa5bd;           /* path dots and target ring for a black ball */
   --ball-highlight: rgb(255 255 255 / 0.7);
   --ball-shade: #000000;
 
   --shadow-ball: 0 1px 3px rgb(0 0 0 / 0.5);
   --shadow-dialog: 0 16px 40px rgb(0 0 0 / 0.5);
+}
+
+/* ---------- Ball color theme ---------- */
+/*
+ * Components read --ball-<color>; these blocks point it at the classic or candy
+ * values. Candy has the six classic M&M's plus the limited-edition purple and pink,
+ * and a licorice black. data-ball-theme="classic" | "candy" on any element picks
+ * the theme for its subtree (the app sets it on the root; the theme picker on each
+ * card). Every [data-theme] element repeats the mapping so its own light or dark
+ * classic values win over the ones inherited from the root.
+ */
+:root,
+[data-theme],
+[data-ball-theme="classic"] {
+  --ball-red: var(--ball-classic-red);
+  --ball-orange: var(--ball-classic-orange);
+  --ball-yellow: var(--ball-classic-yellow);
+  --ball-green: var(--ball-classic-green);
+  --ball-blue: var(--ball-classic-blue);
+  --ball-purple: var(--ball-classic-purple);
+  --ball-pink: var(--ball-classic-pink);
+  --ball-brown: var(--ball-classic-brown);
+  --ball-black: var(--ball-classic-black);
+}
+
+:root[data-ball-theme="candy"],
+[data-ball-theme="candy"],
+[data-ball-theme="candy"] [data-theme] {
+  --ball-red: var(--ball-candy-red);
+  --ball-orange: var(--ball-candy-orange);
+  --ball-yellow: var(--ball-candy-yellow);
+  --ball-green: var(--ball-candy-green);
+  --ball-blue: var(--ball-candy-blue);
+  --ball-purple: var(--ball-candy-purple);
+  --ball-pink: var(--ball-candy-pink);
+  --ball-brown: var(--ball-candy-brown);
+  --ball-black: var(--ball-candy-black);
 }

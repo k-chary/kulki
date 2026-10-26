@@ -56,19 +56,11 @@
   --ball-color: var(--ball-pink);
 }
 
-/*
- * White and black get a rim where they would melt into the field (light and dark theme).
- * White also shades from a small lit spot to a cool grey, so it reads as a sphere on a
- * light field where the usual highlight is invisible.
- */
-.ball[data-color='white'] {
-  --ball-color: var(--ball-white);
-  --ball-edge: var(--ball-white-edge);
-  --ball-light-at: 36% 32%;
-  --ball-core: 8%;
-  --ball-dark: var(--ball-white-shade);
+.ball[data-color='brown'] {
+  --ball-color: var(--ball-brown);
 }
 
+/* Black gets a rim where it would melt into a dark field. */
 .ball[data-color='black'] {
   --ball-color: var(--ball-black);
   --ball-edge: var(--ball-black-edge);
