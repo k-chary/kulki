@@ -6,6 +6,7 @@ import { HighscoreList } from '../components/HighscoreList/HighscoreList';
 import { Logo } from '../components/Logo/Logo';
 import { NewGameDialog } from '../components/NewGameDialog/NewGameDialog';
 import { NextBalls } from '../components/NextBalls/NextBalls';
+import { OptionsDialog } from '../components/OptionsDialog/OptionsDialog';
 import { ScorePanel } from '../components/ScorePanel/ScorePanel';
 import { StatusLine } from '../components/StatusLine/StatusLine';
 import {
@@ -25,6 +26,7 @@ import {
 } from '../game/controller';
 import { type PlaybackView, buildSteps, restingView } from '../game/playback';
 import { type Sequence, playSequence } from '../game/sequencer';
+import type { BallTheme } from '../format';
 import { type HighscoreEntry, rowsWithLive } from '../highscores/ranking';
 import { type GameState, type Rng, cellIndex, newGame } from '../rules';
 import type { InsertResult, Storage } from '../storage/Storage';
@@ -41,6 +43,8 @@ export interface GameScreenProps {
   intro?: boolean;
   /** `game` was read from the save: shows „Wczytano zapisaną grę” and warns before „Nowa gra”. */
   resumed?: boolean;
+  /** The theme saved in „Opcje”; classic when none was picked yet. */
+  ballTheme?: BallTheme;
 }
 
 /** Storage failures do not stop the game, but they must not go unnoticed. */
@@ -75,6 +79,7 @@ export function GameScreen({
   game,
   intro = game === undefined,
   resumed = false,
+  ballTheme: initialTheme = 'classic',
 }: GameScreenProps) {
   const [state, dispatch] = useController(() => {
     const start = initialState(game ?? newGame(rng), resumed ? 'loaded' : null, resumed ? 1 : 0);
@@ -101,6 +106,17 @@ export function GameScreen({
   const [saveFailed, setSaveFailed] = useState(false);
   const saving = useRef(false);
   const newGameButton = useRef<HTMLButtonElement>(null);
+  const optionsButton = useRef<HTMLButtonElement>(null);
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const [ballTheme, setBallTheme] = useState(initialTheme);
+  // Every ball reads the theme from the root element.
+  useEffect(() => {
+    document.documentElement.dataset.ballTheme = ballTheme;
+  }, [ballTheme]);
+  const pickBallTheme = (theme: BallTheme) => {
+    setBallTheme(theme);
+    void storage.setBallTheme(theme).catch(logStorageError);
+  };
   const lastNameRef = useRef(lastName);
   useEffect(() => {
     lastNameRef.current = lastName;
@@ -273,6 +289,8 @@ export function GameScreen({
     }
   };
   const status = statusOf(state);
+  // „Nowa gra” and „Opcje” are disabled together: during animations and dialogs.
+  const railLocked = state.choosing || turn !== null || gameOver !== null || optionsOpen;
 
   return (
     <main className={styles.screen}>
@@ -296,6 +314,14 @@ export function GameScreen({
           onFieldClick={(cell) => dispatch({ type: 'click', cell })}
           onFieldHover={(cell) => dispatch({ type: 'hover', cell })}
         >
+          {optionsOpen && (
+            <OptionsDialog
+              ballTheme={ballTheme}
+              onBallThemeChange={pickBallTheme}
+              onClose={() => setOptionsOpen(false)}
+              returnFocusRef={optionsButton}
+            />
+          )}
           {state.choosing && (
             <NewGameDialog
               colorCount={colorCount}
@@ -332,15 +358,24 @@ export function GameScreen({
             deltaId={chip?.id}
           />
           <NextBalls colors={view.preview} fresh={view.spawning.length > 0} />
-          <Button
-            ref={newGameButton}
-            variant="secondary"
-            block
-            disabled={state.choosing || turn !== null || gameOver !== null}
-            onClick={requestNewGame}
-          >
-            Nowa gra
-          </Button>
+          <div className={styles.actions}>
+            <Button
+              ref={newGameButton}
+              variant="secondary"
+              disabled={railLocked}
+              onClick={requestNewGame}
+            >
+              Nowa gra
+            </Button>
+            <Button
+              ref={optionsButton}
+              variant="secondary"
+              disabled={railLocked}
+              onClick={() => setOptionsOpen(true)}
+            >
+              Opcje
+            </Button>
+          </div>
           <HighscoreList
             rows={rows}
             savedPlace={state.saved?.place ?? null}

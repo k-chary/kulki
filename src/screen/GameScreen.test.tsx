@@ -135,3 +135,53 @@ describe('highscore list', () => {
     expect(screen.getByText('Najlepsze wyniki · 9 kolorów')).toBeTruthy();
   });
 });
+
+describe('„Opcje”', () => {
+  const optionsButton = () => screen.getByRole('button', { name: 'Opcje' });
+
+  it('shares a row with „Nowa gra”', () => {
+    setup();
+    expect(optionsButton().parentElement).toBe(newGameButton().parentElement);
+  });
+
+  it('opens over the board and closes with „Gotowe”, Esc and a scrim click, returning focus', async () => {
+    setup();
+    for (const close of ['done', 'escape', 'scrim']) {
+      await userEvent.click(optionsButton());
+      const dialog = screen.getByRole('dialog', { name: 'Opcje' });
+      if (close === 'done')
+        await userEvent.click(within(dialog).getByRole('button', { name: 'Gotowe' }));
+      else if (close === 'escape') await userEvent.keyboard('{Escape}');
+      else await userEvent.click(dialog.parentElement as HTMLElement);
+      expect(screen.queryByRole('dialog', { name: 'Opcje' })).toBeNull();
+      expect(document.activeElement).toBe(optionsButton());
+    }
+  });
+
+  it('applies a picked theme at once, saves it and leaves the game alone', async () => {
+    const { storage } = setup();
+    expect(document.documentElement.dataset.ballTheme).toBe('classic');
+    await userEvent.click(optionsButton());
+    await userEvent.click(screen.getByRole('radio', { name: /Cukierkowe/ }));
+    expect(document.documentElement.dataset.ballTheme).toBe('candy');
+    await waitFor(async () => expect(await storage.getBallTheme()).toBe('candy'));
+    await userEvent.click(screen.getByRole('button', { name: 'Gotowe' }));
+    expect(balls()).toHaveLength(1);
+  });
+
+  it('starts from the saved theme', () => {
+    const storage = new MemoryStorage<GameState>();
+    render(<GameScreen storage={storage} rng={createRng(4)} game={fixture(6)} ballTheme="candy" />);
+    expect(document.documentElement.dataset.ballTheme).toBe('candy');
+  });
+
+  it('is disabled with „Nowa gra”, during an animation and in a dialog', async () => {
+    setup();
+    await userEvent.click(newGameButton());
+    expect((optionsButton() as HTMLButtonElement).disabled).toBe(true);
+    await userEvent.click(screen.getByRole('button', { name: 'Anuluj' }));
+    expect((optionsButton() as HTMLButtonElement).disabled).toBe(false);
+    await userEvent.click(optionsButton());
+    expect((newGameButton() as HTMLButtonElement).disabled).toBe(true);
+  });
+});
