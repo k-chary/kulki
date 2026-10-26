@@ -1,3 +1,4 @@
+import type { BallTheme } from '../format/colors';
 import type { HighscoreEntry } from '../highscores/ranking';
 
 export type { HighscoreEntry };
@@ -32,6 +33,10 @@ export interface Storage<Game = unknown> {
   /** The color count of the last game started (5 to 9), or null when none was chosen yet. */
   getLastColorCount(): Promise<number | null>;
   setLastColorCount(colorCount: number): Promise<void>;
+  /** The ball theme picked in „Opcje”, or null when none was picked yet (callers treat that as classic). */
+  getBallTheme(): Promise<BallTheme | null>;
+  /** Throws `RangeError` for a theme that does not exist. */
+  setBallTheme(theme: BallTheme): Promise<void>;
   saveGame(game: Game): Promise<void>;
   loadGame(): Promise<Game | null>;
   deleteGame(): Promise<void>;

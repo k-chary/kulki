@@ -1,3 +1,4 @@
+import { BALL_THEMES, type BallTheme } from '../format/colors';
 import {
   DEFAULT_COLOR_COUNT,
   MAX_ENTRIES,
@@ -13,6 +14,10 @@ export type Backing = Pick<globalThis.Storage, 'getItem' | 'setItem'>;
 
 const BACKING_KEY = 'kulki:v1';
 
+function isBallTheme(value: unknown): value is BallTheme {
+  return BALL_THEMES.includes(value as BallTheme);
+}
+
 /**
  * `Storage` that keeps everything in memory: used by the web build the end-to-end
  * tests run against, and by unit tests. The saved game goes through JSON like it
@@ -26,6 +31,7 @@ export class MemoryStorage<Game = unknown> implements Storage<Game> {
   private nextId = 1;
   private lastName: string | null = null;
   private lastColorCount: number | null = null;
+  private ballTheme: BallTheme | null = null;
   private game: string | null = null;
   private readonly backing: Backing | undefined;
 
@@ -42,6 +48,7 @@ export class MemoryStorage<Game = unknown> implements Storage<Game> {
         highscores?: (Omit<HighscoreEntry, 'colorCount'> & { colorCount?: number; id?: number })[];
         lastName?: string | null;
         lastColorCount?: number | null;
+        ballTheme?: unknown;
         game?: string | null;
       };
       const stored = Array.isArray(data.highscores) ? data.highscores : [];
@@ -56,6 +63,7 @@ export class MemoryStorage<Game = unknown> implements Storage<Game> {
       this.nextId = Math.max(0, ...this.rows.map((row) => row.id)) + 1;
       this.lastName = typeof data.lastName === 'string' ? data.lastName : null;
       this.lastColorCount = isColorCount(data.lastColorCount) ? data.lastColorCount : null;
+      this.ballTheme = isBallTheme(data.ballTheme) ? data.ballTheme : null;
       this.game = typeof data.game === 'string' ? data.game : null;
     } catch {
       // Unreadable backing: start empty.
@@ -70,6 +78,7 @@ export class MemoryStorage<Game = unknown> implements Storage<Game> {
           highscores: this.rows.map(({ id, entry }) => ({ ...entry, id })),
           lastName: this.lastName,
           lastColorCount: this.lastColorCount,
+          ballTheme: this.ballTheme,
           game: this.game,
         }),
       );
@@ -133,6 +142,16 @@ export class MemoryStorage<Game = unknown> implements Storage<Game> {
   async setLastColorCount(colorCount: number): Promise<void> {
     if (!isColorCount(colorCount)) throw new RangeError(`bad color count: ${colorCount}`);
     this.lastColorCount = colorCount;
+    this.persist();
+  }
+
+  async getBallTheme(): Promise<BallTheme | null> {
+    return this.ballTheme;
+  }
+
+  async setBallTheme(theme: BallTheme): Promise<void> {
+    if (!isBallTheme(theme)) throw new RangeError(`bad ball theme: ${String(theme)}`);
+    this.ballTheme = theme;
     this.persist();
   }
 

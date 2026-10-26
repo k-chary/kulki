@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { TauriStorage, type Invoke } from './TauriStorage';
+import type { BallTheme } from '../format/colors';
 
 function storageReturning(value: unknown) {
   const invoke = vi.fn(() => Promise.resolve(value));
@@ -50,6 +51,22 @@ describe('TauriStorage', () => {
   it('reads a missing or invalid last color count as null', async () => {
     await expect(storageReturning(null).storage.getLastColorCount()).resolves.toBeNull();
     await expect(storageReturning(12).storage.getLastColorCount()).resolves.toBeNull();
+  });
+
+  it('gets and sets the ball theme', async () => {
+    const { storage, invoke } = storageReturning('candy');
+    await expect(storage.getBallTheme()).resolves.toBe('candy');
+    expect(invoke).toHaveBeenCalledWith('get_ball_theme');
+    await storage.setBallTheme('classic');
+    expect(invoke).toHaveBeenCalledWith('set_ball_theme', { theme: 'classic' });
+  });
+
+  it('reads a missing or unknown ball theme as null and refuses to set one', async () => {
+    await expect(storageReturning(null).storage.getBallTheme()).resolves.toBeNull();
+    await expect(storageReturning('neon').storage.getBallTheme()).resolves.toBeNull();
+    const { storage, invoke } = storageReturning(undefined);
+    await expect(storage.setBallTheme('neon' as BallTheme)).rejects.toThrow(RangeError);
+    expect(invoke).not.toHaveBeenCalled();
   });
 
   it('gets and sets the last name', async () => {

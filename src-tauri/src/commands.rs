@@ -64,6 +64,16 @@ pub fn set_last_color_count(state: State<StoreState>, color_count: u8) -> Result
 }
 
 #[tauri::command]
+pub fn get_ball_theme(state: State<StoreState>) -> Result<Option<String>, String> {
+    with_store(&state, |store| store.ball_theme())
+}
+
+#[tauri::command]
+pub fn set_ball_theme(state: State<StoreState>, theme: String) -> Result<(), String> {
+    with_store(&state, |store| store.set_ball_theme(&theme))
+}
+
+#[tauri::command]
 pub fn save_game(state: State<StoreState>, game: Value) -> Result<(), String> {
     with_store(&state, |store| store.save_game(&game))
 }

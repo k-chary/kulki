@@ -1,4 +1,5 @@
 import { invoke as tauriInvoke } from '@tauri-apps/api/core';
+import { BALL_THEMES, type BallTheme } from '../format/colors';
 import { isColorCount } from '../highscores/ranking';
 import type { HighscoreEntry, InsertResult, Storage } from './Storage';
 
@@ -40,6 +41,16 @@ export class TauriStorage<Game = unknown> implements Storage<Game> {
 
   async setLastColorCount(colorCount: number): Promise<void> {
     await this.invoke('set_last_color_count', { colorCount });
+  }
+
+  async getBallTheme(): Promise<BallTheme | null> {
+    const theme = await this.invoke<string | null>('get_ball_theme');
+    return BALL_THEMES.find((known) => known === theme) ?? null;
+  }
+
+  async setBallTheme(theme: BallTheme): Promise<void> {
+    if (!BALL_THEMES.includes(theme)) throw new RangeError(`bad ball theme: ${String(theme)}`);
+    await this.invoke('set_ball_theme', { theme });
   }
 
   async saveGame(game: Game): Promise<void> {
