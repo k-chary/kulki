@@ -19,3 +19,17 @@ describe('ScorePanel', () => {
     expect(screen.queryByText(/^\+/)).toBeNull();
   });
 });
+
+describe('ScorePanel bonus chip', () => {
+  it('names the bonus and takes its step', () => {
+    render(<ScorePanel score={1430} cleared={133} delta={190} deltaBalls={9} deltaBonus={100} />);
+    expect(screen.getByText('9 kulek · premia +100')).toBeTruthy();
+    expect(screen.getByText('+190').parentElement?.dataset.step).toBe('2');
+  });
+
+  it('stays plain without a bonus', () => {
+    render(<ScorePanel score={1240} cleared={124} delta={50} deltaBalls={5} />);
+    expect(screen.queryByText(/premia/)).toBeNull();
+    expect(screen.getByText('+50').parentElement?.dataset.step).toBe('0');
+  });
+});

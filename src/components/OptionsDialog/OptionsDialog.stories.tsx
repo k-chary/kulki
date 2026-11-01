@@ -33,3 +33,36 @@ export const Playground: Story = {
     );
   },
 };
+
+/** With the next game's settings: two tabs, „Wygląd” first. */
+export const WithTabs: Story = {
+  args: { nextGame: { colorCount: 6, bonus: false }, onNextGameChange: fn() },
+};
+
+/** „Następna gra”: color count and scoring, waiting for the next game. */
+export const NextGame: Story = {
+  args: { ...WithTabs.args, initialTab: 'next' },
+};
+
+export const NextGameWithBonus: Story = {
+  args: { ...WithTabs.args, nextGame: { colorCount: 8, bonus: true }, initialTab: 'next' },
+};
+
+/** Click through everything: the theme applies at once, the next-game settings only remember. */
+export const NextGamePlayground: Story = {
+  render: function Render(args) {
+    const [theme, setTheme] = useState(args.ballTheme);
+    const [next, setNext] = useState({ colorCount: 7, bonus: true });
+    return (
+      <div data-ball-theme={theme}>
+        <OptionsDialog
+          {...args}
+          ballTheme={theme}
+          onBallThemeChange={setTheme}
+          nextGame={next}
+          onNextGameChange={setNext}
+        />
+      </div>
+    );
+  },
+};

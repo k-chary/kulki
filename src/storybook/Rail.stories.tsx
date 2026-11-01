@@ -22,13 +22,41 @@ const sevenColors: HighscoreEntry[] = scores.map((entry) => ({
   colorCount: 7,
 }));
 
+const bonusScores: HighscoreEntry[] = scores.map((entry) => ({
+  ...entry,
+  score: entry.score * 3,
+}));
+
+interface RailProps {
+  newGameDisabled: boolean;
+  browsing?: number;
+  /** A game with the bonus for long clears, just after a 9-ball clear. */
+  bonusGame?: boolean;
+}
+
 /** The side rail as the game screen stacks it: Wynik, Następne, Nowa gra and Opcje, Najlepsze wyniki. */
-function Rail({ newGameDisabled, browsing }: { newGameDisabled: boolean; browsing?: number }) {
+function Rail({ newGameDisabled, browsing, bonusGame = false }: RailProps) {
   const [shown, setShown] = useState(browsing ?? 6);
-  const list = shown === 6 ? scores : sevenColors.slice(0, shown === 7 ? 6 : 0);
+  const [bonus, setBonus] = useState(bonusGame);
+  const score = bonusGame ? 4210 : 1240;
+  const own = shown === 6 && bonus === bonusGame;
+  const gameList = bonusGame ? bonusScores : scores;
+  const list = own
+    ? gameList
+    : bonus
+      ? shown === 6
+        ? bonusScores
+        : []
+      : shown === 6
+        ? scores
+        : sevenColors.slice(0, shown === 7 ? 6 : 0);
   return (
     <RailFrame tall>
-      <ScorePanel score={1240} cleared={124} />
+      {bonusGame ? (
+        <ScorePanel score={score} cleared={312} delta={190} deltaBalls={9} deltaBonus={100} />
+      ) : (
+        <ScorePanel score={score} cleared={124} />
+      )}
       <NextBalls colors={['blue', 'yellow', 'purple']} />
       <div className={styles.actions}>
         <Button variant="secondary" disabled={newGameDisabled}>
@@ -40,14 +68,17 @@ function Rail({ newGameDisabled, browsing }: { newGameDisabled: boolean; browsin
       </div>
       <HighscoreList
         rows={
-          shown === 6
-            ? rowsWithLive(list, 1240)
+          own
+            ? rowsWithLive(list, score)
             : list.map((entry, i) => ({ kind: 'stored', place: i + 1, entry }))
         }
         colorCount={shown}
         gameColorCount={6}
         onColorCountChange={setShown}
-        current={{ place: placeFor(1240, scores), score: 1240 }}
+        bonus={bonus}
+        gameBonus={bonusGame}
+        onBonusChange={setBonus}
+        current={{ place: placeFor(score, gameList), score }}
       />
     </RailFrame>
   );
@@ -69,6 +100,9 @@ export const Locked: Story = { args: { newGameDisabled: true } };
 
 /** Browsing the 7-color list in a 6-color game; the game's place is pinned at the foot. */
 export const BrowsingOtherCount: Story = { args: { browsing: 7 } };
+
+/** A bonus game just after a 9-ball clear: amber chip, bonus lists in the heading. */
+export const BonusGame: Story = { args: { bonusGame: true } };
 
 /** The candy ball theme: only the balls change. */
 export const Candy: Story = {

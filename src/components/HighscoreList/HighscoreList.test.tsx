@@ -166,4 +166,45 @@ describe('HighscoreList', () => {
       expect(screen.queryByRole('button', { name: /^Ta gra/ })).toBeNull();
     });
   });
+
+  describe('bonus filter', () => {
+    it('names the bonus lists in the heading and shows the second filter', () => {
+      render(
+        <HighscoreList
+          rows={[]}
+          colorCount={6}
+          gameColorCount={6}
+          onColorCountChange={() => {}}
+          bonus
+          gameBonus
+          onBonusChange={() => {}}
+        />,
+      );
+      expect(screen.getByText('Wyniki z premią · 6 kolorów')).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'z premią, ta gra' })).toBeTruthy();
+    });
+
+    it('pins the current game under its other-scoring list and jumps back to both', async () => {
+      const onCount = vi.fn();
+      const onBonus = vi.fn();
+      render(
+        <HighscoreList
+          rows={[]}
+          colorCount={6}
+          gameColorCount={6}
+          onColorCountChange={onCount}
+          bonus={false}
+          gameBonus
+          onBonusChange={onBonus}
+          current={{ place: 4, score: 2310 }}
+        />,
+      );
+      expect(screen.getByText('Brak wyników dla 6 kolorów.')).toBeTruthy();
+      const note = screen.getByRole('button', { name: /^Ta gra: 4\. miejsce/ });
+      expect(note.textContent).toBe(`4.Ta gra · 6 kolorówz premią · teraz2${nb}310`);
+      await userEvent.click(note);
+      expect(onCount).toHaveBeenCalledWith(6);
+      expect(onBonus).toHaveBeenCalledWith(true);
+    });
+  });
 });

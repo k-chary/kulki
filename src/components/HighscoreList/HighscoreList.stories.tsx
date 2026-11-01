@@ -153,3 +153,75 @@ export const Interactive: Story = {
   },
   decorators: [(Story) => <RailFrame tall>{Story()}</RailFrame>],
 };
+
+const bonusScores: HighscoreEntry[] = full.slice(0, 12).map((entry) => ({
+  ...entry,
+  score: entry.score * 3,
+}));
+
+/** A bonus game on its own list: both filters show and the heading says „z premią”. */
+export const BonusOnGameList: Story = {
+  args: {
+    rows: rowsWithLive(bonusScores, 4210),
+    colorCount: 6,
+    gameColorCount: 6,
+    onColorCountChange: fn(),
+    bonus: true,
+    gameBonus: true,
+    onBonusChange: fn(),
+    current: { place: placeFor(4210, bonusScores), score: 4210 },
+  },
+  decorators: [(Story) => <RailFrame tall>{Story()}</RailFrame>],
+};
+
+/**
+ * Browsing the no-bonus list during a bonus game: same count, other scoring, so
+ * the game's place is pinned underneath.
+ */
+export const BonusBrowsingPlainList: Story = {
+  args: {
+    ...BonusOnGameList.args,
+    rows: storedRows(full),
+    bonus: false,
+  },
+  decorators: [(Story) => <RailFrame tall>{Story()}</RailFrame>],
+};
+
+/** No bonus game has been played with 9 colors yet. */
+export const BonusEmptyList: Story = {
+  args: {
+    rows: [],
+    colorCount: 9,
+    gameColorCount: 6,
+    onColorCountChange: fn(),
+    bonus: true,
+    gameBonus: false,
+    onBonusChange: fn(),
+    current: { place: 2, score: 320 },
+  },
+};
+
+/** Click through counts and scorings; the pinned line jumps back to the game's list. */
+export const BonusInteractive: Story = {
+  args: { rows: [] },
+  render: function Render() {
+    const [shown, setShown] = useState(6);
+    const [bonus, setBonus] = useState(true);
+    const score = 4210;
+    const own = shown === 6 && bonus;
+    const list = bonus ? (shown === 6 ? bonusScores : []) : (lists[shown] ?? []);
+    return (
+      <HighscoreList
+        rows={own ? rowsWithLive(list, score) : storedRows(list)}
+        colorCount={shown}
+        gameColorCount={6}
+        onColorCountChange={setShown}
+        bonus={bonus}
+        gameBonus
+        onBonusChange={setBonus}
+        current={{ place: placeFor(score, bonusScores), score }}
+      />
+    );
+  },
+  decorators: [(Story) => <RailFrame tall>{Story()}</RailFrame>],
+};

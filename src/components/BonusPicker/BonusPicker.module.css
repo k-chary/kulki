@@ -1,0 +1,12 @@
+/* The track and segments come from ColorCountPicker, so both controls match. */
+.segment {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--color-text-muted);
+}

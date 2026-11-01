@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { formatCleared, formatDate, formatNumber, plural } from '.';
+import {
+  chipStep,
+  formatBonus,
+  formatBonusDetail,
+  formatCleared,
+  formatDate,
+  formatNumber,
+  plural,
+} from '.';
 
 const nb = ' ';
 
@@ -58,5 +66,35 @@ describe('formatDate', () => {
 
   it('rejects text that is not a date', () => {
     expect(() => formatDate('wczoraj')).toThrow();
+  });
+});
+
+describe('chipStep', () => {
+  it('stays plain without a bonus', () => {
+    expect(chipStep(5, 0)).toBe(0);
+    expect(chipStep(9, 0)).toBe(0);
+  });
+
+  it('grows with the balls of one clear', () => {
+    expect(chipStep(6, 20)).toBe(1);
+    expect(chipStep(8, 90)).toBe(1);
+    expect(chipStep(9, 100)).toBe(2);
+    expect(chipStep(12, 280)).toBe(2);
+    expect(chipStep(13, 360)).toBe(3);
+    expect(chipStep(17, 780)).toBe(3);
+  });
+});
+
+describe('formatBonusDetail', () => {
+  it('names the balls and the bonus', () => {
+    expect(formatBonusDetail(9, 100)).toBe('9 kulek · premia +100');
+    expect(formatBonusDetail(22, 1530)).toBe('22 kulki · premia +1 530');
+  });
+});
+
+describe('formatBonus', () => {
+  it('names the scoring', () => {
+    expect(formatBonus(true)).toBe('z premią');
+    expect(formatBonus(false)).toBe('bez premii');
   });
 });

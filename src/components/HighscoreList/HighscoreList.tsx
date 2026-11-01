@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import type { HighscoreRow } from '../../highscores/ranking';
-import { formatColorCount } from '../../format';
+import { formatBonus, formatColorCount } from '../../format';
 import { prefersReducedMotion } from '../../styles/motion';
+import { BonusFilter } from '../BonusFilter/BonusFilter';
 import { CurrentGameNote } from '../CurrentGameNote/CurrentGameNote';
 import { HighscoreFilter } from '../HighscoreFilter/HighscoreFilter';
 import { Panel } from '../Panel/Panel';
@@ -19,9 +20,15 @@ export interface HighscoreListProps {
   gameColorCount?: number;
   /** Shows the 5–9 filter; called with the count whose list to show. */
   onColorCountChange?: (count: number) => void;
+  /** Whether the lists with the bonus for long clears are shown; each has its own top 30 per count. */
+  bonus?: boolean;
+  /** The current game's scoring; while it differs from bonus, rows hold no „Ta gra”. */
+  gameBonus?: boolean;
+  /** Shows the „Bez premii | Z premią” filter; called with the scoring whose lists to show. */
+  onBonusChange?: (bonus: boolean) => void;
   /**
    * The current game in its own list (place null when outside the top 30),
-   * pinned under the rows while another count's list is shown.
+   * pinned under the rows while another count's or scoring's list is shown.
    */
   current?: { place: number | null; score: number };
 }
@@ -36,6 +43,9 @@ export function HighscoreList({
   colorCount,
   gameColorCount,
   onColorCountChange,
+  bonus,
+  gameBonus,
+  onBonusChange,
   current,
 }: HighscoreListProps) {
   const markedRef = useRef<HTMLLIElement>(null);
@@ -56,14 +66,20 @@ export function HighscoreList({
   }, [markedKey]);
 
   const empty = !rows.some((row) => row.kind === 'stored');
-  const other =
+  const otherCount =
     colorCount !== undefined && gameColorCount !== undefined && colorCount !== gameColorCount;
+  const otherBonus = bonus !== undefined && gameBonus !== undefined && bonus !== gameBonus;
+  const other = otherCount || otherBonus;
+  // The plain lists need no mention of their scoring; the bonus ones always say so.
+  const scoring = bonus ? ` ${formatBonus(true)}` : '';
   return (
     <Panel
       label={
         colorCount === undefined
           ? 'Najlepsze wyniki'
-          : `Najlepsze wyniki · ${formatColorCount(colorCount)}`
+          : bonus
+            ? `Wyniki ${formatBonus(true)} · ${formatColorCount(colorCount)}`
+            : `Najlepsze wyniki · ${formatColorCount(colorCount)}`
       }
       grow
     >
@@ -74,10 +90,13 @@ export function HighscoreList({
           onChange={onColorCountChange}
         />
       )}
+      {onBonusChange && bonus !== undefined && (
+        <BonusFilter value={bonus} gameBonus={gameBonus} onChange={onBonusChange} />
+      )}
       {empty && (
         <p className={styles.empty}>
-          {other
-            ? `Brak wyników dla ${formatColorCount(colorCount)}.`
+          {other && colorCount !== undefined
+            ? `Brak wyników${scoring} dla ${formatColorCount(colorCount)}.`
             : 'Jeszcze nie ma wyników. Twoja pierwsza gra trafi tutaj.'}
         </p>
       )}
@@ -111,12 +130,16 @@ export function HighscoreList({
           );
         })}
       </ol>
-      {other && current && (
+      {other && current && gameColorCount !== undefined && (
         <CurrentGameNote
           colorCount={gameColorCount}
+          bonus={gameBonus}
           place={current.place}
           score={current.score}
-          onShow={() => onColorCountChange?.(gameColorCount)}
+          onShow={() => {
+            onColorCountChange?.(gameColorCount);
+            if (gameBonus !== undefined) onBonusChange?.(gameBonus);
+          }}
         />
       )}
     </Panel>
