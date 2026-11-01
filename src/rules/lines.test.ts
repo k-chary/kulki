@@ -346,4 +346,48 @@ describe('lineCells and scoreFor', () => {
     expect(scoreFor(run(at(0, 0), 0, 1, 9))).toBe(90);
     expect(scoreFor([at(1, 1), at(1, 1), at(2, 2)])).toBe(20);
   });
+
+  it('scores n balls as 10n + 5(n - 5)(n - 4) with the bonus', () => {
+    const table: [number, number][] = [
+      [5, 50],
+      [6, 70],
+      [7, 100],
+      [8, 140],
+      [9, 190],
+      [13, 490],
+      [17, 950],
+    ];
+    for (const [balls, points] of table) {
+      const cells = Array.from({ length: balls }, (_, i) => at(Math.floor(i / 9), i % 9));
+      expect(scoreFor(cells, true)).toBe(points);
+    }
+  });
+
+  it('pools two crossing 5-lines into one 9-ball clear: 190 with the bonus, 90 without', () => {
+    const board = parseBoard(`
+      .........
+      .........
+      ....g....
+      ....g....
+      ..ggggg..
+      ....g....
+      ....g....
+      .........
+      .........
+    `);
+    const cells = lineCells(findLines(board, [at(4, 4)]));
+    expect(scoreFor(cells, true)).toBe(190);
+    expect(scoreFor(cells, false)).toBe(90);
+    expect(scoreFor(cells)).toBe(90);
+  });
+
+  it('adds nothing for a clear of fewer than 5 balls or an empty one', () => {
+    expect(scoreFor([], true)).toBe(0);
+    expect(scoreFor(run(at(0, 0), 0, 1, 3), true)).toBe(30);
+  });
+
+  it('counts a repeated cell once with the bonus', () => {
+    const cells = [...run(at(0, 0), 0, 1, 6), at(0, 0)];
+    expect(scoreFor(cells, true)).toBe(70);
+  });
 });

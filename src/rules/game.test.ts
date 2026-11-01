@@ -23,6 +23,7 @@ function stateOf(board: Board, extra: Partial<GameState> = {}): GameState {
     preview: PREVIEW,
     score: 0,
     colorCount: 6,
+    bonus: false,
     cleared: 0,
     gameOver: false,
     ...extra,
@@ -234,6 +235,7 @@ describe('playTurn: a move that clears', () => {
       preview: PREVIEW,
       score: 70,
       colorCount: 6,
+      bonus: false,
       cleared: 7,
       gameOver: false,
     });
@@ -345,6 +347,75 @@ describe('playTurn: spawns that clear', () => {
   });
 });
 
+describe('playTurn: bonus', () => {
+  const cross = parseBoard(`
+    ....r....
+    ....r....
+    ....r....
+    ....r....
+    rrrr.....
+    .....rrrr
+    .........
+    .........
+    .........
+  `);
+
+  it('defaults to no bonus and records the setting', () => {
+    expect(newGame(createRng(1)).bonus).toBe(false);
+    expect(newGame(createRng(1), 6, true).bonus).toBe(true);
+    expect(newGame(createRng(1), 8, true).colorCount).toBe(8);
+  });
+
+  it('deals the same start with or without the bonus', () => {
+    expect(newGame(createRng(4), 6, true).board).toEqual(newGame(createRng(4), 6, false).board);
+  });
+
+  it('scores two crossing 5s as 190 with the bonus and 90 without', () => {
+    for (const [bonus, points] of [
+      [true, 190],
+      [false, 90],
+    ] as const) {
+      const result = playTurn(stateOf(cross, { bonus }), at(5, 5), at(4, 4), createRng(1));
+      if (result.status !== 'played') throw new Error('expected a played turn');
+      const clear = result.events[1];
+      if (clear?.type !== 'clear') throw new Error('expected a clear');
+      expect(clear.points).toBe(points);
+      expect(result.state.score).toBe(points);
+      expect(result.state.cleared).toBe(9);
+      expect(result.state.bonus).toBe(bonus);
+    }
+  });
+
+  it('scores a clear of 5 the same with the bonus', () => {
+    const start = stateOf(parseBoard('rr.rr....\n' + '.........\n'.repeat(7) + '.....r...'), {
+      bonus: true,
+    });
+    const result = playTurn(start, at(8, 5), at(0, 2), createRng(1));
+    if (result.status !== 'played') throw new Error('expected a played turn');
+    expect(result.state.score).toBe(50);
+  });
+
+  it('applies the bonus to a clear completed by spawned balls', () => {
+    // As the spawn test below, but the top row ends up 7 balls long.
+    let board = crowded([at(0, 4), at(3, 0)]);
+    for (const col of [0, 1, 2, 3, 5, 6]) board = setBall(board, at(0, col), 'green');
+    const preview: Color[] = ['green', 'green', 'green'];
+    for (const [bonus, points] of [
+      [true, 100],
+      [false, 70],
+    ] as const) {
+      const start = stateOf(board, { preview, bonus });
+      const result = playTurn(start, at(3, 1), at(3, 0), createRng(2));
+      if (result.status !== 'played') throw new Error('expected a played turn');
+      const clear = result.events.find((event) => event.type === 'clear');
+      if (clear?.type !== 'clear') throw new Error('expected a clear');
+      expect(clear.cells).toHaveLength(7);
+      expect(clear.points).toBe(points);
+      expect(result.state.score).toBe(points);
+    }
+  });
+});
+
 describe('playTurn: few free squares', () => {
   it('fills only the 2 free squares and checks only those', () => {
     // Holes at (0, 0) and (4, 4); the ball on (0, 1) steps into (0, 0).
@@ -398,6 +469,7 @@ describe('serialize and deserialize', () => {
       preview: ['purple', 'yellow', 'orange'],
       score: 1240,
       colorCount: 6,
+      bonus: false,
       cleared: 124,
       gameOver: false,
     };
@@ -412,6 +484,25 @@ describe('serialize and deserialize', () => {
     for (const count of COLOR_COUNTS) {
       const state = newGame(createRng(5), count);
       expect(deserialize(serialize(state))).toEqual(state);
+    }
+  });
+
+  it('round-trips the bonus setting', () => {
+    for (const bonus of [true, false]) {
+      const state = newGame(createRng(5), 7, bonus);
+      expect(deserialize(serialize(state))).toEqual(state);
+    }
+  });
+
+  it('reads a save without a bonus setting as a game without the bonus', () => {
+    const old = { ...newGame(createRng(2), 6, true), bonus: undefined };
+    expect(deserialize(JSON.stringify(old)).bonus).toBe(false);
+  });
+
+  it('rejects a bonus setting that is not a boolean', () => {
+    const good = JSON.parse(serialize(newGame(createRng(1)))) as Record<string, unknown>;
+    for (const bonus of [1, 'true', null]) {
+      expect(() => deserialize(JSON.stringify({ ...good, bonus }))).toThrow(Error);
     }
   });
 

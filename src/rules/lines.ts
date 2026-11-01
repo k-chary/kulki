@@ -80,10 +80,16 @@ export function lineCells(lines: readonly Line[]): Cell[] {
   return [...indexes].sort((a, b) => a - b).map(cellAt);
 }
 
-/** Points for clearing `cells`: POINTS_PER_BALL for each distinct ball. */
-export function scoreFor(cells: readonly Cell[]): number {
-  const distinct = new Set(cells.map(cellIndex));
-  return distinct.size * POINTS_PER_BALL;
+/**
+ * Points for one clear of `cells`: POINTS_PER_BALL for each distinct ball.
+ * With the bonus, n balls score 10n + 5(n - 5)(n - 4) for n >= 5: the first 5
+ * are worth 10 each and every ball after that 10 more than the one before.
+ */
+export function scoreFor(cells: readonly Cell[], bonus: boolean = false): number {
+  const n = new Set(cells.map(cellIndex)).size;
+  const base = n * POINTS_PER_BALL;
+  if (!bonus || n < MIN_LINE_LENGTH) return base;
+  return base + (POINTS_PER_BALL / 2) * (n - MIN_LINE_LENGTH) * (n - MIN_LINE_LENGTH + 1);
 }
 
 /** Every line on the board, wherever it is. */

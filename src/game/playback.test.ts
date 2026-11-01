@@ -11,6 +11,7 @@ function game(board: string): GameState {
     board: parseBoard(board),
     preview: ['blue', 'green', 'purple'],
     colorCount: 6,
+    bonus: false,
     score: 0,
     cleared: 0,
     gameOver: false,

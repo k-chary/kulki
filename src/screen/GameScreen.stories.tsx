@@ -29,6 +29,7 @@ const finished = (score: number): GameState => ({
   }),
   preview: ['red', 'green', 'blue'],
   colorCount: 6,
+  bonus: false,
   score,
   cleared: score / 10,
   gameOver: true,
@@ -40,6 +41,7 @@ const stored = (count: number): HighscoreEntry[] =>
     score: 1000 - i * 10,
     date: '2026-01-15T12:00:00.000Z',
     colorCount: 6,
+    bonus: false,
   }));
 
 function withScores(count: number) {
