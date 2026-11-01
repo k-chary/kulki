@@ -12,7 +12,7 @@ describe('NewGameDialog', () => {
     render(<NewGameDialog colorCount={6} onCancel={vi.fn()} onStart={onStart} />);
     await userEvent.click(screen.getByRole('radio', { name: '8 kolorów' }));
     await userEvent.click(screen.getByRole('button', { name: 'Zacznij' }));
-    expect(onStart).toHaveBeenCalledWith(8);
+    expect(onStart).toHaveBeenCalledWith(8, false);
   });
 
   it('focuses „Zacznij” when nothing is lost', () => {
@@ -30,5 +30,16 @@ describe('NewGameDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Anuluj' }));
     expect(onCancel).toHaveBeenCalledOnce();
     expect(onStart).not.toHaveBeenCalled();
+  });
+
+  it('opens on the remembered scoring and starts with the chosen one', async () => {
+    const onStart = vi.fn();
+    render(<NewGameDialog colorCount={6} bonus onCancel={vi.fn()} onStart={onStart} />);
+    expect(screen.getByRole('radio', { name: 'Z premią' }).getAttribute('aria-checked')).toBe(
+      'true',
+    );
+    await userEvent.click(screen.getByRole('radio', { name: 'Bez premii' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Zacznij' }));
+    expect(onStart).toHaveBeenCalledWith(6, false);
   });
 });

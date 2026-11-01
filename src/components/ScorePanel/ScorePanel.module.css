@@ -1,11 +1,15 @@
-.line {
-  display: flex;
+/* Score and „kulek zbitych” on the left; the chip and its bonus line sit to the
+   right across both rows, so even the largest chip never changes the panel's height. */
+.body {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
   align-items: center;
-  gap: var(--space-2);
-  min-height: calc(var(--text-2xl) * var(--leading-tight));
+  gap: var(--space-0-5) var(--space-3);
 }
 
 .score {
+  grid-area: 1 / 1;
   font-family: var(--font-mono);
   font-weight: var(--weight-medium);
   font-size: var(--text-2xl);
@@ -13,6 +17,26 @@
   font-variant-numeric: tabular-nums;
 }
 
+.sub {
+  grid-area: 2 / 1;
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--color-text-muted);
+}
+
+.gain {
+  grid-area: 1 / 2 / 3 / 3;
+  justify-self: end;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-0-5);
+  white-space: nowrap;
+  animation: delta var(--dur-delta) var(--ease-out) forwards;
+}
+
+/* Step 0: the plain chip, as before the bonus. */
 .delta {
   padding: var(--space-0-5) var(--space-2);
   border-radius: var(--radius-full);
@@ -22,24 +46,59 @@
   font-weight: var(--weight-semibold);
   font-size: var(--text-sm);
   line-height: var(--leading-snug);
-  animation: delta var(--dur-delta) var(--ease-out) forwards;
+  font-variant-numeric: tabular-nums;
 }
 
-.sub {
-  margin: 0;
+.detail {
   font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
   line-height: var(--leading-snug);
-  color: var(--color-text-muted);
+  color: var(--color-accent);
 }
 
+/* Step 1: 6–8 balls. */
+.gain[data-step='1'] .delta {
+  padding: var(--space-0-5) var(--space-3);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: var(--text-md);
+}
+
+/* Step 2: 9–12 balls, a full row and up. */
+.gain[data-step='2'] .delta {
+  padding: var(--space-0-5) var(--space-3);
+  background: var(--color-bonus-warm);
+  color: var(--color-on-bonus-warm);
+  font-size: var(--text-lg);
+}
+
+.gain[data-step='2'] .detail {
+  color: var(--color-bonus-warm-text);
+}
+
+/* Step 3: 13 or more, a crossing shape; one pulse as it appears. */
+.gain[data-step='3'] .delta {
+  padding: var(--space-0-5) var(--space-3);
+  background: var(--color-bonus-hot);
+  color: var(--color-on-bonus-hot);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  animation: pulse var(--dur-pulse) var(--ease-pop) both;
+}
+
+.gain[data-step='3'] .detail {
+  color: var(--color-bonus-hot-text);
+}
+
+/* Rises in, holds, then fades in the last moments of --dur-delta. */
 @keyframes delta {
   0% {
     opacity: 0;
     transform: translateY(calc(30% * var(--motion-distance)));
   }
 
-  15%,
-  70% {
+  3%,
+  94% {
     opacity: 1;
     transform: translateY(0);
   }
@@ -47,5 +106,19 @@
   100% {
     opacity: 0;
     transform: translateY(calc(-30% * var(--motion-distance)));
+  }
+}
+
+@keyframes pulse {
+  0% {
+    scale: 0.6;
+  }
+
+  50% {
+    scale: 1.25;
+  }
+
+  100% {
+    scale: 1;
   }
 }

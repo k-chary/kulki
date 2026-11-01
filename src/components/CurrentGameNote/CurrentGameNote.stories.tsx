@@ -22,3 +22,6 @@ export const OutsideTop30: Story = { args: { place: null, score: 120 } };
 export const Hover: Story = { args: { force: 'hover' } };
 
 export const Focus: Story = { args: { force: 'focus' } };
+
+/** A bonus game: the note names its scoring too. */
+export const BonusGame: Story = { args: { colorCount: 9, bonus: true, place: 12, score: 14630 } };

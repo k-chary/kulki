@@ -129,7 +129,8 @@
   --dur-spawn-stagger: 60ms; /* delay between the new balls */
   --dur-hop: 900ms;          /* one hop cycle of the selected ball */
   --dur-shake: 320ms;        /* "no path" shake */
-  --dur-delta: 900ms;        /* the "+50" chip next to the score */
+  --dur-delta: 5000ms;       /* the "+50" chip stays this long, or until the next score */
+  --dur-pulse: 600ms;        /* one pulse of the largest bonus chip */
   --dur-hover: 120ms;        /* hover and press feedback */
   --dur-dialog: 180ms;       /* dialog and scrim fade in */
   --dur-status: 2200ms;      /* a one-off status message stays this long */
@@ -154,6 +155,7 @@
     --dur-spawn-stagger: 0ms;
     --dur-hop: 0ms;
     --dur-shake: 0ms;
+    --dur-pulse: 0ms;
     --dur-dialog: 0ms;
     --motion-distance: 0;
   }
@@ -166,6 +168,7 @@
   --dur-spawn-stagger: 0ms;
   --dur-hop: 0ms;
   --dur-shake: 0ms;
+  --dur-pulse: 0ms;
   --dur-dialog: 0ms;
   --motion-distance: 0;
 }
@@ -190,6 +193,13 @@
   --color-on-primary: #ffffff;
   --color-focus: #3a56d4;
   --color-scrim: rgb(17 21 31 / 0.42);
+  /* Bonus chip steps 2 (9-12 balls) and 3 (13+); step 1 uses the accent. */
+  --color-bonus-warm: #f2a516;
+  --color-on-bonus-warm: #1b2233;
+  --color-bonus-warm-text: #8a5200;
+  --color-bonus-hot: #d23a4b;
+  --color-on-bonus-hot: #ffffff;
+  --color-bonus-hot-text: #b42a3b;
 
   --color-board: #c9d1df;
   --color-field: #e7ebf2;
@@ -234,6 +244,12 @@
     --color-on-primary: #11151f;
     --color-focus: #8ea2ff;
     --color-scrim: rgb(0 0 0 / 0.55);
+    --color-bonus-warm: #f5b53d;
+    --color-on-bonus-warm: #11151f;
+    --color-bonus-warm-text: #f5b53d;
+    --color-bonus-hot: #ff6b74;
+    --color-on-bonus-hot: #11151f;
+    --color-bonus-hot-text: #ff8a91;
 
     --color-board: #0b0f18;
     --color-field: #222a3c;
@@ -276,6 +292,12 @@
   --color-on-primary: #11151f;
   --color-focus: #8ea2ff;
   --color-scrim: rgb(0 0 0 / 0.55);
+  --color-bonus-warm: #f5b53d;
+  --color-on-bonus-warm: #11151f;
+  --color-bonus-warm-text: #f5b53d;
+  --color-bonus-hot: #ff6b74;
+  --color-on-bonus-hot: #11151f;
+  --color-bonus-hot-text: #ff8a91;
 
   --color-board: #0b0f18;
   --color-field: #222a3c;

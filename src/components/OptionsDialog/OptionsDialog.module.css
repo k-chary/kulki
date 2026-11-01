@@ -5,3 +5,58 @@
 .actions > * {
   flex: 1;
 }
+
+/* „Wygląd | Następna gra”: underlined tabs, so they never read as one more picker. */
+.tabs {
+  display: flex;
+  gap: var(--space-4);
+
+  /* thin is 1px: tokens.css has no border-width token. */
+  border-bottom: thin solid var(--color-border);
+}
+
+.tab {
+  appearance: none;
+  margin-bottom: calc(-1 * var(--focus-width));
+  padding: var(--space-1) 0 var(--space-2);
+  border: 0;
+  border-bottom: var(--focus-width) solid transparent;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  cursor: pointer;
+  transition:
+    color var(--dur-hover) var(--ease-standard),
+    border-color var(--dur-hover) var(--ease-standard);
+}
+
+.tab:hover {
+  color: var(--color-text);
+}
+
+.tab:focus-visible {
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: var(--space-0-5);
+}
+
+.tab[aria-selected='true'] {
+  border-bottom-color: var(--color-accent);
+  color: var(--color-text);
+  cursor: default;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.note {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--color-text-muted);
+}
