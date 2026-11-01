@@ -263,3 +263,20 @@ describe('„Opcje”', () => {
     expect((newGameButton() as HTMLButtonElement).disabled).toBe(true);
   });
 });
+
+describe('next balls on a nearly full board', () => {
+  const rows = (free: number) => {
+    const cells = Array<string>(81).fill('r');
+    for (let i = 0; i < free; i++) cells[i] = '.';
+    return parseBoard(
+      Array.from({ length: 9 }, (_, r) => cells.slice(r * 9, r * 9 + 9).join('')).join('\n'),
+    );
+  };
+
+  it.each([1, 2, 3, 5])('shows min(3, free) balls with %i free squares', (free) => {
+    const game = { ...fixture(6), board: rows(free) };
+    render(<GameScreen storage={new MemoryStorage<GameState>()} rng={createRng(4)} game={game} />);
+    const label = screen.getByRole('img', { name: /niebieska|niebieski/i });
+    expect(label.children).toHaveLength(Math.min(3, free));
+  });
+});

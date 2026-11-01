@@ -33,7 +33,7 @@ import {
   livePlace,
   rowsWithLive,
 } from '../highscores/ranking';
-import { type GameState, type Rng, cellIndex, newGame } from '../rules';
+import { type Color, type GameState, type Rng, cellIndex, emptyCells, newGame } from '../rules';
 import type { InsertResult, Storage } from '../storage/Storage';
 import { readDuration, readTurnDurations } from '../styles/motion';
 import styles from './GameScreen.module.css';
@@ -403,7 +403,7 @@ export function GameScreen({
             delta={chip?.delta}
             deltaId={chip?.id}
           />
-          <NextBalls colors={view.preview} fresh={view.spawning.length > 0} />
+          <NextBalls colors={fittingPreview(view)} fresh={view.spawning.length > 0} />
           <div className={styles.actions}>
             <Button
               ref={newGameButton}
@@ -438,4 +438,17 @@ export function GameScreen({
       </div>
     </main>
   );
+}
+
+/**
+ * The preview balls that will really appear: only as many as there are free
+ * squares (the sliding ball's square counts as taken).
+ */
+function fittingPreview(view: {
+  board: GameState['board'];
+  moving: unknown;
+  preview: readonly Color[];
+}) {
+  const free = emptyCells(view.board).length - (view.moving ? 1 : 0);
+  return view.preview.slice(0, Math.max(free, 0));
 }
