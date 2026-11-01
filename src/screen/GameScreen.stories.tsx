@@ -40,6 +40,7 @@ const stored = (count: number): HighscoreEntry[] =>
     score: 1000 - i * 10,
     date: '2026-01-15T12:00:00.000Z',
     colorCount: 6,
+    bonus: false,
   }));
 
 function withScores(count: number) {

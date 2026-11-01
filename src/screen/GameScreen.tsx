@@ -118,7 +118,7 @@ export function GameScreen({
     if (shown === colorCount) return;
     let current = true;
     void storage
-      .listHighscores(shown)
+      .listHighscores(shown, false)
       .then((entries) => {
         // An answer for a count no longer shown is dropped.
         if (current) setBrowsed({ colorCount: shown, entries });
@@ -152,7 +152,7 @@ export function GameScreen({
 
   useEffect(() => {
     let current = true;
-    void Promise.all([storage.listHighscores(colorCount), storage.getLastName()]).then(
+    void Promise.all([storage.listHighscores(colorCount, false), storage.getLastName()]).then(
       ([list, name]) => {
         if (!current) return;
         setHighscores(list, colorCount);
@@ -312,6 +312,7 @@ export function GameScreen({
           score: state.game.score,
           date: new Date().toISOString(),
           colorCount: state.game.colorCount,
+          bonus: false,
         };
         const inserted = storage.insertHighscore(entry);
         finished.current = inserted;

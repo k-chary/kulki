@@ -121,6 +121,8 @@ export function finishedEntry(
     score: game.score,
     date,
     colorCount: game.colorCount,
+    // The bonus is not a game setting yet.
+    bonus: false,
   };
 }
 

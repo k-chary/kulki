@@ -1,7 +1,7 @@
 // Top-30 highscore ranking. Pure functions, no storage or UI code.
 //
-// Each color count has its own list; every function here works on one list,
-// so the caller passes the list of the game's count. A list is always ordered
+// Each color count and scoring (with or without the bonus) has its own list; every function here works on one list,
+// so the caller passes the list of the game's settings. A list is always ordered
 // best first. Equal scores keep the older game
 // higher, so a new score goes below every stored score it ties with.
 
@@ -20,6 +20,8 @@ export interface HighscoreEntry {
   date: string;
   /** How many ball colors the game used (5 to 9); it picks the list the score belongs to. */
   colorCount: number;
+  /** Whether the bonus for long clears was on; with the count it picks the list. */
+  bonus: boolean;
 }
 
 /** Whether `n` is a color count a game can use. */

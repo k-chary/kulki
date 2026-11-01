@@ -56,6 +56,7 @@ export function parseScores(text: string, colorCount = DEFAULT_COLORS): Highscor
       score: Number(part),
       date: '2026-01-15T12:00:00.000Z',
       colorCount,
+      bonus: false,
     }));
 }
 

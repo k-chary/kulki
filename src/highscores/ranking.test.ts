@@ -12,7 +12,7 @@ import {
 } from './ranking';
 
 function entry(score: number, name = `Gracz ${score}`): HighscoreEntry {
-  return { name, score, date: '2026-10-23T08:00:00.000Z', colorCount: 6 };
+  return { name, score, date: '2026-10-23T08:00:00.000Z', colorCount: 6, bonus: false };
 }
 
 /** n entries scoring 10·n down to 10, best first. */

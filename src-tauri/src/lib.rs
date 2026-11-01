@@ -63,6 +63,8 @@ pub fn run() {
             commands::set_last_name,
             commands::get_last_color_count,
             commands::set_last_color_count,
+            commands::get_last_bonus,
+            commands::set_last_bonus,
             commands::get_ball_theme,
             commands::set_ball_theme,
             commands::save_game,

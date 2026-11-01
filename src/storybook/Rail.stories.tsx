@@ -14,6 +14,7 @@ const scores: HighscoreEntry[] = POINTS.map((score, i) => ({
   score,
   date: new Date(2026, 9, 18 - i * 3, 20).toISOString(),
   colorCount: 6,
+  bonus: false,
 }));
 
 const sevenColors: HighscoreEntry[] = scores.map((entry) => ({

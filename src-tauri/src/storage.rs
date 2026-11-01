@@ -42,10 +42,15 @@ const MIGRATIONS: &[&str] = &[
     // 2: a list per color count. Rows saved before it belong to the 6-color list.
     "ALTER TABLE highscores ADD COLUMN color_count INTEGER NOT NULL DEFAULT 6;
      CREATE INDEX highscores_by_count ON highscores (color_count, score DESC, id ASC);",
+    // 3: a list per scoring too. Rows saved before it belong to the lists without the bonus.
+    "ALTER TABLE highscores ADD COLUMN bonus INTEGER NOT NULL DEFAULT 0;
+     DROP INDEX highscores_by_count;
+     CREATE INDEX highscores_by_list ON highscores (color_count, bonus, score DESC, id ASC);",
 ];
 
 const LAST_NAME_KEY: &str = "last_name";
 const LAST_COLOR_COUNT_KEY: &str = "last_color_count";
+const LAST_BONUS_KEY: &str = "last_bonus";
 const BALL_THEME_KEY: &str = "ball_theme";
 /// The ball themes the frontend knows (`BallTheme` in `src/format/colors.ts`).
 pub const BALL_THEMES: [&str; 3] = ["classic", "candy", "cats"];
@@ -62,6 +67,9 @@ pub struct HighscoreEntry {
     /// How many ball colors the game used; the score goes in that count's list.
     #[serde(rename = "colorCount")]
     pub color_count: u8,
+    /// Whether the bonus for long clears was on; with the count it picks the list.
+    #[serde(default)]
+    pub bonus: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -128,40 +136,53 @@ impl Store {
         Ok(())
     }
 
-    /// The list of one color count, best first; equal scores keep the older game higher.
-    pub fn list_highscores(&self, color_count: u8) -> rusqlite::Result<Vec<HighscoreEntry>> {
+    /// The list of one color count and scoring, best first; equal scores keep the older game higher.
+    pub fn list_highscores(
+        &self,
+        color_count: u8,
+        bonus: bool,
+    ) -> rusqlite::Result<Vec<HighscoreEntry>> {
         let mut stmt = self.conn.prepare(
-            "SELECT name, score, date, color_count FROM highscores
-             WHERE color_count = ?1 ORDER BY score DESC, id ASC LIMIT ?2",
+            "SELECT name, score, date, color_count, bonus FROM highscores
+             WHERE color_count = ?1 AND bonus = ?2 ORDER BY score DESC, id ASC LIMIT ?3",
         )?;
-        let rows = stmt.query_map(params![color_count, LIMIT], |row| {
+        let rows = stmt.query_map(params![color_count, bonus, LIMIT], |row| {
             Ok(HighscoreEntry {
                 name: row.get(0)?,
                 score: row.get(1)?,
                 date: row.get(2)?,
                 color_count: row.get(3)?,
+                bonus: row.get(4)?,
             })
         })?;
         rows.collect()
     }
 
-    /// Inserts a finished game into its color count's list and trims that
-    /// list to 30; other counts are untouched. The name is normalised the
+    /// Inserts a finished game into the list of its color count and scoring and
+    /// trims that list to 30; other lists are untouched. The name is normalised the
     /// same way as on the frontend.
     pub fn insert_highscore(&mut self, entry: &HighscoreEntry) -> rusqlite::Result<InsertResult> {
         check_color_count(entry.color_count)?;
         let count = entry.color_count;
+        let bonus = entry.bonus;
         let tx = self.conn.transaction()?;
         tx.execute(
-            "INSERT INTO highscores (name, score, date, color_count) VALUES (?1, ?2, ?3, ?4)",
-            params![normalize_name(&entry.name), entry.score, entry.date, count],
+            "INSERT INTO highscores (name, score, date, color_count, bonus)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            params![
+                normalize_name(&entry.name),
+                entry.score,
+                entry.date,
+                count,
+                bonus
+            ],
         )?;
         let id = tx.last_insert_rowid();
         tx.execute(
-            "DELETE FROM highscores WHERE color_count = ?1 AND id NOT IN
-                 (SELECT id FROM highscores WHERE color_count = ?1
-                  ORDER BY score DESC, id ASC LIMIT ?2)",
-            params![count, LIMIT],
+            "DELETE FROM highscores WHERE color_count = ?1 AND bonus = ?2 AND id NOT IN
+                 (SELECT id FROM highscores WHERE color_count = ?1 AND bonus = ?2
+                  ORDER BY score DESC, id ASC LIMIT ?3)",
+            params![count, bonus, LIMIT],
         )?;
         let kept: bool = tx.query_row(
             "SELECT EXISTS (SELECT 1 FROM highscores WHERE id = ?1)",
@@ -171,7 +192,7 @@ impl Store {
         let place = if kept {
             Some(tx.query_row(
                 "SELECT COUNT(*) + 1 FROM highscores h, highscores me
-                 WHERE me.id = ?1 AND h.color_count = me.color_count
+                 WHERE me.id = ?1 AND h.color_count = me.color_count AND h.bonus = me.bonus
                    AND (h.score > me.score OR (h.score = me.score AND h.id < me.id))",
                 [id],
                 |row| row.get(0),
@@ -183,28 +204,28 @@ impl Store {
         Ok(InsertResult {
             place,
             id: kept.then_some(id),
-            highscores: self.list_highscores(count)?,
+            highscores: self.list_highscores(count, bonus)?,
         })
     }
 
     /// Gives the row `id` a new name (normalised like on insert) and returns
-    /// the list of its color count. Renaming a row that is gone changes
+    /// the list of its color count and scoring. Renaming a row that is gone changes
     /// nothing and returns an empty list.
     pub fn rename_highscore(&self, id: i64, name: &str) -> rusqlite::Result<Vec<HighscoreEntry>> {
         self.conn.execute(
             "UPDATE highscores SET name = ?1 WHERE id = ?2",
             params![normalize_name(name), id],
         )?;
-        let count: Option<u8> = self
+        let list: Option<(u8, bool)> = self
             .conn
             .query_row(
-                "SELECT color_count FROM highscores WHERE id = ?1",
+                "SELECT color_count, bonus FROM highscores WHERE id = ?1",
                 [id],
-                |row| row.get(0),
+                |row| Ok((row.get(0)?, row.get(1)?)),
             )
             .optional()?;
-        match count {
-            Some(count) => self.list_highscores(count),
+        match list {
+            Some((count, bonus)) => self.list_highscores(count, bonus),
             None => Ok(Vec::new()),
         }
     }
@@ -228,7 +249,7 @@ impl Store {
         Ok(())
     }
 
-    /// The color count of the last game started, or `None` if none was
+    /// The color count of the next game, or `None` if none was
     /// chosen yet (or the stored value is not a valid count).
     pub fn last_color_count(&self) -> rusqlite::Result<Option<u8>> {
         let value: Option<String> = self
@@ -256,6 +277,33 @@ impl Store {
 
     /// The ball theme picked in „Opcje”, or `None` if none was picked yet (or
     /// the stored value is not a known theme); the caller treats that as classic.
+    /// Whether the next game has the bonus for long clears, or `None` if it
+    /// was never chosen (callers treat that as off).
+    pub fn last_bonus(&self) -> rusqlite::Result<Option<bool>> {
+        let value: Option<String> = self
+            .conn
+            .query_row(
+                "SELECT value FROM settings WHERE key = ?1",
+                [LAST_BONUS_KEY],
+                |row| row.get(0),
+            )
+            .optional()?;
+        Ok(match value.as_deref() {
+            Some("1") => Some(true),
+            Some("0") => Some(false),
+            _ => None,
+        })
+    }
+
+    pub fn set_last_bonus(&self, bonus: bool) -> rusqlite::Result<()> {
+        self.conn.execute(
+            "INSERT INTO settings (key, value) VALUES (?1, ?2)
+             ON CONFLICT (key) DO UPDATE SET value = excluded.value",
+            params![LAST_BONUS_KEY, if bonus { "1" } else { "0" }],
+        )?;
+        Ok(())
+    }
+
     pub fn ball_theme(&self) -> rusqlite::Result<Option<String>> {
         let value: Option<String> = self
             .conn
@@ -379,6 +427,7 @@ mod tests {
             score,
             date: date.to_string(),
             color_count: 6,
+            bonus: false,
         }
     }
 
@@ -386,6 +435,13 @@ mod tests {
         HighscoreEntry {
             color_count: count,
             ..entry(name, score, "d")
+        }
+    }
+
+    fn bonus_of(count: u8, name: &str, score: u32) -> HighscoreEntry {
+        HighscoreEntry {
+            bonus: true,
+            ..entry_of(count, name, score)
         }
     }
 
@@ -423,7 +479,7 @@ mod tests {
 
         assert_eq!(result.place, Some(3));
         assert_eq!(names(&result.highscores), ["Ola", "Ala", "Ela"]);
-        assert_eq!(store.list_highscores(6).unwrap(), result.highscores);
+        assert_eq!(store.list_highscores(6, false).unwrap(), result.highscores);
     }
 
     #[test]
@@ -459,7 +515,10 @@ mod tests {
                 .insert_highscore(&entry(&format!("P{i}"), 100 + i * 10, "d"))
                 .unwrap();
         }
-        assert_eq!(store.list_highscores(6).unwrap().len(), MAX_HIGHSCORES);
+        assert_eq!(
+            store.list_highscores(6, false).unwrap().len(),
+            MAX_HIGHSCORES
+        );
 
         // Beats the 30th (score 100): the 30th drops off.
         let result = store.insert_highscore(&entry("New", 105, "d")).unwrap();
@@ -550,7 +609,7 @@ mod tests {
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .unwrap();
         assert_eq!(version as usize, MIGRATIONS.len());
-        assert!(store.list_highscores(6).unwrap().is_empty());
+        assert!(store.list_highscores(6, false).unwrap().is_empty());
         assert_eq!(discarded(&path), 0);
     }
 
@@ -565,7 +624,7 @@ mod tests {
             store.save_game(&json!({ "score": 70 })).unwrap();
         }
         let store = Store::open(&path).unwrap();
-        assert_eq!(names(&store.list_highscores(6).unwrap()), ["Ala"]);
+        assert_eq!(names(&store.list_highscores(6, false).unwrap()), ["Ala"]);
         assert_eq!(store.last_name().unwrap().as_deref(), Some("Ala"));
         assert_eq!(store.load_game().unwrap(), Some(json!({ "score": 70 })));
     }
@@ -581,13 +640,13 @@ mod tests {
         .unwrap();
 
         let mut store = Store::open(&path).unwrap();
-        assert!(store.list_highscores(6).unwrap().is_empty());
+        assert!(store.list_highscores(6, false).unwrap().is_empty());
         store.insert_highscore(&entry("Ala", 10, "d")).unwrap();
         assert_eq!(discarded(&path), 1);
 
         drop(store);
         let store = Store::open(&path).unwrap();
-        assert_eq!(store.list_highscores(6).unwrap().len(), 1);
+        assert_eq!(store.list_highscores(6, false).unwrap().len(), 1);
     }
 
     #[test]
@@ -608,7 +667,7 @@ mod tests {
         fs::write(&path, &bytes).unwrap();
 
         let store = Store::open(&path).unwrap();
-        assert!(store.list_highscores(6).unwrap().is_empty());
+        assert!(store.list_highscores(6, false).unwrap().is_empty());
     }
 
     #[test]
@@ -631,7 +690,7 @@ mod tests {
 
         let store = Store::open(&path).unwrap();
         holder.join().unwrap();
-        assert_eq!(names(&store.list_highscores(6).unwrap()), ["Ala"]);
+        assert_eq!(names(&store.list_highscores(6, false).unwrap()), ["Ala"]);
         assert_eq!(discarded(&path), 0);
     }
 
@@ -668,8 +727,8 @@ mod tests {
         // 50 is the best of the 9-color list although it trails the 6-color one.
         assert_eq!(result.place, Some(1));
         assert_eq!(names(&result.highscores), ["Nine"]);
-        assert_eq!(names(&store.list_highscores(6).unwrap()), ["Six"]);
-        assert!(store.list_highscores(5).unwrap().is_empty());
+        assert_eq!(names(&store.list_highscores(6, false).unwrap()), ["Six"]);
+        assert!(store.list_highscores(5, false).unwrap().is_empty());
     }
 
     #[test]
@@ -688,8 +747,11 @@ mod tests {
         assert_eq!(result.place, None);
         let result = store.insert_highscore(&entry_of(7, "Beat", 105)).unwrap();
         assert_eq!(result.place, Some(30));
-        assert_eq!(store.list_highscores(7).unwrap().len(), MAX_HIGHSCORES);
-        assert_eq!(store.list_highscores(8).unwrap().len(), 1);
+        assert_eq!(
+            store.list_highscores(7, false).unwrap().len(),
+            MAX_HIGHSCORES
+        );
+        assert_eq!(store.list_highscores(8, false).unwrap().len(), 1);
 
         // Equal scores in different counts do not tie with each other.
         let result = store.insert_highscore(&entry_of(8, "Same", 1)).unwrap();
@@ -807,15 +869,102 @@ mod tests {
         assert_eq!(version as usize, MIGRATIONS.len());
 
         // Old scores joined the 6-color list; nothing else was touched.
-        let list = store.list_highscores(6).unwrap();
+        let list = store.list_highscores(6, false).unwrap();
         assert_eq!(names(&list), ["Ala", "Ola"]);
         assert!(list.iter().all(|e| e.color_count == 6));
-        assert!(store.list_highscores(7).unwrap().is_empty());
+        assert!(store.list_highscores(7, false).unwrap().is_empty());
         assert_eq!(store.last_name().unwrap().as_deref(), Some("Ola"));
         assert_eq!(store.load_game().unwrap(), Some(json!({ "score": 70 })));
 
         // The migrated list ranks new scores as before.
         let result = store.insert_highscore(&entry_of(6, "Ela", 250)).unwrap();
         assert_eq!(result.place, Some(2));
+    }
+
+    #[test]
+    fn migrating_an_old_file_keeps_its_scores_in_the_lists_without_the_bonus() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("kulki.db");
+        {
+            // The schema as version 2 left it: color counts, no bonus.
+            let conn = Connection::open(&path).unwrap();
+            conn.execute_batch(MIGRATIONS[0]).unwrap();
+            conn.execute_batch(MIGRATIONS[1]).unwrap();
+            conn.pragma_update(None, "user_version", 2).unwrap();
+            conn.execute(
+                "INSERT INTO highscores (name, score, date, color_count)
+                 VALUES ('Ala', 300, 'd1', 6), ('Ola', 200, 'd2', 8)",
+                [],
+            )
+            .unwrap();
+        }
+        let store = Store::open(&path).unwrap();
+        assert_eq!(names(&store.list_highscores(6, false).unwrap()), ["Ala"]);
+        assert_eq!(names(&store.list_highscores(8, false).unwrap()), ["Ola"]);
+        assert!(store.list_highscores(6, true).unwrap().is_empty());
+        assert!(store.list_highscores(8, true).unwrap().is_empty());
+    }
+
+    #[test]
+    fn ranks_and_trims_each_scoring_list_on_its_own() {
+        let mut store = Store::open_in_memory().unwrap();
+        for i in 0..MAX_HIGHSCORES as u32 {
+            store
+                .insert_highscore(&entry_of(6, "Plain", 100 + i))
+                .unwrap();
+        }
+        // A bonus score never shows in or pushes out the plain list...
+        let result = store
+            .insert_highscore(&bonus_of(6, "Premia", 5000))
+            .unwrap();
+        assert_eq!(result.place, Some(1));
+        assert_eq!(names(&result.highscores), ["Premia"]);
+        let plain = store.list_highscores(6, false).unwrap();
+        assert_eq!(plain.len(), MAX_HIGHSCORES);
+        assert!(plain.iter().all(|e| !e.bonus && e.name == "Plain"));
+        assert_eq!(plain[MAX_HIGHSCORES - 1].score, 100);
+        // ...and a plain score does not touch the bonus list.
+        store.insert_highscore(&entry_of(6, "Plain", 9999)).unwrap();
+        assert_eq!(names(&store.list_highscores(6, true).unwrap()), ["Premia"]);
+        // Trimming the bonus list leaves the plain one alone.
+        for i in 0..MAX_HIGHSCORES as u32 {
+            store.insert_highscore(&bonus_of(6, "B", 6000 + i)).unwrap();
+        }
+        let bonus = store.list_highscores(6, true).unwrap();
+        assert_eq!(bonus.len(), MAX_HIGHSCORES);
+        assert!(bonus.iter().all(|e| e.bonus && e.score >= 6000));
+        assert_eq!(
+            store.list_highscores(6, false).unwrap().len(),
+            MAX_HIGHSCORES
+        );
+        // Ties are broken within the list: the older game stays higher.
+        let tie = store.insert_highscore(&bonus_of(7, "Later", 50)).unwrap();
+        let earlier_plain = store.insert_highscore(&entry_of(7, "Plain", 50)).unwrap();
+        assert_eq!((tie.place, earlier_plain.place), (Some(1), Some(1)));
+    }
+
+    #[test]
+    fn renames_within_the_rows_own_scoring_list() {
+        let mut store = Store::open_in_memory().unwrap();
+        store.insert_highscore(&entry_of(6, "Plain", 100)).unwrap();
+        let id = store
+            .insert_highscore(&bonus_of(6, "Premia", 200))
+            .unwrap()
+            .id
+            .unwrap();
+        let list = store.rename_highscore(id, "Nowy").unwrap();
+        assert_eq!(names(&list), ["Nowy"]);
+        assert!(list[0].bonus);
+        assert_eq!(names(&store.list_highscores(6, false).unwrap()), ["Plain"]);
+    }
+
+    #[test]
+    fn remembers_last_bonus() {
+        let store = Store::open_in_memory().unwrap();
+        assert_eq!(store.last_bonus().unwrap(), None);
+        store.set_last_bonus(true).unwrap();
+        assert_eq!(store.last_bonus().unwrap(), Some(true));
+        store.set_last_bonus(false).unwrap();
+        assert_eq!(store.last_bonus().unwrap(), Some(false));
     }
 }
