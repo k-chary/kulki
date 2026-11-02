@@ -79,7 +79,7 @@ describe('a move that clears', () => {
     if (!clear) throw new Error('no clear step');
     expect(clear.duration).toBe(300);
     expect(clear.expect).toBe(5);
-    expect(clear.view).toMatchObject({ score: 50, cleared: 5, delta: 50 });
+    expect(clear.view).toMatchObject({ score: 50, cleared: 5, delta: 50, deltaBalls: 5 });
     expect(clear.view.board.filter((square) => square !== null)).toHaveLength(5);
     const last = steps[steps.length - 1]?.view;
     if (!last) throw new Error('no steps');

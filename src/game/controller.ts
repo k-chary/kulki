@@ -64,7 +64,7 @@ export type ControllerAction =
   | { type: 'clearNotice'; noticeId: number }
   | { type: 'requestNewGame' }
   | { type: 'cancelNewGame' }
-  | { type: 'startNewGame'; colorCount: number }
+  | { type: 'startNewGame'; colorCount: number; bonus: boolean }
   | { type: 'scoreSaved'; name: string; place: number };
 
 export function initialState(
@@ -121,8 +121,7 @@ export function finishedEntry(
     score: game.score,
     date,
     colorCount: game.colorCount,
-    // The bonus is not a game setting yet.
-    bonus: false,
+    bonus: game.bonus,
   };
 }
 
@@ -144,8 +143,16 @@ export function withIntro(state: ControllerState): ControllerState {
   return { ...state, turn: { before, events: [{ type: 'spawn', cells, colors }] } };
 }
 
-function freshGame(state: ControllerState, rng: Rng, colorCount: number): ControllerState {
-  return { ...withIntro(initialState(newGame(rng, colorCount))), noticeId: state.noticeId };
+function freshGame(
+  state: ControllerState,
+  rng: Rng,
+  colorCount: number,
+  bonus: boolean,
+): ControllerState {
+  return {
+    ...withIntro(initialState(newGame(rng, colorCount, bonus))),
+    noticeId: state.noticeId,
+  };
 }
 
 /**
@@ -225,7 +232,7 @@ export function reduce(
     case 'cancelNewGame':
       return { ...state, choosing: false };
     case 'startNewGame':
-      return state.choosing ? freshGame(state, rng, action.colorCount) : state;
+      return state.choosing ? freshGame(state, rng, action.colorCount, action.bonus) : state;
     case 'scoreSaved':
       return state.game.gameOver && state.saved === null
         ? { ...state, saved: { name: action.name, place: action.place } }

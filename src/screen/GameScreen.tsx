@@ -33,7 +33,15 @@ import {
   livePlace,
   rowsWithLive,
 } from '../highscores/ranking';
-import { type Color, type GameState, type Rng, cellIndex, emptyCells, newGame } from '../rules';
+import {
+  type Color,
+  type GameState,
+  type Rng,
+  POINTS_PER_BALL,
+  cellIndex,
+  emptyCells,
+  newGame,
+} from '../rules';
 import type { InsertResult, Storage } from '../storage/Storage';
 import { readDuration, readTurnDurations } from '../styles/motion';
 import styles from './GameScreen.module.css';
@@ -50,6 +58,15 @@ export interface GameScreenProps {
   resumed?: boolean;
   /** The theme saved in „Opcje”; classic when none was picked yet. */
   ballTheme?: BallTheme;
+  /** The scoring remembered for the next game (set in „Nowa gra”); the bonus is off when none was chosen. */
+  nextBonus?: boolean;
+}
+
+/** One highscore list: a color count and a scoring have their own top 30. */
+interface ListOf {
+  colorCount: number;
+  bonus: boolean;
+  entries: HighscoreEntry[];
 }
 
 /** Storage failures do not stop the game, but they must not go unnoticed. */
@@ -85,6 +102,7 @@ export function GameScreen({
   intro = game === undefined,
   resumed = false,
   ballTheme: initialTheme = 'classic',
+  nextBonus: initialNextBonus = false,
 }: GameScreenProps) {
   const [state, dispatch] = useController(() => {
     const start = initialState(game ?? newGame(rng), resumed ? 'loaded' : null, resumed ? 1 : 0);
@@ -92,42 +110,40 @@ export function GameScreen({
     return intro && !resumed ? withIntro(start) : start;
   }, rng);
   // The list before the finished game's own row went in; the dialog and the live row use it.
-  // It belongs to one color count; after a new game with another count it reads empty
-  // until that count's list is loaded.
-  const { colorCount } = state.game;
-  const [stored, setStored] = useState<{ colorCount: number; entries: HighscoreEntry[] }>({
-    colorCount,
-    entries: [],
-  });
+  // It belongs to one color count and scoring; after a new game with another config it
+  // reads empty until that config's list is loaded.
+  const { colorCount, bonus } = state.game;
+  const [stored, setStored] = useState<ListOf>({ colorCount, bonus, entries: [] });
   const highscores = useMemo(
-    () => (stored.colorCount === colorCount ? stored.entries : []),
-    [stored, colorCount],
+    () => (stored.colorCount === colorCount && stored.bonus === bonus ? stored.entries : []),
+    [stored, colorCount, bonus],
   );
   const setHighscores = useCallback(
-    (entries: HighscoreEntry[], forCount: number) => setStored({ colorCount: forCount, entries }),
+    (entries: HighscoreEntry[], forCount: number, forBonus: boolean) =>
+      setStored({ colorCount: forCount, bonus: forBonus, entries }),
     [],
   );
-  // The count whose list the rail shows. It follows the game at launch and whenever a game
-  // starts or ends; in between the player may browse the other counts. Not stored anywhere.
+  // The count and scoring whose list the rail shows. They follow the game at launch and
+  // whenever a game starts or ends; in between the player may browse the other lists.
+  // Not stored anywhere.
   const [shown, setShown] = useState(colorCount);
-  const [browsed, setBrowsed] = useState<{ colorCount: number; entries: HighscoreEntry[] }>({
-    colorCount,
-    entries: [],
-  });
+  const [shownBonus, setShownBonus] = useState(bonus);
+  const [browsed, setBrowsed] = useState<ListOf>({ colorCount, bonus, entries: [] });
+  const [nextBonus, setNextBonus] = useState(initialNextBonus);
   useEffect(() => {
-    if (shown === colorCount) return;
+    if (shown === colorCount && shownBonus === bonus) return;
     let current = true;
     void storage
-      .listHighscores(shown, false)
+      .listHighscores(shown, shownBonus)
       .then((entries) => {
-        // An answer for a count no longer shown is dropped.
-        if (current) setBrowsed({ colorCount: shown, entries });
+        // An answer for a list no longer shown is dropped.
+        if (current) setBrowsed({ colorCount: shown, bonus: shownBonus, entries });
       })
       .catch(logStorageError);
     return () => {
       current = false;
     };
-  }, [storage, shown, colorCount]);
+  }, [storage, shown, shownBonus, colorCount, bonus]);
   const [lastName, setLastName] = useState<string | null>(null);
   const [saveFailed, setSaveFailed] = useState(false);
   const saving = useRef(false);
@@ -152,17 +168,17 @@ export function GameScreen({
 
   useEffect(() => {
     let current = true;
-    void Promise.all([storage.listHighscores(colorCount, false), storage.getLastName()]).then(
+    void Promise.all([storage.listHighscores(colorCount, bonus), storage.getLastName()]).then(
       ([list, name]) => {
         if (!current) return;
-        setHighscores(list, colorCount);
+        setHighscores(list, colorCount, bonus);
         setLastName(name);
       },
     );
     return () => {
       current = false;
     };
-  }, [storage, colorCount, setHighscores]);
+  }, [storage, colorCount, bonus, setHighscores]);
 
   // Every turn is saved as soon as the reducer has computed it, before anything
   // is played back. The turn that ends the game drops the save and stores the score
@@ -193,7 +209,8 @@ export function GameScreen({
     writes.current = stored
       .then((result) => {
         // The storage kept no row after all: the dialog shows „outside the top 30”.
-        if (result.id === null) setHighscores(result.highscores, effect.game.colorCount);
+        if (result.id === null)
+          setHighscores(result.highscores, effect.game.colorCount, effect.game.bonus);
       })
       .catch(logStorageError);
   }, [state, storage, setHighscores]);
@@ -217,7 +234,7 @@ export function GameScreen({
     [turn, durations, after],
   );
   const [progress, setProgress] = useState<{ turn: typeof turn; view: PlaybackView } | null>(null);
-  const [chip, setChip] = useState<{ delta: number; id: number } | null>(null);
+  const [chip, setChip] = useState<{ delta: number; balls: number; id: number } | null>(null);
   const sequence = useRef<Sequence | null>(null);
   const chipCount = useRef(0);
 
@@ -228,7 +245,7 @@ export function GameScreen({
         setProgress({ turn, view });
         if (view.delta !== null) {
           chipCount.current += 1;
-          setChip({ delta: view.delta, id: chipCount.current });
+          setChip({ delta: view.delta, balls: view.deltaBalls, id: chipCount.current });
         }
       },
       onDone: () => dispatch({ type: 'turnDone' }),
@@ -276,26 +293,34 @@ export function GameScreen({
   const [wasEnded, setWasEnded] = useState(gameEnded);
   if (gameEnded !== wasEnded) {
     setWasEnded(gameEnded);
-    if (gameEnded) setShown(colorCount);
+    if (gameEnded) {
+      setShown(colorCount);
+      setShownBonus(bonus);
+    }
   }
-  const browsing = shown !== colorCount;
+  const browsing = shown !== colorCount || shownBonus !== bonus;
   const shownRows: HighscoreRow[] = useMemo(
     () =>
       browsing
-        ? (browsed.colorCount === shown ? browsed.entries : []).map((entry, i) => ({
-            kind: 'stored',
-            place: i + 1,
-            entry,
-          }))
+        ? (browsed.colorCount === shown && browsed.bonus === shownBonus ? browsed.entries : []).map(
+            (entry, i) => ({
+              kind: 'stored',
+              place: i + 1,
+              entry,
+            }),
+          )
         : rows,
-    [browsing, browsed, shown, rows],
+    [browsing, browsed, shown, shownBonus, rows],
   );
   const requestNewGame = () => dispatch({ type: 'requestNewGame' });
-  const startNewGame = (count: number) => {
-    // Only the next launch depends on it; the game starts regardless.
+  const startNewGame = (count: number, withBonus: boolean) => {
+    // Only the next launch depends on them; the game starts regardless.
     void storage.setLastColorCount(count).catch(logStorageError);
+    void storage.setLastBonus(withBonus).catch(logStorageError);
+    setNextBonus(withBonus);
     setShown(count);
-    dispatch({ type: 'startNewGame', colorCount: count });
+    setShownBonus(withBonus);
+    dispatch({ type: 'startNewGame', colorCount: count, bonus: withBonus });
   };
 
   // Renames the row stored at game over. If storing it failed, the row is inserted
@@ -312,18 +337,18 @@ export function GameScreen({
           score: state.game.score,
           date: new Date().toISOString(),
           colorCount: state.game.colorCount,
-          bonus: false,
+          bonus: state.game.bonus,
         };
         const inserted = storage.insertHighscore(entry);
         finished.current = inserted;
         result = await inserted;
       }
       if (result.id === null || result.place === null) {
-        setHighscores(result.highscores, state.game.colorCount);
+        setHighscores(result.highscores, state.game.colorCount, state.game.bonus);
         return;
       }
       const list = await storage.renameHighscore(result.id, name);
-      setHighscores(list, state.game.colorCount);
+      setHighscores(list, state.game.colorCount, state.game.bonus);
       setLastName(name);
       dispatch({ type: 'scoreSaved', name, place: result.place });
       // Only the next default depends on it; the score is already stored.
@@ -372,6 +397,7 @@ export function GameScreen({
           {state.choosing && (
             <NewGameDialog
               colorCount={colorCount}
+              bonus={nextBonus}
               score={state.moves > 0 && !state.game.gameOver ? state.game.score : null}
               returnFocusRef={newGameButton}
               onCancel={() => dispatch({ type: 'cancelNewGame' })}
@@ -403,6 +429,8 @@ export function GameScreen({
             cleared={view.cleared}
             delta={chip?.delta}
             deltaId={chip?.id}
+            deltaBalls={chip?.balls}
+            deltaBonus={chip ? chip.delta - chip.balls * POINTS_PER_BALL : 0}
           />
           <NextBalls colors={fittingPreview(view)} fresh={view.spawning.length > 0} />
           <div className={styles.actions}>
@@ -429,6 +457,9 @@ export function GameScreen({
             colorCount={shown}
             gameColorCount={colorCount}
             onColorCountChange={setShown}
+            bonus={shownBonus}
+            gameBonus={bonus}
+            onBonusChange={setShownBonus}
             current={
               state.game.gameOver
                 ? undefined
