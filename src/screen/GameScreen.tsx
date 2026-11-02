@@ -6,7 +6,7 @@ import { HighscoreList } from '../components/HighscoreList/HighscoreList';
 import { Logo } from '../components/Logo/Logo';
 import { NewGameDialog } from '../components/NewGameDialog/NewGameDialog';
 import { NextBalls } from '../components/NextBalls/NextBalls';
-import { OptionsDialog } from '../components/OptionsDialog/OptionsDialog';
+import { OptionsDialog, type NextGameSettings } from '../components/OptionsDialog/OptionsDialog';
 import { ScorePanel } from '../components/ScorePanel/ScorePanel';
 import { StatusLine } from '../components/StatusLine/StatusLine';
 import {
@@ -58,7 +58,9 @@ export interface GameScreenProps {
   resumed?: boolean;
   /** The theme saved in „Opcje”; classic when none was picked yet. */
   ballTheme?: BallTheme;
-  /** The scoring remembered for the next game (set in „Nowa gra”); the bonus is off when none was chosen. */
+  /** The color count remembered for the next game (set in „Nowa gra” or „Opcje”); the game's own by default. */
+  nextColorCount?: number;
+  /** The scoring remembered for the next game (set in „Nowa gra” or „Opcje”); the bonus is off when none was chosen. */
   nextBonus?: boolean;
 }
 
@@ -102,6 +104,7 @@ export function GameScreen({
   intro = game === undefined,
   resumed = false,
   ballTheme: initialTheme = 'classic',
+  nextColorCount: initialNextColorCount,
   nextBonus: initialNextBonus = false,
 }: GameScreenProps) {
   const [state, dispatch] = useController(() => {
@@ -129,6 +132,7 @@ export function GameScreen({
   const [shown, setShown] = useState(colorCount);
   const [shownBonus, setShownBonus] = useState(bonus);
   const [browsed, setBrowsed] = useState<ListOf>({ colorCount, bonus, entries: [] });
+  const [nextColorCount, setNextColorCount] = useState(initialNextColorCount ?? colorCount);
   const [nextBonus, setNextBonus] = useState(initialNextBonus);
   useEffect(() => {
     if (shown === colorCount && shownBonus === bonus) return;
@@ -312,11 +316,19 @@ export function GameScreen({
         : rows,
     [browsing, browsed, shown, shownBonus, rows],
   );
+  // „Opcje” only remembers the next game's settings; the game in progress is not touched.
+  const changeNextGame = (next: NextGameSettings) => {
+    setNextColorCount(next.colorCount);
+    setNextBonus(next.bonus);
+    void storage.setLastColorCount(next.colorCount).catch(logStorageError);
+    void storage.setLastBonus(next.bonus).catch(logStorageError);
+  };
   const requestNewGame = () => dispatch({ type: 'requestNewGame' });
   const startNewGame = (count: number, withBonus: boolean) => {
     // Only the next launch depends on them; the game starts regardless.
     void storage.setLastColorCount(count).catch(logStorageError);
     void storage.setLastBonus(withBonus).catch(logStorageError);
+    setNextColorCount(count);
     setNextBonus(withBonus);
     setShown(count);
     setShownBonus(withBonus);
@@ -390,13 +402,15 @@ export function GameScreen({
             <OptionsDialog
               ballTheme={ballTheme}
               onBallThemeChange={pickBallTheme}
+              nextGame={{ colorCount: nextColorCount, bonus: nextBonus }}
+              onNextGameChange={changeNextGame}
               onClose={() => setOptionsOpen(false)}
               returnFocusRef={optionsButton}
             />
           )}
           {state.choosing && (
             <NewGameDialog
-              colorCount={colorCount}
+              colorCount={nextColorCount}
               bonus={nextBonus}
               score={state.moves > 0 && !state.game.gameOver ? state.game.score : null}
               returnFocusRef={newGameButton}

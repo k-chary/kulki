@@ -30,6 +30,8 @@ interface Launch {
   intro: boolean;
   resumed: boolean;
   ballTheme: BallTheme;
+  /** The color count remembered for the next game; the game's own when none was remembered. */
+  nextColorCount: number;
   /** The scoring remembered for the next game. */
   nextBonus: boolean;
 }
@@ -53,19 +55,35 @@ export function App() {
       // null (none picked yet) and an unreadable setting both mean classic.
       storage.getBallTheme().catch(() => null),
       storage.getLastBonus().catch(() => null),
-    ]).then(async ([saved, savedTheme, lastBonus]) => {
+      storage.getLastColorCount().catch(() => null),
+    ]).then(([saved, savedTheme, lastBonus, last]) => {
       if (!current) return;
       const ballTheme = savedTheme ?? 'classic';
       // Set before the first paint, so candy balls never flash classic.
       document.documentElement.dataset.ballTheme = ballTheme;
       const nextBonus = lastBonus ?? false;
-      if (saved) setLaunch({ game: saved, intro: false, resumed: true, ballTheme, nextBonus });
-      else if (start.game) {
-        setLaunch({ game: start.game, intro: false, resumed: false, ballTheme, nextBonus });
+      if (saved) {
+        const nextColorCount = last ?? saved.colorCount;
+        setLaunch({
+          game: saved,
+          intro: false,
+          resumed: true,
+          ballTheme,
+          nextColorCount,
+          nextBonus,
+        });
+      } else if (start.game) {
+        const nextColorCount = last ?? start.game.colorCount;
+        setLaunch({
+          game: start.game,
+          intro: false,
+          resumed: false,
+          ballTheme,
+          nextColorCount,
+          nextBonus,
+        });
       } else {
         // Without a save the last count and scoring played are used, 6 colors and no bonus the very first time.
-        const last = await storage.getLastColorCount().catch(() => null);
-        if (!current) return;
         const colorCount = start.colorCount ?? last ?? DEFAULT_COLORS;
         const bonus = start.bonus ?? nextBonus;
         setLaunch({
@@ -73,6 +91,7 @@ export function App() {
           intro: true,
           resumed: false,
           ballTheme,
+          nextColorCount: colorCount,
           nextBonus: bonus,
         });
       }
@@ -103,6 +122,7 @@ export function App() {
           intro={launch.intro}
           resumed={launch.resumed}
           ballTheme={launch.ballTheme}
+          nextColorCount={launch.nextColorCount}
           nextBonus={launch.nextBonus}
         />
       </div>

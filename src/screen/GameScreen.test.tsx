@@ -278,6 +278,36 @@ describe('„Opcje”', () => {
     expect(document.documentElement.dataset.ballTheme).toBe('candy');
   });
 
+  it('remembers the next game in „Następna gra” and leaves the game in progress alone', async () => {
+    const { storage } = setup(6);
+    expect(await screen.findByText('Najlepsze wyniki · 6 kolorów')).toBeTruthy();
+    await userEvent.click(optionsButton());
+    const dialog = screen.getByRole('dialog', { name: 'Opcje' });
+    await userEvent.click(within(dialog).getByRole('tab', { name: 'Następna gra' }));
+    await userEvent.click(within(dialog).getByRole('radio', { name: '8 kolorów' }));
+    await userEvent.click(within(dialog).getByRole('radio', { name: /Z premią/ }));
+    await waitFor(async () => expect(await storage.getLastColorCount()).toBe(8));
+    expect(await storage.getLastBonus()).toBe(true);
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Gotowe' }));
+
+    // The game in progress, its rail and its balls are unchanged.
+    expect(balls()).toHaveLength(1);
+    expect(screen.getByText('Najlepsze wyniki · 6 kolorów')).toBeTruthy();
+
+    await userEvent.click(newGameButton());
+    const newGame = screen.getByRole('dialog', { name: 'Nowa gra' });
+    expect(
+      within(newGame).getByRole('radio', { name: '8 kolorów' }).getAttribute('aria-checked'),
+    ).toBe('true');
+    expect(
+      within(newGame)
+        .getByRole('radio', { name: /Z premią/ })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
+    await userEvent.click(within(newGame).getByRole('button', { name: 'Zacznij' }));
+    expect(await screen.findByText('Wyniki z premią · 8 kolorów')).toBeTruthy();
+  });
+
   it('is disabled with „Nowa gra”, during an animation and in a dialog', async () => {
     setup();
     await userEvent.click(newGameButton());
