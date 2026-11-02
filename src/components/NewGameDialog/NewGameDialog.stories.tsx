@@ -6,7 +6,14 @@ import { NewGameDialog } from './NewGameDialog';
 const meta = {
   title: 'Dialogs/NewGameDialog',
   component: NewGameDialog,
-  args: { colorCount: 6, bonus: false, score: null, onCancel: fn(), onStart: fn() },
+  args: {
+    colorCount: 6,
+    bonus: false,
+    score: null,
+    onCancel: fn(),
+    onStart: fn(),
+    onOpenOptions: fn(),
+  },
   argTypes: { colorCount: { control: 'inline-radio', options: [5, 6, 7, 8, 9] } },
   decorators: [(Story) => <BoardStage>{Story()}</BoardStage>],
 } satisfies Meta<typeof NewGameDialog>;
@@ -23,5 +30,5 @@ export const GameInProgress: Story = { args: { score: 1240 } };
 /** Opens on the last game's count; here the hardest. */
 export const NineColors: Story = { args: { colorCount: 9 } };
 
-/** The bonus for long clears was chosen last time, or in „Opcje”. */
+/** The bonus for long clears is on, as set in „Opcje”: the summary says so. */
 export const WithBonus: Story = { args: { bonus: true, score: 1240 } };

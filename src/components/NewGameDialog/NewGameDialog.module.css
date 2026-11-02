@@ -12,3 +12,78 @@
 .actions > * {
   flex: 1;
 }
+
+/* „Ustawienia gry”: what the game starts with besides the count, set in „Opcje”. */
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.summaryHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.link {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-accent);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  text-decoration: underline;
+  text-underline-offset: var(--space-0-5);
+  cursor: pointer;
+}
+
+.link:hover {
+  color: var(--color-text);
+}
+
+.link:focus-visible {
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: var(--space-0-5);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.item {
+  display: flex;
+  gap: var(--space-2);
+  font-size: var(--text-md);
+  line-height: var(--leading-snug);
+}
+
+.item dt {
+  color: var(--color-text-muted);
+}
+
+.item dt::after {
+  content: ':';
+}
+
+.item dd {
+  margin: 0;
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
