@@ -2,7 +2,14 @@ import { useId } from 'react';
 import { COLOR_COUNT_LEVELS, COLOR_NAMES, formatColorCount } from '../../format';
 import { COLOR_COUNTS, COLORS, colorsFor } from '../../rules/color';
 import { Ball } from '../Ball/Ball';
+import { SegmentedControl } from '../SegmentedControl/SegmentedControl';
 import styles from './ColorCountPicker.module.css';
+
+const COUNT_OPTIONS = COLOR_COUNTS.map((count) => ({
+  value: count,
+  label: String(count),
+  ariaLabel: formatColorCount(count),
+}));
 
 export interface ColorCountPickerProps {
   /** The chosen color count. */
@@ -24,22 +31,13 @@ export function ColorCountPicker({ value, onChange, force }: ColorCountPickerPro
       <span className={styles.label} id={labelId}>
         Liczba kolorów
       </span>
-      <div className={styles.segments} role="radiogroup" aria-labelledby={labelId}>
-        {COLOR_COUNTS.map((count) => (
-          <button
-            key={count}
-            type="button"
-            role="radio"
-            className={styles.segment}
-            aria-checked={count === value}
-            aria-label={formatColorCount(count)}
-            data-force={force?.count === count ? force.state : undefined}
-            onClick={() => onChange?.(count)}
-          >
-            {count}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        options={COUNT_OPTIONS}
+        value={value}
+        onChange={onChange}
+        ariaLabelledBy={labelId}
+        force={force && { value: force.count, state: force.state }}
+      />
       <div className={styles.footer}>
         <span
           className={styles.strip}

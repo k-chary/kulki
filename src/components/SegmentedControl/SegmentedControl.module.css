@@ -1,4 +1,4 @@
-/* The „Liczba kolorów” segmented control, compact enough for the rail. */
+/* One sunken track, the chosen segment raised in the accent. */
 .segments {
   display: flex;
   gap: var(--space-0-5);
@@ -7,6 +7,10 @@
 
   /* thin is 1px: tokens.css has no border-width token. */
   border: thin solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.segments[data-size='compact'] {
   border-radius: var(--radius-sm);
 }
 
@@ -15,16 +19,15 @@
   appearance: none;
   position: relative;
   flex: 1;
-  height: calc(var(--filter-height) - 2 * var(--space-0-5));
-  padding: 0 0 var(--space-1);
+  height: calc(var(--control-height) - 2 * var(--space-0-5));
+  padding: 0;
   border: 0;
-  border-radius: calc(var(--radius-sm) - var(--space-0-5));
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--color-text-muted);
   font-family: var(--font-mono);
-  font-size: var(--text-sm);
+  font-size: var(--text-md);
   font-weight: var(--weight-semibold);
-  line-height: var(--leading-tight);
   font-variant-numeric: tabular-nums;
   cursor: pointer;
   transition:
@@ -50,8 +53,25 @@
   cursor: default;
 }
 
-/* The current game's count: a small accent dot under the number. */
-.segment[data-game='true']::after {
+.segments[data-size='compact'] .segment {
+  height: calc(var(--filter-height) - 2 * var(--space-0-5));
+  padding: 0 0 var(--space-1);
+  border-radius: calc(var(--radius-sm) - var(--space-0-5));
+  font-size: var(--text-sm);
+  line-height: var(--leading-tight);
+}
+
+.segments[data-text='text'] .segment {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+}
+
+.segments[data-size='compact'][data-text='text'] .segment {
+  font-size: var(--text-xs);
+}
+
+/* A marked segment: a small accent dot under the label. */
+.segment[data-marked='true']::after {
   content: '';
   position: absolute;
   inset-inline: 0;
@@ -63,6 +83,6 @@
   background: var(--color-accent);
 }
 
-.segment[data-game='true'][aria-checked='true']::after {
+.segment[data-marked='true'][aria-checked='true']::after {
   background: var(--color-on-accent);
 }

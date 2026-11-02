@@ -1,5 +1,0 @@
-/* The track, segments and dot come from HighscoreFilter, so both rows match. */
-.segment {
-  font-family: var(--font-body);
-  font-size: var(--text-xs);
-}

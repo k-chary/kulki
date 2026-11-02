@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { formatBonus } from '../../format';
-import picker from '../ColorCountPicker/ColorCountPicker.module.css';
+import { SegmentedControl } from '../SegmentedControl/SegmentedControl';
 import styles from './BonusPicker.module.css';
 
 export interface BonusPickerProps {
@@ -11,7 +11,10 @@ export interface BonusPickerProps {
   force?: { bonus: boolean; state: 'hover' | 'focus' };
 }
 
-const OPTIONS = [false, true] as const;
+const OPTIONS = [false, true].map((bonus) => {
+  const name = formatBonus(bonus);
+  return { value: bonus, label: name.charAt(0).toUpperCase() + name.slice(1) };
+});
 
 /**
  * „Punktacja” in „Nowa gra” and „Opcje”: „Bez premii” or „Z premią”, drawn like
@@ -20,28 +23,18 @@ const OPTIONS = [false, true] as const;
 export function BonusPicker({ value, onChange, force }: BonusPickerProps) {
   const labelId = useId();
   return (
-    <div className={picker.picker}>
-      <span className={picker.label} id={labelId}>
+    <div className={styles.picker}>
+      <span className={styles.label} id={labelId}>
         Punktacja
       </span>
-      <div className={picker.segments} role="radiogroup" aria-labelledby={labelId}>
-        {OPTIONS.map((bonus) => {
-          const name = formatBonus(bonus);
-          return (
-            <button
-              key={name}
-              type="button"
-              role="radio"
-              className={`${picker.segment} ${styles.segment}`}
-              aria-checked={bonus === value}
-              data-force={force?.bonus === bonus ? force.state : undefined}
-              onClick={() => onChange?.(bonus)}
-            >
-              {name.charAt(0).toUpperCase() + name.slice(1)}
-            </button>
-          );
-        })}
-      </div>
+      <SegmentedControl
+        options={OPTIONS}
+        value={value}
+        onChange={onChange}
+        text="text"
+        ariaLabelledBy={labelId}
+        force={force && { value: force.bonus, state: force.state }}
+      />
       <p className={styles.hint}>
         {value
           ? 'Od 6. kulki w jednym zbiciu każda warta o 10 pkt więcej'

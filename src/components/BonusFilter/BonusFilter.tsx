@@ -1,6 +1,5 @@
 import { formatBonus } from '../../format';
-import filter from '../HighscoreFilter/HighscoreFilter.module.css';
-import styles from './BonusFilter.module.css';
+import { SegmentedControl } from '../SegmentedControl/SegmentedControl';
 
 export interface BonusFilterProps {
   /** Whether the bonus lists are shown. */
@@ -12,34 +11,30 @@ export interface BonusFilterProps {
   force?: { bonus: boolean; state: 'hover' | 'focus' };
 }
 
-const OPTIONS = [false, true] as const;
-
 /**
  * „Bez premii | Z premią” under the 5–9 filter: picks whether the panel shows
  * the lists with or without the bonus, without touching the game in progress.
  */
 export function BonusFilter({ value, gameBonus, onChange, force }: BonusFilterProps) {
+  const options = [false, true].map((bonus) => {
+    const name = formatBonus(bonus);
+    const game = bonus === gameBonus;
+    return {
+      value: bonus,
+      label: name.charAt(0).toUpperCase() + name.slice(1),
+      ariaLabel: `${name}${game ? ', ta gra' : ''}`,
+      marked: game,
+    };
+  });
   return (
-    <div className={filter.segments} role="radiogroup" aria-label="Pokaż wyniki">
-      {OPTIONS.map((bonus) => {
-        const name = formatBonus(bonus);
-        const game = bonus === gameBonus;
-        return (
-          <button
-            key={name}
-            type="button"
-            role="radio"
-            className={`${filter.segment} ${styles.segment}`}
-            aria-checked={bonus === value}
-            aria-label={`${name}${game ? ', ta gra' : ''}`}
-            data-game={game}
-            data-force={force?.bonus === bonus ? force.state : undefined}
-            onClick={() => onChange?.(bonus)}
-          >
-            {name.charAt(0).toUpperCase() + name.slice(1)}
-          </button>
-        );
-      })}
-    </div>
+    <SegmentedControl
+      options={options}
+      value={value}
+      onChange={onChange}
+      size="compact"
+      text="text"
+      ariaLabel="Pokaż wyniki"
+      force={force && { value: force.bonus, state: force.state }}
+    />
   );
 }
