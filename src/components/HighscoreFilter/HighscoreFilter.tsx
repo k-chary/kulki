@@ -1,6 +1,6 @@
 import { formatColorCount } from '../../format';
 import { COLOR_COUNTS } from '../../rules/color';
-import styles from './HighscoreFilter.module.css';
+import { SegmentedControl } from '../SegmentedControl/SegmentedControl';
 
 export interface HighscoreFilterProps {
   /** The color count whose top 30 is shown. */
@@ -17,26 +17,23 @@ export interface HighscoreFilterProps {
  * shows, without touching the game in progress.
  */
 export function HighscoreFilter({ value, gameColorCount, onChange, force }: HighscoreFilterProps) {
+  const options = COLOR_COUNTS.map((count) => {
+    const game = count === gameColorCount;
+    return {
+      value: count,
+      label: String(count),
+      ariaLabel: `${formatColorCount(count)}${game ? ', ta gra' : ''}`,
+      marked: game,
+    };
+  });
   return (
-    <div className={styles.segments} role="radiogroup" aria-label="Pokaż wyniki dla">
-      {COLOR_COUNTS.map((count) => {
-        const game = count === gameColorCount;
-        return (
-          <button
-            key={count}
-            type="button"
-            role="radio"
-            className={styles.segment}
-            aria-checked={count === value}
-            aria-label={`${formatColorCount(count)}${game ? ', ta gra' : ''}`}
-            data-game={game}
-            data-force={force?.count === count ? force.state : undefined}
-            onClick={() => onChange?.(count)}
-          >
-            {count}
-          </button>
-        );
-      })}
-    </div>
+    <SegmentedControl
+      options={options}
+      value={value}
+      onChange={onChange}
+      size="compact"
+      ariaLabel="Pokaż wyniki dla"
+      force={force && { value: force.count, state: force.state }}
+    />
   );
 }
