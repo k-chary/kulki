@@ -6,7 +6,7 @@
   flex: 1;
 }
 
-/* „Wygląd | Następna gra”: underlined tabs, so they never read as one more picker. */
+/* „Gra | Wygląd”: underlined tabs, so they never read as one more picker. */
 .tabs {
   display: flex;
   gap: var(--space-4);

@@ -35,30 +35,32 @@ describe('OptionsDialog', () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it('shows the next game settings only when given, and reports each change', async () => {
-    const onNextGameChange = vi.fn();
+  it('opens on „Gra” when given the scoring, and reports each change', async () => {
+    const onBonusChange = vi.fn();
     render(
       <OptionsDialog
         ballTheme="classic"
         onBallThemeChange={vi.fn()}
-        nextGame={{ colorCount: 6, bonus: false }}
-        onNextGameChange={onNextGameChange}
+        bonus={false}
+        onBonusChange={onBonusChange}
         onClose={vi.fn()}
       />,
     );
-    expect(screen.getByRole('tab', { name: 'Wygląd' }).getAttribute('aria-selected')).toBe('true');
-    await userEvent.click(screen.getByRole('tab', { name: 'Następna gra' }));
-    expect(screen.getByRole('tabpanel', { name: 'Następna gra' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Gra' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tabpanel', { name: 'Gra' })).toBeTruthy();
     expect(screen.queryByRole('radio', { name: /Cukierkowe/ })).toBeNull();
+    // The color count is picked only in „Nowa gra”.
+    expect(screen.queryByRole('radio', { name: '8 kolorów' })).toBeNull();
     await userEvent.click(screen.getByRole('radio', { name: 'Z premią' }));
-    expect(onNextGameChange).toHaveBeenLastCalledWith({ colorCount: 6, bonus: true });
-    await userEvent.click(screen.getByRole('radio', { name: '8 kolorów' }));
-    expect(onNextGameChange).toHaveBeenLastCalledWith({ colorCount: 8, bonus: false });
+    expect(onBonusChange).toHaveBeenLastCalledWith(true);
+    await userEvent.click(screen.getByRole('tab', { name: 'Wygląd' }));
+    expect(screen.getByRole('radio', { name: /Cukierkowe/ })).toBeTruthy();
   });
 
-  it('has no tabs without next game settings', () => {
+  it('has no tabs without the game settings', () => {
     render(<OptionsDialog ballTheme="classic" onBallThemeChange={vi.fn()} onClose={vi.fn()} />);
     expect(screen.queryByRole('tablist')).toBeNull();
+    expect(screen.getByRole('radio', { name: /Cukierkowe/ })).toBeTruthy();
   });
 
   it('switches tabs with the arrow keys', async () => {
@@ -66,13 +68,13 @@ describe('OptionsDialog', () => {
       <OptionsDialog
         ballTheme="classic"
         onBallThemeChange={vi.fn()}
-        nextGame={{ colorCount: 6, bonus: false }}
+        bonus={false}
         onClose={vi.fn()}
       />,
     );
-    screen.getByRole('tab', { name: 'Wygląd' }).focus();
+    screen.getByRole('tab', { name: 'Gra' }).focus();
     await userEvent.keyboard('{ArrowRight}');
-    expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Następna gra' }));
-    expect(screen.getByRole('tabpanel', { name: 'Następna gra' })).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Wygląd' }));
+    expect(screen.getByRole('tabpanel', { name: 'Wygląd' })).toBeTruthy();
   });
 });

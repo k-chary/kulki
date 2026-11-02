@@ -32,14 +32,34 @@ describe('NewGameDialog', () => {
     expect(onStart).not.toHaveBeenCalled();
   });
 
-  it('opens on the remembered scoring and starts with the chosen one', async () => {
+  it('sums up the scoring instead of picking it, and starts with it', async () => {
     const onStart = vi.fn();
     render(<NewGameDialog colorCount={6} bonus onCancel={vi.fn()} onStart={onStart} />);
-    expect(screen.getByRole('radio', { name: 'Z premią' }).getAttribute('aria-checked')).toBe(
-      'true',
-    );
-    await userEvent.click(screen.getByRole('radio', { name: 'Bez premii' }));
+    expect(screen.queryByRole('radiogroup', { name: 'Punktacja' })).toBeNull();
+    const summary = screen.getByRole('region', { name: 'Ustawienia gry' });
+    expect(summary.textContent).toContain('Punktacja');
+    expect(summary.textContent).toContain('Z premią');
     await userEvent.click(screen.getByRole('button', { name: 'Zacznij' }));
-    expect(onStart).toHaveBeenCalledWith(6, false);
+    expect(onStart).toHaveBeenCalledWith(6, true);
+  });
+
+  it('opens „Opcje” with the count picked so far', async () => {
+    const onOpenOptions = vi.fn();
+    render(
+      <NewGameDialog
+        colorCount={6}
+        onCancel={vi.fn()}
+        onStart={vi.fn()}
+        onOpenOptions={onOpenOptions}
+      />,
+    );
+    await userEvent.click(screen.getByRole('radio', { name: '9 kolorów' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Zmień w Opcjach' }));
+    expect(onOpenOptions).toHaveBeenCalledWith(9);
+  });
+
+  it('has no link without somewhere to go', () => {
+    render(<NewGameDialog colorCount={6} onCancel={vi.fn()} onStart={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: 'Zmień w Opcjach' })).toBeNull();
   });
 });

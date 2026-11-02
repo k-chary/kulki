@@ -6,7 +6,7 @@ import { HighscoreList } from '../components/HighscoreList/HighscoreList';
 import { Logo } from '../components/Logo/Logo';
 import { NewGameDialog } from '../components/NewGameDialog/NewGameDialog';
 import { NextBalls } from '../components/NextBalls/NextBalls';
-import { OptionsDialog, type NextGameSettings } from '../components/OptionsDialog/OptionsDialog';
+import { OptionsDialog } from '../components/OptionsDialog/OptionsDialog';
 import { ScorePanel } from '../components/ScorePanel/ScorePanel';
 import { StatusLine } from '../components/StatusLine/StatusLine';
 import {
@@ -153,7 +153,11 @@ export function GameScreen({
   const saving = useRef(false);
   const newGameButton = useRef<HTMLButtonElement>(null);
   const optionsButton = useRef<HTMLButtonElement>(null);
-  const [optionsOpen, setOptionsOpen] = useState(false);
+  // Where „Opcje” was opened from: the rail, or the „Nowa gra” link, which hides
+  // „Nowa gra” meanwhile and keeps the count picked there for its return.
+  const [options, setOptions] = useState<null | 'rail' | 'newGame'>(null);
+  const [pickedCount, setPickedCount] = useState<number | null>(null);
+  const optionsOpen = options !== null;
   const [ballTheme, setBallTheme] = useState(initialTheme);
   // Every ball reads the theme from the root element.
   useEffect(() => {
@@ -316,15 +320,14 @@ export function GameScreen({
         : rows,
     [browsing, browsed, shown, shownBonus, rows],
   );
-  // „Opcje” only remembers the next game's settings; the game in progress is not touched.
-  const changeNextGame = (next: NextGameSettings) => {
-    setNextColorCount(next.colorCount);
-    setNextBonus(next.bonus);
-    void storage.setLastColorCount(next.colorCount).catch(logStorageError);
-    void storage.setLastBonus(next.bonus).catch(logStorageError);
+  // „Opcje” only remembers the next game's scoring; the game in progress is not touched.
+  const changeNextBonus = (next: boolean) => {
+    setNextBonus(next);
+    void storage.setLastBonus(next).catch(logStorageError);
   };
   const requestNewGame = () => dispatch({ type: 'requestNewGame' });
   const startNewGame = (count: number, withBonus: boolean) => {
+    setPickedCount(null);
     // Only the next launch depends on them; the game starts regardless.
     void storage.setLastColorCount(count).catch(logStorageError);
     void storage.setLastBonus(withBonus).catch(logStorageError);
@@ -398,24 +401,32 @@ export function GameScreen({
           onFieldClick={(cell) => dispatch({ type: 'click', cell })}
           onFieldHover={(cell) => dispatch({ type: 'hover', cell })}
         >
-          {optionsOpen && (
+          {options && (
             <OptionsDialog
               ballTheme={ballTheme}
               onBallThemeChange={pickBallTheme}
-              nextGame={{ colorCount: nextColorCount, bonus: nextBonus }}
-              onNextGameChange={changeNextGame}
-              onClose={() => setOptionsOpen(false)}
-              returnFocusRef={optionsButton}
+              bonus={nextBonus}
+              onBonusChange={changeNextBonus}
+              onClose={() => setOptions(null)}
+              // Back to „Nowa gra”, which takes focus itself, or to the rail.
+              returnFocusRef={options === 'rail' ? optionsButton : undefined}
             />
           )}
-          {state.choosing && (
+          {state.choosing && !optionsOpen && (
             <NewGameDialog
-              colorCount={nextColorCount}
+              colorCount={pickedCount ?? nextColorCount}
               bonus={nextBonus}
               score={state.moves > 0 && !state.game.gameOver ? state.game.score : null}
               returnFocusRef={newGameButton}
-              onCancel={() => dispatch({ type: 'cancelNewGame' })}
+              onCancel={() => {
+                setPickedCount(null);
+                dispatch({ type: 'cancelNewGame' });
+              }}
               onStart={startNewGame}
+              onOpenOptions={(count) => {
+                setPickedCount(count);
+                setOptions('newGame');
+              }}
             />
           )}
           {gameOver?.state === 'entry' && (
@@ -460,7 +471,7 @@ export function GameScreen({
               ref={optionsButton}
               variant="secondary"
               disabled={railLocked}
-              onClick={() => setOptionsOpen(true)}
+              onClick={() => setOptions('rail')}
             >
               Opcje
             </Button>

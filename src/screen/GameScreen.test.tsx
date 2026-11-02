@@ -265,6 +265,7 @@ describe('„Opcje”', () => {
     const { storage } = setup();
     expect(document.documentElement.dataset.ballTheme).toBe('classic');
     await userEvent.click(optionsButton());
+    await userEvent.click(screen.getByRole('tab', { name: 'Wygląd' }));
     await userEvent.click(screen.getByRole('radio', { name: /Cukierkowe/ }));
     expect(document.documentElement.dataset.ballTheme).toBe('candy');
     await waitFor(async () => expect(await storage.getBallTheme()).toBe('candy'));
@@ -278,17 +279,18 @@ describe('„Opcje”', () => {
     expect(document.documentElement.dataset.ballTheme).toBe('candy');
   });
 
-  it('remembers the next game in „Następna gra” and leaves the game in progress alone', async () => {
+  it('remembers the next scoring in „Gra” and leaves the game in progress alone', async () => {
     const { storage } = setup(6);
     expect(await screen.findByText('Najlepsze wyniki · 6 kolorów')).toBeTruthy();
     await userEvent.click(optionsButton());
     const dialog = screen.getByRole('dialog', { name: 'Opcje' });
-    await userEvent.click(within(dialog).getByRole('tab', { name: 'Następna gra' }));
-    await userEvent.click(within(dialog).getByRole('radio', { name: '8 kolorów' }));
+    expect(within(dialog).getByRole('tab', { name: 'Gra' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
     await userEvent.click(within(dialog).getByRole('radio', { name: /Z premią/ }));
-    await waitFor(async () => expect(await storage.getLastColorCount()).toBe(8));
-    expect(await storage.getLastBonus()).toBe(true);
+    await waitFor(async () => expect(await storage.getLastBonus()).toBe(true));
     await userEvent.click(within(dialog).getByRole('button', { name: 'Gotowe' }));
+    expect(document.activeElement).toBe(optionsButton());
 
     // The game in progress, its rail and its balls are unchanged.
     expect(balls()).toHaveLength(1);
@@ -296,16 +298,52 @@ describe('„Opcje”', () => {
 
     await userEvent.click(newGameButton());
     const newGame = screen.getByRole('dialog', { name: 'Nowa gra' });
+    expect(within(newGame).getByRole('region', { name: 'Ustawienia gry' }).textContent).toContain(
+      'Z premią',
+    );
+    await userEvent.click(within(newGame).getByRole('button', { name: 'Zacznij' }));
+    expect(await screen.findByText('Wyniki z premią · 6 kolorów')).toBeTruthy();
+  });
+
+  it('goes from „Nowa gra” to „Opcje” and back with the picked count kept', async () => {
+    setup(6);
+    expect(await screen.findByText('Najlepsze wyniki · 6 kolorów')).toBeTruthy();
+    await userEvent.click(newGameButton());
+    let newGame = screen.getByRole('dialog', { name: 'Nowa gra' });
+    await userEvent.click(within(newGame).getByRole('radio', { name: '8 kolorów' }));
+    await userEvent.click(within(newGame).getByRole('button', { name: 'Zmień w Opcjach' }));
+
+    expect(screen.queryByRole('dialog', { name: 'Nowa gra' })).toBeNull();
+    const options = screen.getByRole('dialog', { name: 'Opcje' });
+    expect(within(options).getByRole('tabpanel', { name: 'Gra' })).toBeTruthy();
+    await userEvent.click(within(options).getByRole('radio', { name: /Z premią/ }));
+    await userEvent.click(within(options).getByRole('button', { name: 'Gotowe' }));
+
+    newGame = screen.getByRole('dialog', { name: 'Nowa gra' });
     expect(
       within(newGame).getByRole('radio', { name: '8 kolorów' }).getAttribute('aria-checked'),
     ).toBe('true');
-    expect(
-      within(newGame)
-        .getByRole('radio', { name: /Z premią/ })
-        .getAttribute('aria-checked'),
-    ).toBe('true');
+    expect(within(newGame).getByRole('region', { name: 'Ustawienia gry' }).textContent).toContain(
+      'Z premią',
+    );
     await userEvent.click(within(newGame).getByRole('button', { name: 'Zacznij' }));
     expect(await screen.findByText('Wyniki z premią · 8 kolorów')).toBeTruthy();
+  });
+
+  it('forgets a count picked in „Nowa gra” when it is cancelled', async () => {
+    setup(6);
+    await userEvent.click(newGameButton());
+    let newGame = screen.getByRole('dialog', { name: 'Nowa gra' });
+    await userEvent.click(within(newGame).getByRole('radio', { name: '8 kolorów' }));
+    await userEvent.click(within(newGame).getByRole('button', { name: 'Zmień w Opcjach' }));
+    await userEvent.keyboard('{Escape}');
+    newGame = screen.getByRole('dialog', { name: 'Nowa gra' });
+    await userEvent.click(within(newGame).getByRole('button', { name: 'Anuluj' }));
+    await userEvent.click(newGameButton());
+    newGame = screen.getByRole('dialog', { name: 'Nowa gra' });
+    expect(
+      within(newGame).getByRole('radio', { name: '6 kolorów' }).getAttribute('aria-checked'),
+    ).toBe('true');
   });
 
   it('is disabled with „Nowa gra”, during an animation and in a dialog', async () => {
@@ -364,18 +402,20 @@ describe('bonus games', () => {
   it('„Zacznij” starts a bonus game and remembers the scoring', async () => {
     const { storage } = setup();
     await userEvent.click(newGameButton());
+    await userEvent.click(screen.getByRole('button', { name: 'Zmień w Opcjach' }));
+    await userEvent.click(screen.getByRole('radio', { name: /^Z premią/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Gotowe' }));
     const dialog = screen.getByRole('dialog', { name: 'Nowa gra' });
-    await userEvent.click(within(dialog).getByRole('radio', { name: /^Z premią/ }));
     await userEvent.click(within(dialog).getByRole('button', { name: 'Zacznij' }));
 
     expect(await screen.findByText('Wyniki z premią · 6 kolorów')).toBeTruthy();
     expect(await storage.getLastBonus()).toBe(true);
     await userEvent.click(newGameButton());
     expect(
-      within(screen.getByRole('dialog', { name: 'Nowa gra' }))
-        .getByRole('radio', { name: /^Z premią/ })
-        .getAttribute('aria-checked'),
-    ).toBe('true');
+      within(screen.getByRole('dialog', { name: 'Nowa gra' })).getByRole('region', {
+        name: 'Ustawienia gry',
+      }).textContent,
+    ).toContain('Z premią');
   });
 
   it('opens „Nowa gra” on the remembered scoring', async () => {
@@ -383,10 +423,10 @@ describe('bonus games', () => {
     render(<GameScreen storage={storage} rng={createRng(4)} game={fixture(6)} nextBonus />);
     await userEvent.click(newGameButton());
     expect(
-      within(screen.getByRole('dialog', { name: 'Nowa gra' }))
-        .getByRole('radio', { name: /^Z premią/ })
-        .getAttribute('aria-checked'),
-    ).toBe('true');
+      within(screen.getByRole('dialog', { name: 'Nowa gra' })).getByRole('region', {
+        name: 'Ustawienia gry',
+      }).textContent,
+    ).toContain('Z premią');
   });
 
   it('shows the bonus on the chip after a long clear', async () => {

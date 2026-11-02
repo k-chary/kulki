@@ -17,7 +17,7 @@ const OPTIONS = [false, true].map((bonus) => {
 });
 
 /**
- * „Punktacja” in „Nowa gra” and „Opcje”: „Bez premii” or „Z premią”, drawn like
+ * „Punktacja” in the „Gra” tab of „Opcje”: „Bez premii” or „Z premią”, drawn like
  * the color count's segmented control, with a line on what the choice means.
  */
 export function BonusPicker({ value, onChange, force }: BonusPickerProps) {
