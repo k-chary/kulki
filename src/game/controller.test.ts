@@ -188,7 +188,11 @@ describe('new game', () => {
     expect(cancelled.choosing).toBe(false);
     expect(cancelled.game).toBe(asking.game);
 
-    const fresh = reduce(asking, { type: 'startNewGame', colorCount: 9 }, createRng(5));
+    const fresh = reduce(
+      asking,
+      { type: 'startNewGame', colorCount: 9, bonus: false },
+      createRng(5),
+    );
     expect(fresh.choosing).toBe(false);
     expect(fresh.moves).toBe(0);
     expect(fresh.game.score).toBe(0);
@@ -198,14 +202,18 @@ describe('new game', () => {
 
   it('ignores startNewGame while the dialog is closed', () => {
     const state = initialState(game(OPEN));
-    expect(reduce(state, { type: 'startNewGame', colorCount: 9 }, rng)).toBe(state);
+    expect(reduce(state, { type: 'startNewGame', colorCount: 9, bonus: false }, rng)).toBe(state);
   });
 
   it('opens the dialog after the game ended and starts from there', () => {
     const over = initialState(game(OPEN, { gameOver: true }));
     const asking = reduce({ ...over, moves: 4 }, { type: 'requestNewGame' }, createRng(3));
     expect(asking.choosing).toBe(true);
-    const state = reduce(asking, { type: 'startNewGame', colorCount: 5 }, createRng(3));
+    const state = reduce(
+      asking,
+      { type: 'startNewGame', colorCount: 5, bonus: false },
+      createRng(3),
+    );
     expect(state.game.gameOver).toBe(false);
     expect(state.game.colorCount).toBe(5);
   });
@@ -380,7 +388,10 @@ describe('saveEffect', () => {
     expect(saveEffect(playing, asking)).toBeNull();
     expect(saveEffect(asking, reduce(asking, { type: 'cancelNewGame' }, rng))).toBeNull();
     expect(
-      saveEffect(asking, reduce(asking, { type: 'startNewGame', colorCount: 6 }, rng)),
+      saveEffect(
+        asking,
+        reduce(asking, { type: 'startNewGame', colorCount: 6, bonus: false }, rng),
+      ),
     ).toEqual({
       type: 'delete',
     });
@@ -445,7 +456,7 @@ describe('game over dialog', () => {
     const saved = reduce(over(800), { type: 'scoreSaved', name: 'Ola', place: 22 }, rng);
     const asking = reduce(saved, { type: 'requestNewGame' }, rng);
     expect(asking.choosing).toBe(true);
-    const next = reduce(asking, { type: 'startNewGame', colorCount: 6 }, rng);
+    const next = reduce(asking, { type: 'startNewGame', colorCount: 6, bonus: false }, rng);
     expect(next.game.gameOver).toBe(false);
     expect(next.saved).toBeNull();
     expect(next.choosing).toBe(false);
@@ -503,6 +514,11 @@ describe('finishedEntry', () => {
     });
   });
 
+  it('puts a bonus game into the bonus list', () => {
+    const bonusGame = { ...over(800).game, bonus: true };
+    expect(finishedEntry(bonusGame, 'Ola', NOW).bonus).toBe(true);
+  });
+
   it('falls back to „Gracz” without a last name', () => {
     expect(finishedEntry(over(800).game, null, NOW).name).toBe('Gracz');
     expect(finishedEntry(over(800).game, '  ', NOW).name).toBe('Gracz');
@@ -542,7 +558,11 @@ describe('pop-in of a new game', () => {
     const resumed = initialState(game(OPEN), 'loaded', 1);
     expect(resumed.turn).toBeNull();
     const asking = reduce({ ...resumed, moves: 2 }, { type: 'requestNewGame' }, rng);
-    const fresh = reduce(asking, { type: 'startNewGame', colorCount: 6 }, createRng(5));
+    const fresh = reduce(
+      asking,
+      { type: 'startNewGame', colorCount: 6, bonus: false },
+      createRng(5),
+    );
     expect(fresh.turn?.events[0]?.type).toBe('spawn');
   });
 });

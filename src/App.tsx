@@ -30,6 +30,8 @@ interface Launch {
   intro: boolean;
   resumed: boolean;
   ballTheme: BallTheme;
+  /** The scoring remembered for the next game. */
+  nextBonus: boolean;
 }
 
 export function App() {
@@ -50,19 +52,29 @@ export function App() {
       loadSavedGame(storage),
       // null (none picked yet) and an unreadable setting both mean classic.
       storage.getBallTheme().catch(() => null),
-    ]).then(async ([saved, savedTheme]) => {
+      storage.getLastBonus().catch(() => null),
+    ]).then(async ([saved, savedTheme, lastBonus]) => {
       if (!current) return;
       const ballTheme = savedTheme ?? 'classic';
       // Set before the first paint, so candy balls never flash classic.
       document.documentElement.dataset.ballTheme = ballTheme;
-      if (saved) setLaunch({ game: saved, intro: false, resumed: true, ballTheme });
-      else if (start.game) setLaunch({ game: start.game, intro: false, resumed: false, ballTheme });
-      else {
-        // Without a save the last count played is used, 6 the very first time.
+      const nextBonus = lastBonus ?? false;
+      if (saved) setLaunch({ game: saved, intro: false, resumed: true, ballTheme, nextBonus });
+      else if (start.game) {
+        setLaunch({ game: start.game, intro: false, resumed: false, ballTheme, nextBonus });
+      } else {
+        // Without a save the last count and scoring played are used, 6 colors and no bonus the very first time.
         const last = await storage.getLastColorCount().catch(() => null);
         if (!current) return;
         const colorCount = start.colorCount ?? last ?? DEFAULT_COLORS;
-        setLaunch({ game: newGame(start.rng, colorCount), intro: true, resumed: false, ballTheme });
+        const bonus = start.bonus ?? nextBonus;
+        setLaunch({
+          game: newGame(start.rng, colorCount, bonus),
+          intro: true,
+          resumed: false,
+          ballTheme,
+          nextBonus: bonus,
+        });
       }
     });
     return () => {
@@ -91,6 +103,7 @@ export function App() {
           intro={launch.intro}
           resumed={launch.resumed}
           ballTheme={launch.ballTheme}
+          nextBonus={launch.nextBonus}
         />
       </div>
     </div>

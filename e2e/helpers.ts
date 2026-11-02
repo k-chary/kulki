@@ -13,6 +13,7 @@ export async function openFixture(
     seed?: number;
     scores?: number[];
     colors?: number;
+    bonus?: boolean;
   },
 ) {
   const query = new URLSearchParams({
@@ -22,6 +23,7 @@ export async function openFixture(
   });
   if (options.scores) query.set('scores', options.scores.join(','));
   if (options.colors) query.set('colors', String(options.colors));
+  if (options.bonus) query.set('bonus', '1');
   await page.goto(`/?${query.toString()}`);
 }
 

@@ -35,6 +35,8 @@ export interface PlaybackView {
   cleared: number;
   /** Points just won; set on the step where the clear starts. */
   delta: number | null;
+  /** The balls of the clear behind `delta`; 0 when there is none. */
+  deltaBalls: number;
 }
 
 /** A frame for the moving ball to mount on the start square before it slides. */
@@ -51,6 +53,7 @@ export function restingView(state: GameState): PlaybackView {
     score: state.score,
     cleared: state.cleared,
     delta: null,
+    deltaBalls: 0,
   };
 }
 
@@ -100,6 +103,7 @@ export function buildSteps(
             score,
             cleared: view.cleared + event.cells.length,
             delta: event.points,
+            deltaBalls: event.cells.length,
           },
           duration: durations.clear,
           expect: event.cells.length,

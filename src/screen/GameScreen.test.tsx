@@ -305,3 +305,123 @@ describe('next balls on a nearly full board', () => {
     expect(label.children).toHaveLength(Math.min(3, free));
   });
 });
+
+describe('bonus games', () => {
+  const date = '2026-01-15T12:00:00.000Z';
+  const scoring = (name: string) =>
+    within(screen.getByRole('radiogroup', { name: 'Pokaż wyniki' })).getByRole('radio', {
+      name: new RegExp(`^${name}`, 'i'),
+    });
+  const note = () => screen.getByRole('button', { name: /^Ta gra:/ });
+  // Moving the ball from 2,3 to 0,3 joins five more into a clear of six.
+  const SIX = parseBoard(
+    ['rrr.rr...', '.........', '...r.....', ...Array<string>(6).fill('.........')].join('\n'),
+  );
+  const bonusGame = (): GameState => ({ ...fixture(6), board: SIX, bonus: true });
+  const entry = (name: string, bonus: boolean, score: number) => ({
+    name,
+    score,
+    date,
+    colorCount: 6,
+    bonus,
+  });
+
+  async function playSix() {
+    await userEvent.click(field(2, 3));
+    await userEvent.click(field(0, 3));
+  }
+
+  it('„Zacznij” starts a bonus game and remembers the scoring', async () => {
+    const { storage } = setup();
+    await userEvent.click(newGameButton());
+    const dialog = screen.getByRole('dialog', { name: 'Nowa gra' });
+    await userEvent.click(within(dialog).getByRole('radio', { name: /^Z premią/ }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Zacznij' }));
+
+    expect(await screen.findByText('Wyniki z premią · 6 kolorów')).toBeTruthy();
+    expect(await storage.getLastBonus()).toBe(true);
+    await userEvent.click(newGameButton());
+    expect(
+      within(screen.getByRole('dialog', { name: 'Nowa gra' }))
+        .getByRole('radio', { name: /^Z premią/ })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
+  });
+
+  it('opens „Nowa gra” on the remembered scoring', async () => {
+    const storage = new MemoryStorage<GameState>();
+    render(<GameScreen storage={storage} rng={createRng(4)} game={fixture(6)} nextBonus />);
+    await userEvent.click(newGameButton());
+    expect(
+      within(screen.getByRole('dialog', { name: 'Nowa gra' }))
+        .getByRole('radio', { name: /^Z premią/ })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
+  });
+
+  it('shows the bonus on the chip after a long clear', async () => {
+    const storage = new MemoryStorage<GameState>();
+    render(<GameScreen storage={storage} rng={createRng(4)} game={bonusGame()} />);
+    await playSix();
+    expect(await screen.findByText('+70')).toBeTruthy();
+    expect(screen.getByText('6 kulek · premia +10')).toBeTruthy();
+  });
+
+  it('shows no bonus line for the same clear without the bonus', async () => {
+    const storage = new MemoryStorage<GameState>();
+    render(
+      <GameScreen storage={storage} rng={createRng(4)} game={{ ...bonusGame(), bonus: false }} />,
+    );
+    await playSix();
+    expect(await screen.findByText('+60')).toBeTruthy();
+    expect(screen.queryByText(/premia/)).toBeNull();
+  });
+
+  it('switches the scoring filter, pins the game and switches back', async () => {
+    const storage = new MemoryStorage<GameState>();
+    await storage.insertHighscore(entry('Zwykły', false, 300));
+    await storage.insertHighscore(entry('Premiowy', true, 500));
+    render(<GameScreen storage={storage} rng={createRng(4)} game={bonusGame()} />);
+    expect(await screen.findByText('Premiowy')).toBeTruthy();
+    expect(screen.getByText('Wyniki z premią · 6 kolorów')).toBeTruthy();
+
+    await userEvent.click(scoring('Bez premii'));
+    expect(await screen.findByText('Zwykły')).toBeTruthy();
+    expect(screen.queryByText('Premiowy')).toBeNull();
+    expect(screen.getByText('Najlepsze wyniki · 6 kolorów')).toBeTruthy();
+    expect(note().getAttribute('aria-label')).toContain('z premią');
+
+    await userEvent.click(note());
+    expect(await screen.findByText('Premiowy')).toBeTruthy();
+    expect(screen.queryByText('Zwykły')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Ta gra:/ })).toBeNull();
+  });
+
+  it('snaps both filters back when a game starts', async () => {
+    const storage = new MemoryStorage<GameState>();
+    await storage.insertHighscore(entry('Zwykły', false, 300));
+    render(<GameScreen storage={storage} rng={createRng(4)} game={fixture(6)} />);
+    await screen.findByText('Zwykły');
+    await userEvent.click(scoring('Z premią'));
+    await userEvent.click(screen.getByRole('radio', { name: /^9 kolorów/ }));
+    expect(await screen.findByText('Wyniki z premią · 9 kolorów')).toBeTruthy();
+
+    await userEvent.click(newGameButton());
+    await userEvent.click(screen.getByRole('button', { name: 'Zacznij' }));
+    expect(await screen.findByText('Najlepsze wyniki · 6 kolorów')).toBeTruthy();
+    expect(await screen.findByText('Zwykły')).toBeTruthy();
+  });
+
+  it('stores a finished bonus game in its own list', async () => {
+    const storage = new MemoryStorage<GameState>();
+    const rows = Array<string>(9).fill('rygbpo' + 'ryg');
+    // A full board but one square, so any spawn ends the game.
+    const full = parseBoard(['.ygbporyg', 'bpoRYGbpo'.toLowerCase(), ...rows.slice(2)].join('\n'));
+    const game: GameState = { ...fixture(6), board: full, bonus: true, score: 120 };
+    render(<GameScreen storage={storage} rng={createRng(4)} game={game} />);
+    await userEvent.click(field(1, 0));
+    await userEvent.click(field(0, 0));
+    await waitFor(async () => expect(await storage.listHighscores(6, true)).toHaveLength(1));
+    expect(await storage.listHighscores(6, false)).toHaveLength(0);
+  });
+});

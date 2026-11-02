@@ -29,6 +29,14 @@ describe('startFromSearch', () => {
     expect(startFromSearch(`?board=${ROWS}`, true).game?.colorCount).toBe(6);
   });
 
+  it('takes the scoring for the game and the scores', () => {
+    const start = startFromSearch(`?board=${ROWS}&bonus=1&scores=500`, true);
+    expect(start.game?.bonus).toBe(true);
+    expect(start.highscores[0]?.bonus).toBe(true);
+    expect(startFromSearch('?seed=1&bonus=1', true).bonus).toBe(true);
+    expect(startFromSearch(`?board=${ROWS}`, true).game?.bonus).toBe(false);
+  });
+
   it('rejects a preview that is not three colors', () => {
     expect(() => startFromSearch(`?board=${ROWS}&preview=rg`, true)).toThrow();
   });
