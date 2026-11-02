@@ -25,6 +25,7 @@ describe('ScorePanel bonus chip', () => {
     render(<ScorePanel score={1430} cleared={133} delta={190} deltaBalls={9} deltaBonus={100} />);
     expect(screen.getByText('9 kulek · premia +100')).toBeTruthy();
     expect(screen.getByText('+190').parentElement?.dataset.step).toBe('2');
+    expect(screen.getByText('+190').dataset.tone).toBe('warm');
   });
 
   it('stays plain without a bonus', () => {

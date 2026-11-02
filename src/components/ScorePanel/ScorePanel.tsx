@@ -1,4 +1,5 @@
 import { chipStep, formatBonusDetail, formatCleared, formatNumber } from '../../format';
+import { Chip, type ChipSize, type ChipTone } from '../Chip/Chip';
 import { Panel } from '../Panel/Panel';
 import styles from './ScorePanel.module.css';
 
@@ -16,6 +17,13 @@ export interface ScorePanelProps {
   /** The part of `delta` above 10 per ball; above 0 it adds „9 kulek · premia +100”. */
   deltaBonus?: number;
 }
+
+const STEPS: { tone: ChipTone; size: ChipSize }[] = [
+  { tone: 'soft', size: 'sm' },
+  { tone: 'accent', size: 'md' },
+  { tone: 'warm', size: 'lg' },
+  { tone: 'hot', size: 'xl' },
+];
 
 /** „Wynik”: the current points and how many balls were cleared. */
 export function ScorePanel({
@@ -35,7 +43,9 @@ export function ScorePanel({
         <p className={styles.sub}>{formatCleared(cleared)}</p>
         {delta !== undefined && delta > 0 && (
           <span key={deltaId} className={styles.gain} data-step={step} aria-hidden="true">
-            <span className={styles.delta}>+{formatNumber(delta)}</span>
+            <Chip {...STEPS[step]} pulse={step === 3}>
+              +{formatNumber(delta)}
+            </Chip>
             {deltaBonus > 0 && (
               <span className={styles.detail}>{formatBonusDetail(deltaBalls, deltaBonus)}</span>
             )}
