@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { normalizeName } from '../../highscores/ranking';
 import { Button } from '../Button/Button';
+import { Chip } from '../Chip/Chip';
 import { TextField } from '../TextField/TextField';
 import styles from './NameEntry.module.css';
 
@@ -33,7 +34,13 @@ export function NameEntry({ place, initialName, onSave, failed = false }: NameEn
   return (
     <form className={styles.form} onSubmit={submit}>
       <div className={styles.head}>
-        {place === 1 && <span className={styles.badge}>Nowy rekord</span>}
+        {place === 1 && (
+          <span className={styles.badge}>
+            <Chip tone="accent" size="xs" text="label">
+              Nowy rekord
+            </Chip>
+          </span>
+        )}
         <p className={styles.place}>{place}. miejsce w najlepszych wynikach</p>
       </div>
       <TextField
