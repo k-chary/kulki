@@ -25,6 +25,7 @@ function fixture(colorCount: number): GameState {
     preview: ['blue', 'blue', 'blue'],
     score: 0,
     colorCount,
+    bonus: false,
     cleared: 0,
     gameOver: false,
   };

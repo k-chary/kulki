@@ -25,6 +25,7 @@ function game(board: string, overrides: Partial<GameState> = {}): GameState {
     preview: ['blue', 'blue', 'blue'],
     score: 0,
     colorCount: 6,
+    bonus: false,
     cleared: 0,
     gameOver: false,
     ...overrides,

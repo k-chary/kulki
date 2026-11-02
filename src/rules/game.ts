@@ -36,6 +36,8 @@ export interface GameState {
   readonly score: number;
   /** How many colors this game uses (MIN_COLORS..MAX_COLORS); fixed for the whole game. */
   readonly colorCount: number;
+  /** Whether longer clears score a bonus (see `scoreFor`); fixed for the whole game. */
+  readonly bonus: boolean;
   /** Balls cleared so far. */
   readonly cleared: number;
   /** True once the board is full; no further moves are accepted. */
@@ -72,8 +74,13 @@ function drawPreview(rng: Rng, colorCount: number): Color[] {
  * A new game: START_BALLS balls on random squares with random colors (not taken
  * from the preview), redrawn until they form no line, and a fresh preview. All
  * colors come from the game's `colorCount` colors (default 6, the classic game).
+ * `bonus` (default off) turns on the bonus for long clears for the whole game.
  */
-export function newGame(rng: Rng, colorCount: number = DEFAULT_COLORS): GameState {
+export function newGame(
+  rng: Rng,
+  colorCount: number = DEFAULT_COLORS,
+  bonus: boolean = false,
+): GameState {
   const colors = drawColorsFor(colorCount);
   const squares = Array.from({ length: CELL_COUNT }, (_, index) => cellAt(index));
   let board: Board;
@@ -88,6 +95,7 @@ export function newGame(rng: Rng, colorCount: number = DEFAULT_COLORS): GameStat
     preview: drawPreview(rng, colorCount),
     score: 0,
     colorCount,
+    bonus,
     cleared: 0,
     gameOver: false,
   };
@@ -121,7 +129,7 @@ export function playTurn(state: GameState, from: Cell, to: Cell, rng: Rng): Turn
     const lines = findLines(board, cells);
     if (lines.length === 0) return false;
     const gone = lineCells(lines);
-    const points = scoreFor(gone);
+    const points = scoreFor(gone, state.bonus);
     board = gone.reduce((next, cell) => setBall(next, cell, null), board);
     score += points;
     cleared += gone.length;
@@ -147,6 +155,7 @@ export function playTurn(state: GameState, from: Cell, to: Cell, rng: Rng): Turn
     preview,
     score,
     colorCount: state.colorCount,
+    bonus: state.bonus,
     cleared,
     gameOver: isFull(board),
   };
@@ -173,7 +182,7 @@ function isColorIn(colors: readonly Color[]) {
 
 /**
  * Reads a state written by `serialize`. A save without `colorCount` is a 6-color
- * game, and white balls (from before brown replaced white) read as brown. Throws an Error if the text is not a valid saved game, including one whose
+ * game, one without `bonus` has no bonus, and white balls (from before brown replaced white) read as brown. Throws an Error if the text is not a valid saved game, including one whose
  * `gameOver` disagrees with a full board, whose count is outside MIN_COLORS..MAX_COLORS
  * or whose balls or preview use a color outside that count's set.
  */
@@ -196,6 +205,8 @@ export function deserialize(text: string): GameState {
   ) {
     throw new Error('Saved game has an invalid color count');
   }
+  const bonus = data?.bonus === undefined ? false : data.bonus;
+  if (typeof bonus !== 'boolean') throw new Error('Saved game has an invalid bonus setting');
   const isColor = isColorIn(colorsFor(colorCount));
   if (
     !Array.isArray(board) ||
@@ -213,5 +224,5 @@ export function deserialize(text: string): GameState {
   if (gameOver !== isFull(board as Board)) {
     throw new Error('Saved game is over on a board with room, or running on a full one');
   }
-  return { board: board as Board, preview, score, colorCount, cleared, gameOver };
+  return { board: board as Board, preview, score, colorCount, bonus, cleared, gameOver };
 }
