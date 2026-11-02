@@ -18,21 +18,24 @@ export interface InsertResult {
  * `Game` is the saved game state; it must survive a JSON round trip.
  */
 export interface Storage<Game = unknown> {
-  /** The top 30 of one color count, best first. */
-  listHighscores(colorCount: number): Promise<HighscoreEntry[]>;
+  /** The top 30 of one color count and scoring, best first (one of the 10 lists). */
+  listHighscores(colorCount: number, bonus: boolean): Promise<HighscoreEntry[]>;
   /**
-   * Inserts a finished game into the list of `entry.colorCount` and trims that list
-   * to 30 (ties keep the older game higher). Other counts' lists are untouched.
+   * Inserts a finished game into the list of `entry.colorCount` and `entry.bonus` and
+   * trims that list to 30 (ties keep the older game higher). Other lists are untouched.
    */
   insertHighscore(entry: HighscoreEntry): Promise<InsertResult>;
-  /** Gives row `id` a new name (trimmed, cut to 20, empty = „Gracz”); returns the list of that row's count
+  /** Gives row `id` a new name (trimmed, cut to 20, empty = „Gracz”); returns the list of that row's count and scoring
    * (empty if the row is gone). */
   renameHighscore(id: number, name: string): Promise<HighscoreEntry[]>;
   getLastName(): Promise<string | null>;
   setLastName(name: string): Promise<void>;
-  /** The color count of the last game started (5 to 9), or null when none was chosen yet. */
+  /** The next game's color count (5 to 9), or null when none was chosen yet. */
   getLastColorCount(): Promise<number | null>;
   setLastColorCount(colorCount: number): Promise<void>;
+  /** Whether the next game has the bonus for long clears, or null when never chosen (callers treat that as off). */
+  getLastBonus(): Promise<boolean | null>;
+  setLastBonus(bonus: boolean): Promise<void>;
   /** The ball theme picked in „Opcje”, or null when none was picked yet (callers treat that as classic). */
   getBallTheme(): Promise<BallTheme | null>;
   /** Throws `RangeError` for a theme that does not exist. */

@@ -13,8 +13,8 @@ export class TauriStorage<Game = unknown> implements Storage<Game> {
     this.invoke = invoke;
   }
 
-  listHighscores(colorCount: number): Promise<HighscoreEntry[]> {
-    return this.invoke<HighscoreEntry[]>('list_highscores', { colorCount });
+  listHighscores(colorCount: number, bonus: boolean): Promise<HighscoreEntry[]> {
+    return this.invoke<HighscoreEntry[]>('list_highscores', { colorCount, bonus });
   }
 
   async insertHighscore(entry: HighscoreEntry): Promise<InsertResult> {
@@ -41,6 +41,15 @@ export class TauriStorage<Game = unknown> implements Storage<Game> {
 
   async setLastColorCount(colorCount: number): Promise<void> {
     await this.invoke('set_last_color_count', { colorCount });
+  }
+
+  async getLastBonus(): Promise<boolean | null> {
+    const bonus = await this.invoke<boolean | null>('get_last_bonus');
+    return typeof bonus === 'boolean' ? bonus : null;
+  }
+
+  async setLastBonus(bonus: boolean): Promise<void> {
+    await this.invoke('set_last_bonus', { bonus });
   }
 
   async getBallTheme(): Promise<BallTheme | null> {

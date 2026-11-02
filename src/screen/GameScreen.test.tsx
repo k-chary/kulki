@@ -141,8 +141,20 @@ describe('highscore list', () => {
   it("shows the list of the game's own color count", async () => {
     const storage = new MemoryStorage<GameState>();
     const date = '2026-01-15T12:00:00.000Z';
-    await storage.insertHighscore({ name: 'Szóstka', score: 300, date, colorCount: 6 });
-    await storage.insertHighscore({ name: 'Dziewiątka', score: 700, date, colorCount: 9 });
+    await storage.insertHighscore({
+      name: 'Szóstka',
+      score: 300,
+      date,
+      colorCount: 6,
+      bonus: false,
+    });
+    await storage.insertHighscore({
+      name: 'Dziewiątka',
+      score: 700,
+      date,
+      colorCount: 9,
+      bonus: false,
+    });
     render(<GameScreen storage={storage} rng={createRng(4)} game={newGame(createRng(4), 9)} />);
 
     expect(await screen.findByText('Dziewiątka')).toBeTruthy();
@@ -161,8 +173,20 @@ describe('browsing other color counts', () => {
 
   async function browsable(colorCount = 6) {
     const storage = new MemoryStorage<GameState>();
-    await storage.insertHighscore({ name: 'Szóstka', score: 300, date, colorCount: 6 });
-    await storage.insertHighscore({ name: 'Dziewiątka', score: 700, date, colorCount: 9 });
+    await storage.insertHighscore({
+      name: 'Szóstka',
+      score: 300,
+      date,
+      colorCount: 6,
+      bonus: false,
+    });
+    await storage.insertHighscore({
+      name: 'Dziewiątka',
+      score: 700,
+      date,
+      colorCount: 9,
+      bonus: false,
+    });
     render(<GameScreen storage={storage} rng={createRng(4)} game={fixture(colorCount)} />);
     await screen.findByText('Szóstka');
     return { storage };
