@@ -1,0 +1,47 @@
+name: Test build
+
+# Builds a Windows installer from any branch so unreleased changes can be tried without
+# Rust on your PC. Run it from the Actions tab ("Run workflow", pick the branch) and
+# download the installer from the run's Artifacts. Nothing is released: no tag, no GitHub
+# Release, no latest.json, so installed apps never see it. The build itself has the update
+# check switched off (VITE_TEST_BUILD), so it never offers to replace itself either.
+on:
+  workflow_dispatch:
+
+jobs:
+  installer:
+    name: Test installer (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      # Same version as the latest release, so the build looks like what it replaces; the
+      # repo's own version files can be stale (see README, Releasing).
+      - name: Pick the latest release's version
+        id: version
+        shell: bash
+        run: |
+          tag="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)"
+          echo "tag=${tag:-v0.0.0}" >> "$GITHUB_OUTPUT"
+          # Artifact names can't contain '/', which branch names like KULKI-80/... do.
+          echo "branch=${GITHUB_REF_NAME//\//-}" >> "$GITHUB_OUTPUT"
+      # The same setup as a release (release.yml), so the test build matches what ships.
+      - uses: ./.github/actions/installer-setup
+        with:
+          tag: ${{ steps.version.outputs.tag }}
+      # No updater bundle or signature: the signing key stays with real releases.
+      - name: Build the installer
+        shell: bash
+        env:
+          VITE_TEST_BUILD: '1'
+        run: npx tauri build --bundles nsis --config '{"bundle":{"createUpdaterArtifacts":false}}'
+      - uses: actions/upload-artifact@v7
+        with:
+          name: kulki-test-${{ steps.version.outputs.tag }}-${{ steps.version.outputs.branch }}-${{ github.run_number }}
+          path: src-tauri/target/release/bundle/nsis/*.exe
+          if-no-files-found: error
+          retention-days: 14

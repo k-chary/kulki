@@ -12,8 +12,12 @@ import { loadSavedGame } from './storage/resume';
 import { type Updater, tauriUpdater } from './update/updater';
 import { useUpdate } from './update/useUpdate';
 
-/** Only the installed app can update itself; the browser build (e2e) has no updater. */
-const updater: Updater | null = '__TAURI_INTERNALS__' in window ? tauriUpdater : null;
+/**
+ * Only the installed app can update itself; the browser build (e2e) has no updater, and
+ * neither has a test build (VITE_TEST_BUILD, from test-build.yml), so it never offers a release.
+ */
+const updater: Updater | null =
+  '__TAURI_INTERNALS__' in window && import.meta.env.VITE_TEST_BUILD !== '1' ? tauriUpdater : null;
 
 /** SQLite through Tauri on the desktop; in the browser (e2e) memory backed by `localStorage`. */
 function createStorage(): Storage<GameState> {

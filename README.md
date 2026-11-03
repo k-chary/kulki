@@ -60,6 +60,12 @@ The installers are not code-signed yet, so the first launch shows a warning:
 - **macOS:** Gatekeeper refuses an app from an unidentified developer. Right-click Kulki in Applications, choose “Open” and confirm, or allow it under System Settings › Privacy & Security. If macOS says the app is damaged, run `xattr -dr com.apple.quarantine /Applications/Kulki.app`.
 - **Linux:** no warning; make the AppImage executable with `chmod +x`.
 
+## Trying unreleased changes
+
+To try a branch on Windows without building it yourself, open **Actions → Test build → Run workflow**, pick the branch and run it. After about 15 minutes the run's **Artifacts** section has a zip with the `setup.exe`; unzip and install it over your copy. Your saved game and highscores stay.
+
+A test build is never released (no tag, no GitHub Release, no `latest.json`), so installed apps never offer it as an update. The test build itself has the update check switched off (`VITE_TEST_BUILD`), so it shows no update bar either: to go back, install the latest release's `setup.exe` by hand. Artifacts are kept for 14 days.
+
 ## Updates
 
 The installed app looks for a newer **published** release at launch and every 6 hours. When it finds one, a bar at the top of the window shows „Dostępna nowa wersja X.Y.Z” with „Zainstaluj i uruchom ponownie” (the game is saved after every move, so restarting loses nothing) and „Później”. A failed check (offline, no release yet) shows nothing. The code is in `src/update/` and `src/components/UpdateBanner/`; the Tauri updater plugin reads `latest.json` from the latest GitHub Release (`plugins.updater` in `src-tauri/tauri.conf.json`).
