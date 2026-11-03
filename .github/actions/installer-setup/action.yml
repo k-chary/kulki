@@ -1,0 +1,29 @@
+name: Installer build setup
+description: Node, Rust and npm packages for building the installer, with the given version stamped into the app's version files. Used by release.yml and test-build.yml; check out the code first.
+
+inputs:
+  tag:
+    description: Version tag to stamp, e.g. v0.4.0
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v7
+      with:
+        node-version-file: .nvmrc
+        cache: npm
+    - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+      with:
+        toolchain: stable
+    - uses: swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      with:
+        workspaces: src-tauri
+    - shell: bash
+      run: npm ci
+    # The tag is the version: stamp it into the app's version files for this build only.
+    - name: Stamp the version
+      shell: bash
+      env:
+        TAG: ${{ inputs.tag }}
+      run: node scripts/release.ts stamp "$TAG"
