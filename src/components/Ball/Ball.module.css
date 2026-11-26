@@ -88,6 +88,10 @@
   --ball-color: var(--ball-brown);
 }
 
+.ball[data-color='grey'] {
+  --ball-color: var(--ball-grey);
+}
+
 /* Black gets a rim where it would melt into a dark field; a black cat gets a light face and contour. */
 .ball[data-color='black'] {
   --ball-color: var(--ball-black);

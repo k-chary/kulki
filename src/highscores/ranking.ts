@@ -11,14 +11,14 @@ export const DEFAULT_NAME = 'Gracz';
 /** The classic game, and the list that scores saved before color counts belong to. */
 export const DEFAULT_COLOR_COUNT = 6;
 export const MIN_COLOR_COUNT = 5;
-export const MAX_COLOR_COUNT = 9;
+export const MAX_COLOR_COUNT = 10;
 
 export interface HighscoreEntry {
   name: string;
   score: number;
   /** When the game ended, as an ISO 8601 string. */
   date: string;
-  /** How many ball colors the game used (5 to 9); it picks the list the score belongs to. */
+  /** How many ball colors the game used (5 to 10); it picks the list the score belongs to. */
   colorCount: number;
   /** Whether the bonus for long clears was on; with the count it picks the list. */
   bonus: boolean;

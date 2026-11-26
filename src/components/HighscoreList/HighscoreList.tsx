@@ -18,7 +18,7 @@ export interface HighscoreListProps {
   colorCount?: number;
   /** The current game's color count; while it differs from colorCount, rows hold no „Ta gra”. */
   gameColorCount?: number;
-  /** Shows the 5–9 filter; called with the count whose list to show. */
+  /** Shows the 5–10 filter; called with the count whose list to show. */
   onColorCountChange?: (count: number) => void;
   /** Whether the lists with the bonus for long clears are shown; each has its own top 30 per count. */
   bonus?: boolean;

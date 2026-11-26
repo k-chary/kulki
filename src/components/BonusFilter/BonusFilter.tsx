@@ -12,7 +12,7 @@ export interface BonusFilterProps {
 }
 
 /**
- * „Bez premii | Z premią” under the 5–9 filter: picks whether the panel shows
+ * „Bez premii | Z premią” under the 5–10 filter: picks whether the panel shows
  * the lists with or without the bonus, without touching the game in progress.
  */
 export function BonusFilter({ value, gameBonus, onChange, force }: BonusFilterProps) {

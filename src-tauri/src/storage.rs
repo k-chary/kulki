@@ -56,7 +56,7 @@ const BALL_THEME_KEY: &str = "ball_theme";
 pub const BALL_THEMES: [&str; 3] = ["classic", "candy", "cats"];
 /// The fewest and most ball colors a game can use.
 pub const MIN_COLOR_COUNT: u8 = 5;
-pub const MAX_COLOR_COUNT: u8 = 9;
+pub const MAX_COLOR_COUNT: u8 = 10;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HighscoreEntry {
@@ -366,7 +366,7 @@ impl Store {
     }
 }
 
-/// Rejects a color count outside 5 to 9, so no stray list is ever created.
+/// Rejects a color count outside 5 to 10, so no stray list is ever created.
 fn check_color_count(color_count: u8) -> rusqlite::Result<()> {
     if (MIN_COLOR_COUNT..=MAX_COLOR_COUNT).contains(&color_count) {
         Ok(())
@@ -777,12 +777,12 @@ mod tests {
     }
 
     #[test]
-    fn rejects_a_color_count_outside_five_to_nine() {
+    fn rejects_a_color_count_outside_five_to_ten() {
         let mut store = Store::open_in_memory().unwrap();
         assert!(store.insert_highscore(&entry_of(4, "A", 10)).is_err());
-        assert!(store.insert_highscore(&entry_of(10, "A", 10)).is_err());
+        assert!(store.insert_highscore(&entry_of(11, "A", 10)).is_err());
         assert!(store.set_last_color_count(4).is_err());
-        assert!(store.set_last_color_count(10).is_err());
+        assert!(store.set_last_color_count(11).is_err());
         assert_eq!(store.last_color_count().unwrap(), None);
     }
 

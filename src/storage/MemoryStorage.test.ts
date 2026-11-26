@@ -100,7 +100,7 @@ describe('MemoryStorage', () => {
     await storage.setLastColorCount(8);
     expect(await storage.getLastColorCount()).toBe(8);
     await expect(storage.setLastColorCount(4)).rejects.toThrow(RangeError);
-    await expect(storage.setLastColorCount(10)).rejects.toThrow(RangeError);
+    await expect(storage.setLastColorCount(11)).rejects.toThrow(RangeError);
     expect(await storage.getLastColorCount()).toBe(8);
   });
 

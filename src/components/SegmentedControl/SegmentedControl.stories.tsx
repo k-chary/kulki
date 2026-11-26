@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
 import { SegmentedControl } from './SegmentedControl';
 
-const COUNTS = [5, 6, 7, 8, 9].map((count) => ({ value: count, label: String(count) }));
+const COUNTS = [5, 6, 7, 8, 9, 10].map((count) => ({ value: count, label: String(count) }));
 const WORDS = [
   { value: false, label: 'Bez premii' },
   { value: true, label: 'Z premią' },
@@ -39,7 +39,7 @@ export const CompactMarked: Story = {
 };
 
 export const CompactHover: Story = {
-  args: { size: 'compact', force: { value: 9, state: 'hover' } },
+  args: { size: 'compact', force: { value: 10, state: 'hover' } },
 };
 
 export const CompactFocus: Story = {

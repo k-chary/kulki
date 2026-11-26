@@ -9,16 +9,17 @@ describe('colorsFor', () => {
   it('adds pink, brown and black for seven to nine', () => {
     expect(colorsFor(7).at(-1)).toBe('pink');
     expect(colorsFor(8).at(-1)).toBe('brown');
-    expect(colorsFor(9)).toEqual(COLORS);
+    expect(colorsFor(9).at(-1)).toBe('black');
+    expect(colorsFor(10)).toEqual(COLORS);
   });
 
   it('drops orange in the smallest game', () => {
     expect(colorsFor(5)).toEqual(['red', 'yellow', 'green', 'blue', 'purple']);
   });
 
-  it('offers 5 to 9 and rejects anything else', () => {
-    expect(COLOR_COUNTS).toEqual([5, 6, 7, 8, 9]);
-    for (const count of [4, 10, 6.5, NaN]) expect(() => colorsFor(count)).toThrow(RangeError);
+  it('offers 5 to 10 and rejects anything else', () => {
+    expect(COLOR_COUNTS).toEqual([5, 6, 7, 8, 9, 10]);
+    for (const count of [4, 11, 6.5, NaN]) expect(() => colorsFor(count)).toThrow(RangeError);
   });
 });
 

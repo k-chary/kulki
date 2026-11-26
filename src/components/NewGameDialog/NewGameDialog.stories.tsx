@@ -14,7 +14,7 @@ const meta = {
     onStart: fn(),
     onOpenOptions: fn(),
   },
-  argTypes: { colorCount: { control: 'inline-radio', options: [5, 6, 7, 8, 9] } },
+  argTypes: { colorCount: { control: 'inline-radio', options: [5, 6, 7, 8, 9, 10] } },
   decorators: [(Story) => <BoardStage>{Story()}</BoardStage>],
 } satisfies Meta<typeof NewGameDialog>;
 
@@ -28,7 +28,7 @@ export const NothingLost: Story = {};
 export const GameInProgress: Story = { args: { score: 1240 } };
 
 /** Opens on the last game's count; here the hardest. */
-export const NineColors: Story = { args: { colorCount: 9 } };
+export const TenColors: Story = { args: { colorCount: 10 } };
 
 /** The bonus for long clears is on, as set in „Opcje”: the summary says so. */
 export const WithBonus: Story = { args: { bonus: true, score: 1240 } };

@@ -22,9 +22,9 @@ describe('startFromSearch', () => {
   });
 
   it('takes the color count for the game and the scores', () => {
-    const start = startFromSearch(`?board=${ROWS}&colors=9&scores=500`, true);
-    expect(start.game?.colorCount).toBe(9);
-    expect(start.highscores[0]?.colorCount).toBe(9);
+    const start = startFromSearch(`?board=${ROWS}&colors=10&scores=500`, true);
+    expect(start.game?.colorCount).toBe(10);
+    expect(start.highscores[0]?.colorCount).toBe(10);
     expect(startFromSearch('?seed=1&colors=8', true).colorCount).toBe(8);
     expect(startFromSearch(`?board=${ROWS}`, true).game?.colorCount).toBe(6);
   });

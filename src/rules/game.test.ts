@@ -91,13 +91,13 @@ describe('newGame: color count', () => {
     }
   });
 
-  it('uses every color of a 9-color game across seeds', () => {
+  it('uses every color of a 10-color game across seeds', () => {
     const seen = new Set<Color>();
     for (let seed = 1; seed <= 200; seed++) {
-      const state = newGame(createRng(seed), 9);
+      const state = newGame(createRng(seed), 10);
       for (const color of [...state.board, ...state.preview]) if (color) seen.add(color);
     }
-    expect(seen.size).toBe(9);
+    expect(seen.size).toBe(10);
   });
 
   it('deals the same board as before color counts for 6 colors', () => {
@@ -123,9 +123,9 @@ describe('newGame: color count', () => {
     expect(findAllLines(state.board)).toEqual([]);
   });
 
-  it('rejects a count outside 5–9', () => {
+  it('rejects a count outside 5–10', () => {
     expect(() => newGame(createRng(1), 4)).toThrow(RangeError);
-    expect(() => newGame(createRng(1), 10)).toThrow(RangeError);
+    expect(() => newGame(createRng(1), 11)).toThrow(RangeError);
   });
 });
 
@@ -512,9 +512,9 @@ describe('serialize and deserialize', () => {
     expect(deserialize(JSON.stringify(old))).toEqual({ ...state, colorCount: 6 });
   });
 
-  it('rejects a color count outside 5–9 or not a whole number', () => {
+  it('rejects a color count outside 5–10 or not a whole number', () => {
     const good = JSON.parse(serialize(newGame(createRng(1)))) as Record<string, unknown>;
-    for (const colorCount of [4, 10, 0, 6.5, '6', null]) {
+    for (const colorCount of [4, 11, 0, 6.5, '6', null]) {
       expect(() => deserialize(JSON.stringify({ ...good, colorCount }))).toThrow(Error);
     }
   });
@@ -522,7 +522,7 @@ describe('serialize and deserialize', () => {
   it("rejects balls or preview outside the count's colors", () => {
     const good = JSON.parse(serialize(newGame(createRng(1), 9))) as Record<string, unknown>;
     const empty = Array.from({ length: 81 }, () => null);
-    for (const outside of ['orange', 'pink', 'brown', 'black']) {
+    for (const outside of ['orange', 'pink', 'brown', 'black', 'grey']) {
       const ball = JSON.stringify({ ...good, colorCount: 5, board: [outside, ...empty.slice(1)] });
       expect(() => deserialize(ball)).toThrow(Error);
       const preview = JSON.stringify({

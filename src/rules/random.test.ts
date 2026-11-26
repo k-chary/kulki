@@ -96,7 +96,7 @@ describe('sample', () => {
 });
 
 describe('randomColor with a color set', () => {
-  it.each([5, 9])('draws each of %i colors about equally often', (count) => {
+  it.each([5, 10])('draws each of %i colors about equally often', (count) => {
     const colors = colorsFor(count);
     const rng = createRng(77);
     const counts = new Map<string, number>();

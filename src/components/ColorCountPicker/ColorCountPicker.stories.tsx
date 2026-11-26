@@ -8,7 +8,7 @@ const meta = {
   title: 'Controls/ColorCountPicker',
   component: ColorCountPicker,
   args: { value: 6, onChange: fn() },
-  argTypes: { value: { control: 'inline-radio', options: [5, 6, 7, 8, 9] } },
+  argTypes: { value: { control: 'inline-radio', options: [5, 6, 7, 8, 9, 10] } },
   decorators: [(Story) => <div className={styles.frame}>{Story()}</div>],
 } satisfies Meta<typeof ColorCountPicker>;
 
@@ -20,8 +20,8 @@ export const Classic: Story = {};
 
 export const Easiest: Story = { args: { value: 5 } };
 
-/** All nine colors, pink, brown and black included. */
-export const Hardest: Story = { args: { value: 9 } };
+/** All ten colors, pink, brown, black and grey included. */
+export const Hardest: Story = { args: { value: 10 } };
 
 /** Hovering a count that is not chosen. */
 export const Hover: Story = { args: { force: { count: 8, state: 'hover' } } };
@@ -32,7 +32,7 @@ export const Focus: Story = { args: { force: { count: 7, state: 'focus' } } };
 export const AllCounts: Story = {
   render: () => (
     <>
-      {[5, 6, 7, 8, 9].map((count) => (
+      {[5, 6, 7, 8, 9, 10].map((count) => (
         <ColorCountPicker key={count} value={count} />
       ))}
     </>

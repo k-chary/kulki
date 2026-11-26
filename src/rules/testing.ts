@@ -11,11 +11,12 @@ const LETTERS: Record<string, Color> = {
   i: 'pink',
   n: 'brown',
   k: 'black',
+  e: 'grey',
 };
 
 /**
  * Test helper: builds a board from nine rows of nine characters, `.` for an
- * empty square and r, o, y, g, b, p, i (pink), n (brown) or k (black) for a ball. Whitespace is ignored.
+ * empty square and r, o, y, g, b, p, i (pink), n (brown) k (black) or e (grey) for a ball. Whitespace is ignored.
  */
 export function parseBoard(text: string): Board {
   const rows = text

@@ -20,7 +20,7 @@ export interface ColorCountPickerProps {
 }
 
 /**
- * „Liczba kolorów” in the „Nowa gra” dialog: 5 to 9 as a segmented control, then
+ * „Liczba kolorów” in the „Nowa gra” dialog: 5 to 10 as a segmented control, then
  * the colors in play and the difficulty's name.
  */
 export function ColorCountPicker({ value, onChange, force }: ColorCountPickerProps) {
