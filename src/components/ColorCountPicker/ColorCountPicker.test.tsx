@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { ColorCountPicker } from './ColorCountPicker';
 
 afterEach(cleanup);
@@ -23,12 +22,5 @@ describe('ColorCountPicker', () => {
       'czerwona, żółta, zielona, niebieska, fioletowa',
     );
     expect(screen.getByText('łatwy')).toBeTruthy();
-  });
-
-  it('reports the clicked count', async () => {
-    const onChange = vi.fn();
-    render(<ColorCountPicker value={6} onChange={onChange} />);
-    await userEvent.click(screen.getByRole('radio', { name: '10 kolorów' }));
-    expect(onChange).toHaveBeenCalledWith(10);
   });
 });

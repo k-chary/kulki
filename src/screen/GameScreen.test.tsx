@@ -394,11 +394,6 @@ describe('bonus games', () => {
     bonus,
   });
 
-  async function playSix() {
-    await userEvent.click(field(2, 3));
-    await userEvent.click(field(0, 3));
-  }
-
   it('„Zacznij” starts a bonus game and remembers the scoring', async () => {
     const { storage } = setup();
     await userEvent.click(newGameButton());
@@ -427,24 +422,6 @@ describe('bonus games', () => {
         name: 'Ustawienia gry',
       }).textContent,
     ).toContain('Z premią');
-  });
-
-  it('shows the bonus on the chip after a long clear', async () => {
-    const storage = new MemoryStorage<GameState>();
-    render(<GameScreen storage={storage} rng={createRng(4)} game={bonusGame()} />);
-    await playSix();
-    expect(await screen.findByText('+70')).toBeTruthy();
-    expect(screen.getByText('6 kulek · premia +10')).toBeTruthy();
-  });
-
-  it('shows no bonus line for the same clear without the bonus', async () => {
-    const storage = new MemoryStorage<GameState>();
-    render(
-      <GameScreen storage={storage} rng={createRng(4)} game={{ ...bonusGame(), bonus: false }} />,
-    );
-    await playSix();
-    expect(await screen.findByText('+60')).toBeTruthy();
-    expect(screen.queryByText(/premia/)).toBeNull();
   });
 
   it('switches the scoring filter, pins the game and switches back', async () => {

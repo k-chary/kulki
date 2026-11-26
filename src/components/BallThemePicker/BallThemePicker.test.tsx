@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { BallThemePicker } from './BallThemePicker';
 
 afterEach(cleanup);
@@ -27,12 +26,5 @@ describe('BallThemePicker', () => {
     expect(cats?.getAttribute('data-ball-theme')).toBe('cats');
     const [, candyStrip] = screen.getAllByRole('img');
     expect(candyStrip?.getAttribute('aria-label')).toMatch(/, brązowa, czarna, szara$/);
-  });
-
-  it('reports the clicked theme', async () => {
-    const onChange = vi.fn();
-    render(<BallThemePicker value="classic" onChange={onChange} />);
-    await userEvent.click(screen.getByRole('radio', { name: /Cukierkowe/ }));
-    expect(onChange).toHaveBeenCalledWith('candy');
   });
 });

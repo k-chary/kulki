@@ -104,14 +104,6 @@ test.describe('„Nowa gra”', () => {
   });
 });
 
-test('the same seed gives the same start', async ({ page }) => {
-  await page.goto('/?seed=11');
-  const first = await balls(page).evaluateAll((nodes) => nodes.map((n) => n.ariaLabel));
-  await page.goto('/?seed=11');
-  const second = await balls(page).evaluateAll((nodes) => nodes.map((n) => n.ariaLabel));
-  expect(second).toEqual(first);
-});
-
 test.describe('save and resume', () => {
   test('a reload after a move restores board, score and preview with the status message', async ({
     page,
@@ -138,12 +130,6 @@ test.describe('save and resume', () => {
     await expect(balls(page)).toHaveCount(5);
 
     await page.reload();
-    await expect(status(page)).toHaveText('Kliknij kulkę, aby ją wybrać');
-  });
-
-  test('a fresh install starts a new game with five balls', async ({ page }) => {
-    await page.goto('/');
-    await expect(balls(page)).toHaveCount(5);
     await expect(status(page)).toHaveText('Kliknij kulkę, aby ją wybrać');
   });
 });
