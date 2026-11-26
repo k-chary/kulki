@@ -106,21 +106,17 @@ describe('no path', () => {
     const state = walled();
     expect(reduce(state, { type: 'clearNotice', noticeId: state.noticeId - 1 }, rng)).toBe(state);
     const cleared = reduce(state, { type: 'clearNotice', noticeId: state.noticeId }, rng);
-    expect(statusOf(cleared).lead).toBe('Wybrana kulka: ');
+    expect(statusOf(cleared)).toEqual({ lead: '' });
   });
 });
 
 describe('status line', () => {
-  it('guides from selecting to moving', () => {
+  it('gives no hint while selecting and moving', () => {
     let state = initialState(game(OPEN));
-    expect(statusOf(state)).toEqual({ lead: 'Kliknij kulkę, aby ją wybrać' });
+    expect(statusOf(state)).toEqual({ lead: '' });
     state = reduce(state, { type: 'click', cell: at(0, 0) }, rng);
     expect(selectedColor(state)).toBe('red');
-    expect(statusOf(state)).toEqual({
-      lead: 'Wybrana kulka: ',
-      strong: 'czerwona',
-      tail: ' · kliknij puste pole',
-    });
+    expect(statusOf(state)).toEqual({ lead: '' });
   });
 
   it('shows the loaded-game and game-over messages', () => {
