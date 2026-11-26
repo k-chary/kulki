@@ -38,6 +38,15 @@ The rules module computes the whole turn at once and returns it as a list of eve
 - Without the bonus (the default), each cleared ball is worth 10 points, with no bonus for longer lines or several lines.
 - When lines cross, all of them clear at once and a shared ball counts once. Two crossing lines of 5 give 90 points.
 
+**Undo („Cofnij”)**
+
+- Undo takes back only the last move of the current game. After one undo there is nothing more to undo until the player makes a new move; it never reaches into an earlier game.
+- It restores the board, the score, the cleared count and the „Następne” preview from before the move. Balls the move spawned go away and the preview shows the same colors again; where the balls land next time still comes from the random generator, so their squares can differ.
+- Every undo costs 10 × (colors − 4) points: 10 at 5 colors, 20 at 6, 30 at 7, 40 at 8, 50 at 9 and 60 at 10, with or without the bonus. The cost comes off the score from before the move, so points from a clear are taken back along with the move. Example: at 6 colors with 100 points, a move that clears for +50 makes 150; undoing it gives 100 − 20 = 80.
+- The player must afford it: undo is allowed only when the score from before the move is at least the cost, so the score never goes negative. Otherwise undo is blocked and says why.
+- Undo is not possible at the start of a game, right after an undo, or once the game is over (a finished game's score is saved as usual). A game that used undo counts as a normal game for the highscores, with the cost already deducted.
+- The rules module reports why undo is blocked as `ok`, `nothing`, `gameOver` or `tooFewPoints`; what can be undone is saved with the game.
+
 **Bonus for long clears („Z premią”)**
 
 - The bonus is opt-in and chosen per game, like the color count (see Choosing the game settings). It is fixed for the whole game and is part of the game state, the saved game and the highscore entry.
@@ -196,7 +205,7 @@ One SQLite file in the app's data folder holds the highscores and the unfinished
 
 **Save and resume**
 
-- Each turn is saved as soon as the rules module has computed it, before playback: board, score, balls cleared, preview colors, color count and scoring. The selected ball is not saved. A save without a color count is a 6-color game; a save without a scoring has no bonus.
+- Each turn is saved as soon as the rules module has computed it, before playback: board, score, balls cleared, preview colors, color count and scoring, plus the state from before the move that undo would bring back. The selected ball is not saved. A save without a color count is a 6-color game; a save without a scoring has no bonus.
 - On launch the save is read before the first paint. A saved game is restored without animation, nothing selected, with „Wczytano zapisaną grę”. Without one, a new game pops in its 5 balls.
 - Game over deletes the save. Confirming „Nowa gra” discards it.
 - The finished game's row is inserted (and the list trimmed to 30) the moment the game ends, under the prefilled name or „Gracz”. „Zapisz wynik” renames that row and remembers the name as the next default, so a closed window or a crash never loses the score.
@@ -278,5 +287,5 @@ The code lives in a new private GitHub repo, `k-chary/kulki`, with this spec cop
 
 - Mobile builds and touch layouts.
 - Symbols on balls for colorblind players.
-- Undo, sound and keyboard controls.
+- Sound and further keyboard controls (Ctrl+Z for undo is the only shortcut).
 - Syncing highscores across devices.

@@ -18,7 +18,7 @@ import {
   colorsFor,
   drawColorsFor,
 } from './color';
-import { findAllLines, findLines, lineCells, scoreFor } from './lines';
+import { POINTS_PER_BALL, findAllLines, findLines, lineCells, scoreFor } from './lines';
 import { findPath } from './path';
 import { type Rng, randomColor, sample } from './random';
 
@@ -27,6 +27,22 @@ export const START_BALLS = 5;
 
 /** Balls shown in the preview and placed after a move that clears nothing. */
 export const SPAWN_COUNT = 3;
+
+/** The part of a game that undo brings back: the state from before the last move. */
+export interface UndoSnapshot {
+  readonly board: Board;
+  readonly preview: readonly Color[];
+  readonly score: number;
+  readonly cleared: number;
+}
+
+/** Points one undo costs: 10 per color above 4, so 10 at 5 colors up to 60 at 10. */
+export function undoCost(colorCount: number): number {
+  return POINTS_PER_BALL * (colorCount - 4);
+}
+
+/** Why undo is, or is not, possible right now. */
+export type UndoStatus = 'ok' | 'nothing' | 'gameOver' | 'tooFewPoints';
 
 /** Everything that is saved: the board, the score and the colors of the next balls. */
 export interface GameState {
@@ -42,6 +58,8 @@ export interface GameState {
   readonly cleared: number;
   /** True once the board is full; no further moves are accepted. */
   readonly gameOver: boolean;
+  /** The state from before the last move, or null/absent when there is nothing to undo. */
+  readonly undo?: UndoSnapshot | null;
 }
 
 /** One step of a turn, for the screen to play back in order. */
@@ -98,6 +116,7 @@ export function newGame(
     bonus,
     cleared: 0,
     gameOver: false,
+    undo: null,
   };
 }
 
@@ -158,8 +177,43 @@ export function playTurn(state: GameState, from: Cell, to: Cell, rng: Rng): Turn
     bonus: state.bonus,
     cleared,
     gameOver: isFull(board),
+    undo: {
+      board: state.board,
+      preview: state.preview,
+      score: state.score,
+      cleared: state.cleared,
+    },
   };
   return { status: 'played', state: next, events };
+}
+
+/**
+ * Whether the last move can be taken back. It cannot at the start of a game or right
+ * after an undo (`nothing`), once the game is over (`gameOver`), or when the score from
+ * before the move is below the cost (`tooFewPoints`), so the score never goes negative.
+ */
+export function undoStatus(state: GameState): UndoStatus {
+  if (state.gameOver) return 'gameOver';
+  if (state.undo == null) return 'nothing';
+  return state.undo.score < undoCost(state.colorCount) ? 'tooFewPoints' : 'ok';
+}
+
+/**
+ * Takes back the last move: the board, preview and cleared count come back, the
+ * score returns to what it was before the move minus the undo cost, and there is
+ * nothing more to undo. Throws unless `undoStatus` is `ok`.
+ */
+export function undo(state: GameState): GameState {
+  if (undoStatus(state) !== 'ok' || state.undo == null) throw new Error('Nothing can be undone');
+  const { board, preview, score, cleared } = state.undo;
+  return {
+    ...state,
+    board,
+    preview,
+    score: score - undoCost(state.colorCount),
+    cleared,
+    undo: null,
+  };
 }
 
 /** The state as a JSON string, for saving. */
@@ -224,5 +278,30 @@ export function deserialize(text: string): GameState {
   if (gameOver !== isFull(board as Board)) {
     throw new Error('Saved game is over on a board with room, or running on a full one');
   }
-  return { board: board as Board, preview, score, colorCount, bonus, cleared, gameOver };
+  const undo = readUndo(data?.undo, isColor);
+  return { board: board as Board, preview, score, colorCount, bonus, cleared, gameOver, undo };
+}
+
+// The saved undo snapshot; a save from before undo existed has none.
+function readUndo(
+  value: unknown,
+  isColor: (value: unknown) => value is Color,
+): UndoSnapshot | null {
+  if (value === undefined || value === null) return null;
+  const data = value as Record<string, unknown>;
+  const board = Array.isArray(data.board) ? data.board.map(renamed) : data.board;
+  const preview = Array.isArray(data.preview) ? data.preview.map(renamed) : data.preview;
+  if (
+    !Array.isArray(board) ||
+    board.length !== CELL_COUNT ||
+    !board.every((square) => square === null || isColor(square)) ||
+    !Array.isArray(preview) ||
+    preview.length !== SPAWN_COUNT ||
+    !preview.every(isColor) ||
+    !isCount(data.score) ||
+    !isCount(data.cleared)
+  ) {
+    throw new Error('Saved game has an invalid undo');
+  }
+  return { board: board as Board, preview, score: data.score, cleared: data.cleared };
 }

@@ -9,6 +9,9 @@ import {
   serialize,
   SPAWN_COUNT,
   START_BALLS,
+  undo,
+  undoCost,
+  undoStatus,
 } from './game';
 import { findAllLines } from './lines';
 import { createRng, type Rng } from './random';
@@ -238,6 +241,7 @@ describe('playTurn: a move that clears', () => {
       bonus: false,
       cleared: 7,
       gameOver: false,
+      undo: { board, preview: PREVIEW, score: 20, cleared: 2 },
     });
   });
 
@@ -472,6 +476,7 @@ describe('serialize and deserialize', () => {
       bonus: false,
       cleared: 124,
       gameOver: false,
+      undo: null,
     };
     expect(deserialize(serialize(state))).toEqual(state);
     const over: GameState = { ...state, board: state.board.map(() => 'green'), gameOver: true };
@@ -571,5 +576,133 @@ describe('serialize and deserialize', () => {
       JSON.stringify({ ...good, board: Array.from({ length: 81 }, () => 'red'), gameOver: false }),
     ];
     for (const text of bad) expect(() => deserialize(text)).toThrow(Error);
+  });
+});
+
+describe('undo', () => {
+  const plain = parseBoard(`
+    r........
+    .........
+    .........
+    .........
+    .........
+    .........
+    .........
+    .........
+    ........b
+  `);
+
+  /** Plays one move on `state` and returns the played state. */
+  function play(state: GameState, from: Cell, to: Cell, seed = 1): GameState {
+    const result = playTurn(state, from, to, createRng(seed));
+    if (result.status !== 'played') throw new Error('expected a played turn');
+    return result.state;
+  }
+
+  it('costs 10 per color above 4, with or without the bonus', () => {
+    expect([5, 6, 7, 8, 9, 10].map(undoCost)).toEqual([10, 20, 30, 40, 50, 60]);
+    for (const [colorCount, bonus] of [
+      [5, false],
+      [6, true],
+      [10, false],
+    ] as const) {
+      const played = play(
+        stateOf(plain, { colorCount, bonus, score: 100, preview: PREVIEW.slice() }),
+        at(0, 0),
+        at(0, 5),
+      );
+      expect(undo(played).score).toBe(100 - undoCost(colorCount));
+    }
+  });
+
+  it('takes back a plain move and the balls it spawned, keeping the preview colors', () => {
+    const start = stateOf(plain, { score: 100 });
+    const played = play(start, at(0, 0), at(0, 5));
+    expect(balls(played.board)).toBe(5);
+    const back = undo(played);
+    expect(back.board).toEqual(plain);
+    expect(back.preview).toEqual(PREVIEW);
+    expect(back.score).toBe(80);
+    expect(back.cleared).toBe(0);
+    expect(back.undo).toBeNull();
+  });
+
+  it('takes back a clear with its points and cleared count, minus the cost', () => {
+    const board = parseBoard(`
+      rr.rr....
+      .........
+      .........
+      .........
+      .........
+      .........
+      .........
+      .........
+      .....r...
+    `);
+    const start = stateOf(board, { score: 100, cleared: 2 });
+    const played = play(start, at(8, 5), at(0, 2));
+    expect(played.score).toBe(150);
+    const back = undo(played);
+    expect(back).toMatchObject({ board, score: 80, cleared: 2, preview: PREVIEW });
+  });
+
+  it('is allowed when the score before the move is exactly the cost, not below it', () => {
+    const exactly = play(stateOf(plain, { score: 20 }), at(0, 0), at(0, 5));
+    expect(undoStatus(exactly)).toBe('ok');
+    expect(undo(exactly).score).toBe(0);
+    const below = play(stateOf(plain, { score: 19 }), at(0, 0), at(0, 5));
+    expect(undoStatus(below)).toBe('tooFewPoints');
+    expect(() => undo(below)).toThrow(Error);
+  });
+
+  it('checks the score from before the move, not the one after a clear', () => {
+    const board = parseBoard(`
+      rr.rr....
+      .........
+      .........
+      .........
+      .........
+      .........
+      .........
+      .........
+      .....r...
+    `);
+    const played = play(stateOf(board, { score: 0 }), at(8, 5), at(0, 2));
+    expect(played.score).toBe(50);
+    expect(undoStatus(played)).toBe('tooFewPoints');
+  });
+
+  it('is refused at the start, after an undo and after game over', () => {
+    const start = stateOf(plain, { score: 100 });
+    expect(undoStatus(start)).toBe('nothing');
+    expect(() => undo(start)).toThrow(Error);
+    expect(undoStatus(newGame(createRng(3)))).toBe('nothing');
+    const back = undo(play(start, at(0, 0), at(0, 5)));
+    expect(undoStatus(back)).toBe('nothing');
+    const over = {
+      ...play(start, at(0, 0), at(0, 5)),
+      board: Array.from({ length: CELL_COUNT }, () => 'green' as Color),
+      gameOver: true,
+    };
+    expect(undoStatus(over)).toBe('gameOver');
+    expect(() => undo(over)).toThrow(Error);
+  });
+
+  it('is saved with the game and an old save loads with nothing to undo', () => {
+    const played = play(stateOf(plain, { score: 100 }), at(0, 0), at(0, 5));
+    expect(deserialize(serialize(played))).toEqual(played);
+    const fresh = newGame(createRng(4));
+    expect(deserialize(serialize(fresh)).undo).toBeNull();
+    const old = { ...played, undo: undefined };
+    expect(deserialize(JSON.stringify(old)).undo).toBeNull();
+    expect(undoStatus(deserialize(JSON.stringify(old)))).toBe('nothing');
+  });
+
+  it('rejects a saved undo with a wrong shape', () => {
+    const played = play(stateOf(plain, { score: 100 }), at(0, 0), at(0, 5));
+    const good = JSON.parse(serialize(played)) as Record<string, unknown>;
+    for (const bad of [{ score: 1 }, { ...(good.undo as object), score: -1 }, 'x', 3]) {
+      expect(() => deserialize(JSON.stringify({ ...good, undo: bad }))).toThrow(Error);
+    }
   });
 });
