@@ -20,7 +20,7 @@ test.describe('input lock', () => {
     await expect(page.locator('div[data-locked="true"]')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Nowa gra' })).toBeEnabled();
     // The dropped click selected nothing.
-    await expect(status(page)).toHaveText('Kliknij kulkę, aby ją wybrać');
+    await expect(status(page)).toHaveText('');
     await expect(field(page, 8, 0)).toHaveAccessibleName('Kulka czerwona, wiersz 9, kolumna 1');
     await expect(balls(page)).toHaveCount(5);
   });
@@ -58,7 +58,7 @@ test.describe('input lock', () => {
     await expect(status(page)).toHaveText('Tam nie ma przejścia');
     await expect(page.locator('div[data-locked="true"]')).toHaveCount(0);
     await field(page, 7, 8).click();
-    await expect(status(page)).toHaveText('Wybrana kulka: zielona · kliknij puste pole');
+    await expect(status(page)).toHaveText('');
   });
 });
 

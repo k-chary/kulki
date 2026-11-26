@@ -10,7 +10,7 @@ export interface NextBallsProps {
   fresh?: boolean;
 }
 
-/** „Następne”: the colors of the next three balls and the rule for when they appear. */
+/** „Następne”: the colors of the next three balls. */
 export function NextBalls({ colors, fresh = false }: NextBallsProps) {
   return (
     <Panel label="Następne">
@@ -23,7 +23,6 @@ export function NextBalls({ colors, fresh = false }: NextBallsProps) {
           <PreviewSlot key={i} color={color} state={fresh ? 'spawning' : 'idle'} />
         ))}
       </div>
-      <p className={styles.sub}>pojawią się po ruchu bez zbicia</p>
     </Panel>
   );
 }

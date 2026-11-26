@@ -11,10 +11,3 @@
 .next > :nth-child(3) > * {
   animation-delay: calc(2 * var(--dur-spawn-stagger));
 }
-
-.sub {
-  margin: 0;
-  font-size: var(--text-xs);
-  line-height: var(--leading-snug);
-  color: var(--color-text-muted);
-}

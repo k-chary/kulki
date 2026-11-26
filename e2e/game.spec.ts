@@ -7,10 +7,10 @@ const scorePanel = (page: import('@playwright/test').Page) =>
 test.describe('moving a ball', () => {
   test('selects a ball, previews the path and moves it', async ({ page }) => {
     await openFixture(page, { rows: { 0: 'r' }, preview: 'bbb' });
-    await expect(status(page)).toHaveText('Kliknij kulkę, aby ją wybrać');
+    await expect(status(page)).toHaveText('');
 
     await field(page, 0, 0).click();
-    await expect(status(page)).toHaveText('Wybrana kulka: czerwona · kliknij puste pole');
+    await expect(status(page)).toHaveText('');
     await expect(field(page, 0, 0)).toHaveAttribute('data-state', 'selected');
 
     await field(page, 2, 0).hover();
@@ -20,16 +20,16 @@ test.describe('moving a ball', () => {
     await field(page, 2, 0).click();
     await expect(field(page, 2, 0)).toHaveAccessibleName('Kulka czerwona, wiersz 3, kolumna 1');
     await expect(field(page, 0, 0)).toHaveAccessibleName('Puste pole, wiersz 1, kolumna 1');
-    await expect(status(page)).toHaveText('Kliknij kulkę, aby ją wybrać');
+    await expect(status(page)).toHaveText('');
   });
 
   test('switches the selection and deselects with a second click', async ({ page }) => {
     await openFixture(page, { rows: { 0: 'rg' } });
     await field(page, 0, 0).click();
     await field(page, 0, 1).click();
-    await expect(status(page)).toHaveText('Wybrana kulka: zielona · kliknij puste pole');
+    await expect(status(page)).toHaveText('');
     await field(page, 0, 1).click();
-    await expect(status(page)).toHaveText('Kliknij kulkę, aby ją wybrać');
+    await expect(status(page)).toHaveText('');
   });
 
   test('a move that clears nothing adds the three preview balls', async ({ page }) => {
@@ -50,7 +50,7 @@ test.describe('moving a ball', () => {
     await expect(status(page)).toHaveText('Tam nie ma przejścia');
     await expect(balls(page)).toHaveCount(3);
     // The message goes away after 2.2 s and the selection is still there.
-    await expect(status(page)).toHaveText('Wybrana kulka: czerwona · kliknij puste pole', {
+    await expect(status(page)).toHaveText('', {
       timeout: 5000,
     });
     await expect(scorePanel(page)).toContainText('0 kulek zbitych');
@@ -126,7 +126,7 @@ test.describe('save and resume', () => {
     await expect(field(page, 2, 0)).toHaveAccessibleName('Kulka czerwona, wiersz 3, kolumna 1');
     await expect(page.getByRole('button', { name: /^Kulka zielona/ })).toHaveCount(3);
     await expect(status(page)).toHaveText('Wczytano zapisaną grę');
-    await expect(status(page)).toHaveText('Kliknij kulkę, aby ją wybrać', { timeout: 5000 });
+    await expect(status(page)).toHaveText('', { timeout: 5000 });
   });
 
   test('a new game after a confirmed „Nowa gra” is not resumed', async ({ page }) => {
@@ -138,12 +138,12 @@ test.describe('save and resume', () => {
     await expect(balls(page)).toHaveCount(5);
 
     await page.reload();
-    await expect(status(page)).toHaveText('Kliknij kulkę, aby ją wybrać');
+    await expect(status(page)).toHaveText('');
   });
 
   test('a fresh install starts a new game with five balls', async ({ page }) => {
     await page.goto('/');
     await expect(balls(page)).toHaveCount(5);
-    await expect(status(page)).toHaveText('Kliknij kulkę, aby ją wybrać');
+    await expect(status(page)).toHaveText('');
   });
 });

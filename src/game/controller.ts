@@ -2,7 +2,6 @@
 // screen needs besides the game itself: the selection, the hovered field, the
 // one-off message and the "Nowa gra" dialog.
 import type { PlaybackView } from './playback';
-import { COLOR_NAMES } from '../format';
 import type { CellView } from '../components/Board/Board';
 import {
   type Cell,
@@ -240,22 +239,15 @@ export function reduce(
   }
 }
 
-/** The text of the status line as lead, bold part and tail. */
-export function statusOf(state: ControllerState): { lead: string; strong?: string; tail?: string } {
+/** The text of the status line: empty unless there is feedback to give. */
+export function statusOf(state: ControllerState): { lead: string } {
   // The line stays empty while a turn animates.
   if (state.turn !== null) return { lead: '' };
   if (state.game.gameOver) return { lead: 'Koniec gry' };
   if (state.notice === 'noPath') return { lead: 'Tam nie ma przejścia' };
   if (state.notice === 'loaded') return { lead: 'Wczytano zapisaną grę' };
-  const color = selectedColor(state);
-  if (color) {
-    return {
-      lead: 'Wybrana kulka: ',
-      strong: COLOR_NAMES[color],
-      tail: ' · kliknij puste pole',
-    };
-  }
-  return { lead: 'Kliknij kulkę, aby ją wybrać' };
+  // Selecting and moving explain themselves: no hint line.
+  return { lead: '' };
 }
 
 export function selectedColor(state: ControllerState): Color | null {
