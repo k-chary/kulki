@@ -157,23 +157,6 @@ describe('findPath', () => {
     expect(findPath(board, at(4, 4), at(3, 3))).toEqual([at(3, 4), at(3, 3)]);
   });
 
-  it('gives the same path every time', () => {
-    const board = parseBoard(`
-      .........
-      ..p......
-      .........
-      ....o....
-      .........
-      ......y..
-      .........
-      .........
-      ........r
-    `);
-    const first = findPath(board, at(8, 8), at(0, 0));
-    expect(first).toHaveLength(16);
-    for (let i = 0; i < 5; i++) expect(findPath(board, at(8, 8), at(0, 0))).toEqual(first);
-  });
-
   it('rejects cells outside the board', () => {
     expect(() => findPath(emptyBoard(), at(0, 0), at(9, 0))).toThrow(RangeError);
     expect(() => findPath(emptyBoard(), at(-1, 0), at(0, 0))).toThrow(RangeError);

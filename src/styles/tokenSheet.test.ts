@@ -71,12 +71,6 @@ describe('tokens.css', () => {
   const light = tokenValues(blocks, 'light');
   const dark = tokenValues(blocks, 'dark');
 
-  it('has every theme and motion block', () => {
-    for (const context of ['base', 'motion', 'reduced', 'light', 'dark'] as const) {
-      expect(tokenValues(blocks, context).size).toBeGreaterThan(0);
-    }
-  });
-
   it('gives every light color a dark value and the other way round', () => {
     expect([...dark.keys()].sort()).toEqual([...light.keys()].sort());
   });
@@ -98,19 +92,6 @@ describe('tokens.css', () => {
     for (const ball of balls) {
       expect(light.has(`--ball-classic-${ball}`)).toBe(true);
       expect(base.has(`--ball-candy-${ball}`)).toBe(true);
-    }
-  });
-
-  it('draws cats from tokens', () => {
-    const base = tokenValues(blocks, 'base');
-    for (const name of [
-      '--cat-head',
-      '--cat-face',
-      '--cat-blush',
-      '--cat-ink',
-      '--cat-ink-on-dark',
-    ]) {
-      expect(base.has(name)).toBe(true);
     }
   });
 

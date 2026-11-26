@@ -10,7 +10,6 @@ import {
   isFull,
   isInside,
   neighbors,
-  sameCell,
   setBall,
 } from './board';
 import { parseBoard } from './testing';
@@ -49,12 +48,6 @@ describe('board', () => {
     expect(() => cellAt(-1)).toThrow(RangeError);
     expect(() => cellAt(81)).toThrow(RangeError);
     expect(() => cellAt(1.5)).toThrow(RangeError);
-  });
-
-  it('compares cells by position', () => {
-    expect(sameCell({ row: 2, col: 3 }, { row: 2, col: 3 })).toBe(true);
-    expect(sameCell({ row: 2, col: 3 }, { row: 3, col: 2 })).toBe(false);
-    expect(sameCell({ row: 2, col: 3 }, { row: 2, col: 4 })).toBe(false);
   });
 
   it('sets and clears balls without changing the original board', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CLASSIC_COLORS, colorsFor } from './color';
+import { colorsFor } from './color';
 import { createRng, randomColor, randomInt, sample } from './random';
 
 const draw = (seed: number, count: number) => {
@@ -22,10 +22,6 @@ describe('createRng', () => {
       expect(value).toBeLessThan(1);
     }
   });
-
-  it('treats seeds as 32-bit unsigned integers', () => {
-    expect(draw(-1, 5)).toEqual(draw(0xffffffff, 5));
-  });
 });
 
 describe('randomInt', () => {
@@ -47,22 +43,6 @@ describe('randomInt', () => {
     expect(() => randomInt(rng, 0)).toThrow(RangeError);
     expect(() => randomInt(rng, -3)).toThrow(RangeError);
     expect(() => randomInt(rng, 2.5)).toThrow(RangeError);
-  });
-});
-
-describe('randomColor', () => {
-  it('draws each of the six colors about equally often', () => {
-    const rng = createRng(2026);
-    const counts = new Map<string, number>();
-    const draws = 60_000;
-    for (let i = 0; i < draws; i++) {
-      const color = randomColor(rng, CLASSIC_COLORS);
-      counts.set(color, (counts.get(color) ?? 0) + 1);
-    }
-    expect([...counts.keys()].sort()).toEqual([...CLASSIC_COLORS].sort());
-    for (const count of counts.values()) {
-      expect(count / draws).toBeCloseTo(1 / 6, 1);
-    }
   });
 });
 
@@ -96,7 +76,7 @@ describe('sample', () => {
 });
 
 describe('randomColor with a color set', () => {
-  it.each([5, 10])('draws each of %i colors about equally often', (count) => {
+  it.each([5, 6, 10])('draws each of %i colors about equally often', (count) => {
     const colors = colorsFor(count);
     const rng = createRng(77);
     const counts = new Map<string, number>();

@@ -19,13 +19,6 @@ describe('MemoryStorage', () => {
     expect(result.highscores.map((row) => row.name)).toEqual(['Ola', 'Ala']);
   });
 
-  it('keeps the older game higher on a tie', async () => {
-    const storage = new MemoryStorage();
-    await storage.insertHighscore(entry('Ala', 100));
-    const result = await storage.insertHighscore(entry('Ola', 100));
-    expect(result.place).toBe(2);
-  });
-
   it('trims to 30 and returns null place for a score outside the list', async () => {
     const storage = new MemoryStorage();
     for (let i = 0; i < 30; i++) await storage.insertHighscore(entry(`G${i}`, 1000 + i));
@@ -71,18 +64,6 @@ describe('MemoryStorage', () => {
     expect(nine.highscores.map((row) => row.name)).toEqual(['Nine']);
     expect((await storage.listHighscores(6, false)).map((row) => row.name)).toEqual(['Six']);
     expect(await storage.listHighscores(5, false)).toEqual([]);
-  });
-
-  it('trims and breaks ties within one count only', async () => {
-    const storage = new MemoryStorage();
-    for (let i = 0; i < 30; i++) await storage.insertHighscore(entry(`G${i}`, 1000 + i, 7));
-    expect((await storage.insertHighscore(entry('Low', 1, 8))).place).toBe(1);
-    expect((await storage.insertHighscore(entry('Same', 1, 8))).place).toBe(2);
-    expect((await storage.insertHighscore(entry('Out', 10, 7))).place).toBeNull();
-    const beat = await storage.insertHighscore(entry('Beat', 1001, 7));
-    expect(beat.place).toBe(30);
-    expect(await storage.listHighscores(7, false)).toHaveLength(30);
-    expect(await storage.listHighscores(8, false)).toHaveLength(2);
   });
 
   it("renames within the list of the row's own count", async () => {

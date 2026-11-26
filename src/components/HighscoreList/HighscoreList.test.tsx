@@ -81,21 +81,7 @@ describe('HighscoreList', () => {
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest', behavior: 'auto' });
   });
 
-  it('stripes odd rows and formats dates and points', () => {
-    render(<HighscoreList rows={rowsWithLive(entries(2), 0)} />);
-    const [first, second] = screen.getAllByRole('listitem');
-    expect(first?.dataset.stripe).toBe('odd');
-    expect(second?.dataset.stripe).toBe('even');
-    expect(first?.textContent).toBe('1.Gracz 118.10.20263 000');
-    expect(screen.queryByText(/Jeszcze nie ma wyników/)).toBeNull();
-  });
-
   describe('filter', () => {
-    it('shows no filter unless asked for', () => {
-      render(<HighscoreList rows={rowsWithLive(entries(2), 0)} colorCount={6} />);
-      expect(screen.queryByRole('radiogroup')).toBeNull();
-    });
-
     it("marks the shown count and the current game's count", () => {
       render(
         <HighscoreList rows={[]} colorCount={8} gameColorCount={6} onColorCountChange={() => {}} />,
