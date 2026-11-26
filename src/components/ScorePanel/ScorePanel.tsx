@@ -1,4 +1,10 @@
-import { chipStep, formatBonusDetail, formatCleared, formatNumber } from '../../format';
+import {
+  chipStep,
+  formatBonusDetail,
+  formatCleared,
+  formatNumber,
+  formatUndoCost,
+} from '../../format';
 import { Chip, type ChipSize, type ChipTone } from '../Chip/Chip';
 import { Panel } from '../Panel/Panel';
 import styles from './ScorePanel.module.css';
@@ -16,6 +22,9 @@ export interface ScorePanelProps {
   deltaBalls?: number;
   /** The part of `delta` above 10 per ball; above 0 it adds „9 kulek · premia +100”. */
   deltaBonus?: number;
+  /** Points an undo just cost, shown as a soft „−20” chip like the „+50”; `penaltyId` restarts it. */
+  penalty?: number;
+  penaltyId?: number;
 }
 
 const STEPS: { tone: ChipTone; size: ChipSize }[] = [
@@ -34,6 +43,8 @@ export function ScorePanel({
   deltaId,
   deltaBalls = 0,
   deltaBonus = 0,
+  penalty,
+  penaltyId,
 }: ScorePanelProps) {
   const step = chipStep(deltaBalls, deltaBonus);
   return (
@@ -49,6 +60,13 @@ export function ScorePanel({
             {deltaBonus > 0 && (
               <span className={styles.detail}>{formatBonusDetail(deltaBalls, deltaBonus)}</span>
             )}
+          </span>
+        )}
+        {penalty !== undefined && penalty > 0 && (
+          <span key={`penalty-${penaltyId}`} className={styles.gain} aria-hidden="true">
+            <Chip tone="soft" size="sm">
+              {formatUndoCost(penalty, true)}
+            </Chip>
           </span>
         )}
       </div>

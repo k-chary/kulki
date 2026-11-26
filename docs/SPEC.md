@@ -97,7 +97,7 @@ The game is played with a mouse; Kulki has one screen, and everything else is a 
 
 **Status line**
 
-- The header shows one status line for feedback only: „Tam nie ma przejścia”, „Wczytano zapisaną grę” or „Koniec gry”. It carries no hints that state the obvious (selecting a ball, where to click next), so it is empty the rest of the time.
+- The header shows one status line for feedback only: „Tam nie ma przejścia”, „Wczytano zapisaną grę”, „Koniec gry”, „Cofnięto ruch (−20 pkt)” after an undo, or, when Ctrl+Z is pressed while undo is blocked, the reason (see Undo button). It carries no hints that state the obvious (selecting a ball, where to click next), so it is empty the rest of the time.
 - One-off messages stay for 2.2 s. During an animation the line is empty.
 
 **Motion**
@@ -140,12 +140,21 @@ One window shows a header, the board and a side rail as one centered block. The 
 
 | Area | Polish label | Size | Shows |
 | --- | --- | --- | --- |
-| Header | — | 40 px tall | Logo „Kulki” with three balls on the left, status line on the right |
+| Header | — | 40 px tall | Logo „Kulki” with three balls on the left; on the right the status line, then the „Cofnij” button and its cost chip |
 | Board | — | Largest square that fits | 9×9 fields in a 6 px frame with 4 px gaps; balls are 80% of a field |
 | Score | Wynik | Rail, 280 px wide | Current points and balls cleared, with Polish plural forms (1 kulka zbita, 2–4 kulki zbite, 5 kulek zbitych) |
 | Preview | Następne | Three 44 px slots | The next 3 colors, no caption |
 | New game, options | Nowa gra, Opcje | Two 44 px secondary buttons sharing one row | „Nowa gra” restarts, „Opcje” opens the options dialog; both are disabled during animations and dialogs |
 | Highscores | Najlepsze wyniki · {n} kolorów, or Wyniki z premią · {n} kolorów | Fills the rest of the rail, scrolls | A 5–10 filter and a „Bez premii \| Z premią” filter, then the top 30 for the chosen count and scoring, with rank, name, date (dd.mm.rrrr) and points |
+
+**Undo button („Cofnij”)**
+
+- Desktop and tablet: at the far right of the header, after the status line and above the rail, sits a secondary button „↶ Cofnij” (undo arrow icon plus label, 36 px tall, tokens only). Right after it is the shared Chip (soft, sm, numeric) with the cost, „−20 pkt” (`undoCost(colorCount)`, from −10 at 5 colors to −60 at 10). The chip keeps full color when the button is disabled, so the price is always visible.
+- The tooltip and the status line (for a blocked Ctrl+Z) say, by `undoStatus`: ok „Cofnij ostatni ruch (−20 pkt, Ctrl+Z)”; tooFewPoints „Za mało punktów: cofnięcie kosztuje 20 pkt”; nothing „Brak ruchu do cofnięcia”; gameOver „Gra skończona”. The accessible name is „Cofnij ostatni ruch, minus 20 punktów”, with the reason linked by `aria-describedby`. The tooltip sits on a wrapper around the button, since a disabled button does not fire hover in every WebView.
+- The button is disabled (`--opacity-disabled`) whenever `undoStatus` is not `ok`, while a turn animates and while a dialog is open.
+- Ctrl+Z (Cmd+Z on macOS) undoes when allowed; it is ignored while a dialog or a text field has focus (for example name entry). When blocked it only shows the reason in the status line.
+- After an undo the status line shows „Cofnięto ruch (−20 pkt)”, the score panel shows a soft „−20” chip (the counterpart of „+50”) and the board shows its restored state without animation.
+- Phones (for the planned phone layout; not built yet): in the top bar, just left of the cog, an icon-only ↶ button (44 px touch target) followed by the same chip in short form („−20”, size xs), with the same states and accessible text.
 
 **Highscore list rows**
 
@@ -248,9 +257,9 @@ Each component is presentational: its own CSS Module, every state through props,
 | Group | Components |
 | --- | --- |
 | Board | Ball, Field (a real button), Board, MovingBall |
-| Header | Logo, StatusLine |
+| Header | Logo, StatusLine, UndoControl (with UndoIcon) |
 | Rail | Panel, ScorePanel, NextBalls, PreviewSlot, ScoreRow, HighscoreList, HighscoreFilter, BonusFilter, CurrentGameNote |
-| Controls | Button (primary, secondary), TextField, ColorCountPicker, BonusPicker, BallThemePicker |
+| Controls | Button (primary, secondary; optional icon, size sm), TextField, ColorCountPicker, BonusPicker, BallThemePicker |
 | Dialogs | Dialog (base), NewGameDialog, OptionsDialog, GameOver, NameEntry |
 
 The game screen only assembles these and connects them to the rules module. Props and states for each are drawn on the canvas.

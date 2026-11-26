@@ -29,6 +29,10 @@ describe('startFromSearch', () => {
     expect(startFromSearch(`?board=${ROWS}`, true).game?.colorCount).toBe(6);
   });
 
+  it('takes the starting score for the game', () => {
+    expect(startFromSearch(`?board=${ROWS}&score=120`, true).game?.score).toBe(120);
+  });
+
   it('takes the scoring for the game and the scores', () => {
     const start = startFromSearch(`?board=${ROWS}&bonus=1&scores=500`, true);
     expect(start.game?.bonus).toBe(true);

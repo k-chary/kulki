@@ -19,8 +19,10 @@ import {
   playTurn,
   sameCell,
   undo,
+  undoCost,
   undoStatus,
 } from '../rules';
+import { formatUndone, formatUndoReason } from '../format';
 import {
   type HighscoreEntry,
   type HighscoreRow,
@@ -48,7 +50,9 @@ export interface ControllerState {
   readonly selected: Cell | null;
   readonly hover: Cell | null;
   /** A one-off status message; `noticeId` changes with every new one. */
-  readonly notice: 'noPath' | 'loaded' | null;
+  readonly notice: 'noPath' | 'loaded' | 'undone' | 'undoBlocked' | null;
+  /** Set by an undo until the next move: the points it cost, shown as a „−20” chip; `id` restarts the chip. */
+  readonly undone: { readonly cost: number; readonly id: number } | null;
   readonly noticeId: number;
   /** Turns played in this game; once it is above 0 the „Nowa gra” dialog warns the game is lost. */
   readonly moves: number;
@@ -82,6 +86,7 @@ export function initialState(
     hover: null,
     notice,
     noticeId: notice ? 1 : 0,
+    undone: null,
     moves,
     choosing: false,
     saved: null,
@@ -202,6 +207,7 @@ function click(state: ControllerState, cell: Cell, rng: Rng): ControllerState {
     selected: null,
     hover: null,
     notice: null,
+    undone: null,
     moves: state.moves + 1,
   };
 }
@@ -223,14 +229,21 @@ export function reduce(
       return { ...state, hover: action.cell };
     case 'undo':
       // Refused unless the rules allow it, while a turn animates and while a dialog is open.
-      if (state.turn !== null || state.choosing || undoStatus(state.game) !== 'ok') return state;
+      if (state.turn !== null || state.choosing) return state;
+      if (undoStatus(state.game) !== 'ok') {
+        // Only Ctrl+Z gets here (the button is disabled): the status line says why.
+        if (state.game.gameOver) return state;
+        return { ...state, notice: 'undoBlocked', noticeId: state.noticeId + 1 };
+      }
       return {
         ...state,
         game: undo(state.game),
         selected: null,
         hover: null,
         shaking: false,
-        notice: null,
+        notice: 'undone',
+        noticeId: state.noticeId + 1,
+        undone: { cost: undoCost(state.game.colorCount), id: state.noticeId + 1 },
       };
     case 'turnDone':
       return state.turn === null ? state : { ...state, turn: null };
@@ -260,6 +273,10 @@ export function statusOf(state: ControllerState): { lead: string } {
   if (state.game.gameOver) return { lead: 'Koniec gry' };
   if (state.notice === 'noPath') return { lead: 'Tam nie ma przejścia' };
   if (state.notice === 'loaded') return { lead: 'Wczytano zapisaną grę' };
+  if (state.notice === 'undone' && state.undone) return { lead: formatUndone(state.undone.cost) };
+  if (state.notice === 'undoBlocked') {
+    return { lead: formatUndoReason(undoStatus(state.game), undoCost(state.game.colorCount)) };
+  }
   // Selecting and moving explain themselves: no hint line.
   return { lead: '' };
 }

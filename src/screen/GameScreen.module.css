@@ -44,3 +44,11 @@
 .actions > * {
   flex: 1;
 }
+
+/* The status line and the undo control share the right end of the header. */
+.headerEnd {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}

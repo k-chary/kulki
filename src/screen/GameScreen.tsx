@@ -7,6 +7,7 @@ import { Logo } from '../components/Logo/Logo';
 import { NewGameDialog } from '../components/NewGameDialog/NewGameDialog';
 import { NextBalls } from '../components/NextBalls/NextBalls';
 import { OptionsDialog } from '../components/OptionsDialog/OptionsDialog';
+import { UndoControl } from '../components/UndoControl/UndoControl';
 import { ScorePanel } from '../components/ScorePanel/ScorePanel';
 import { StatusLine } from '../components/StatusLine/StatusLine';
 import {
@@ -41,6 +42,8 @@ import {
   cellIndex,
   emptyCells,
   newGame,
+  undoCost,
+  undoStatus,
 } from '../rules';
 import type { InsertResult, Storage } from '../storage/Storage';
 import { readDuration, readTurnDurations } from '../styles/motion';
@@ -376,6 +379,23 @@ export function GameScreen({
     }
   };
   const status = statusOf(state);
+
+  // Ctrl+Z (Cmd+Z on macOS) undoes; it is left alone in text fields and while a dialog is open.
+  const dialogOpen = state.choosing || optionsOpen || state.game.gameOver;
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() !== 'z' || !(event.ctrlKey || event.metaKey)) return;
+      if (event.shiftKey || event.altKey || dialogOpen) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]')) {
+        return;
+      }
+      event.preventDefault();
+      dispatch({ type: 'undo' });
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [dialogOpen, dispatch]);
   // „Nowa gra” and „Opcje” are disabled together: during animations and dialogs.
   const railLocked = state.choosing || turn !== null || gameOver !== null || optionsOpen;
 
@@ -383,7 +403,15 @@ export function GameScreen({
     <main className={styles.screen}>
       <header className={styles.header}>
         <Logo />
-        <StatusLine {...status} />
+        <div className={styles.headerEnd}>
+          <StatusLine {...status} />
+          <UndoControl
+            status={undoStatus(state.game)}
+            cost={undoCost(colorCount)}
+            busy={turn !== null || dialogOpen}
+            onUndo={() => dispatch({ type: 'undo' })}
+          />
+        </div>
       </header>
       <div className={styles.body}>
         <Board
@@ -452,10 +480,13 @@ export function GameScreen({
             score={view.score}
             shownScore={shownScore}
             cleared={view.cleared}
-            delta={chip?.delta}
+            // The „+N” chip belonged to the move an undo just took back.
+            delta={state.undone ? undefined : chip?.delta}
             deltaId={chip?.id}
             deltaBalls={chip?.balls}
             deltaBonus={chip ? chip.delta - chip.balls * POINTS_PER_BALL : 0}
+            penalty={state.undone?.cost}
+            penaltyId={state.undone?.id}
           />
           <NextBalls colors={fittingPreview(view)} fresh={view.spawning.length > 0} />
           <div className={styles.actions}>
