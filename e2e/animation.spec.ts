@@ -38,7 +38,7 @@ test.describe('input lock', () => {
     await expect(status(page)).toHaveText('Tam nie ma przejścia');
     await expect(page.locator('div[data-locked="true"]')).toHaveCount(0);
     await field(page, 7, 8).click();
-    await expect(status(page)).toHaveText('Wybrana kulka: zielona · kliknij puste pole');
+    await expect(status(page)).toHaveText('');
   });
 });
 

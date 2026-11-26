@@ -6,8 +6,3 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-.status b {
-  color: var(--color-text);
-  font-weight: var(--weight-semibold);
-}

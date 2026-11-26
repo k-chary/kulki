@@ -88,7 +88,7 @@ The game is played with a mouse; Kulki has one screen, and everything else is a 
 
 **Status line**
 
-- The header shows one status line: „Kliknij kulkę, aby ją wybrać”, „Wybrana kulka: czerwona · kliknij puste pole”, „Tam nie ma przejścia”, „Wczytano zapisaną grę” or „Koniec gry”.
+- The header shows one status line for feedback only: „Tam nie ma przejścia”, „Wczytano zapisaną grę” or „Koniec gry”. It carries no hints that state the obvious (selecting a ball, where to click next), so it is empty the rest of the time.
 - One-off messages stay for 2.2 s. During an animation the line is empty.
 
 **Motion**
@@ -134,7 +134,7 @@ One window shows a header, the board and a side rail as one centered block. The 
 | Header | — | 40 px tall | Logo „Kulki” with three balls on the left, status line on the right |
 | Board | — | Largest square that fits | 9×9 fields in a 6 px frame with 4 px gaps; balls are 80% of a field |
 | Score | Wynik | Rail, 280 px wide | Current points and balls cleared, with Polish plural forms (1 kulka zbita, 2–4 kulki zbite, 5 kulek zbitych) |
-| Preview | Następne | Three 44 px slots | The next 3 colors, with „pojawią się po ruchu bez zbicia” always visible |
+| Preview | Następne | Three 44 px slots | The next 3 colors, no caption |
 | New game, options | Nowa gra, Opcje | Two 44 px secondary buttons sharing one row | „Nowa gra” restarts, „Opcje” opens the options dialog; both are disabled during animations and dialogs |
 | Highscores | Najlepsze wyniki · {n} kolorów, or Wyniki z premią · {n} kolorów | Fills the rest of the rail, scrolls | A 5–10 filter and a „Bez premii \| Z premią” filter, then the top 30 for the chosen count and scoring, with rank, name, date (dd.mm.rrrr) and points |
 

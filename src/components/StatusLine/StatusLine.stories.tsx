@@ -9,11 +9,10 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Idle: Story = { args: { lead: 'Kliknij kulkę, aby ją wybrać' } };
+/** Most of the time the line is empty. */
+export const Idle: Story = { args: { lead: '' } };
 
-export const Selected: Story = {
-  args: { lead: 'Wybrana kulka: ', strong: 'niebieska', tail: ' · kliknij puste pole' },
-};
+export const NoPath: Story = { args: { lead: 'Tam nie ma przejścia' } };
 
 export const Resumed: Story = { args: { lead: 'Wczytano zapisaną grę' } };
 
