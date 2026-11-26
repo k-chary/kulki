@@ -46,3 +46,22 @@ describe('Button', () => {
     );
   });
 });
+
+describe('Button with an icon', () => {
+  it('shows the icon before the label, or alone as a square icon-only button', () => {
+    render(
+      <>
+        <Button variant="secondary" size="sm" icon={<svg data-testid="a" />}>
+          Cofnij
+        </Button>
+        <Button variant="secondary" icon={<svg data-testid="b" />} aria-label="Ikona" />
+      </>,
+    );
+    expect(screen.getByRole('button', { name: 'Cofnij' }).getAttribute('data-icon-only')).toBe(
+      'false',
+    );
+    expect(screen.getByRole('button', { name: 'Ikona' }).getAttribute('data-icon-only')).toBe(
+      'true',
+    );
+  });
+});

@@ -495,3 +495,72 @@ describe('bonus games', () => {
     expect(await storage.listHighscores(6, false)).toHaveLength(0);
   });
 });
+
+describe('„Cofnij”', () => {
+  const undoButton = () =>
+    screen.getByRole('button', { name: /^Cofnij ostatni ruch/ }) as HTMLButtonElement;
+
+  function setupScore(score: number, colorCount = 6) {
+    const storage = new MemoryStorage<GameState>();
+    render(
+      <GameScreen
+        storage={storage}
+        rng={createRng(4)}
+        game={{ ...fixture(colorCount), score }}
+        intro={false}
+      />,
+    );
+  }
+
+  it('is disabled at the start and shows the cost for the color count', () => {
+    setupScore(100, 8);
+    expect(undoButton().disabled).toBe(true);
+    expect(screen.getByText('−40 pkt')).toBeTruthy();
+    expect(undoButton().parentElement?.getAttribute('title')).toBe('Brak ruchu do cofnięcia');
+  });
+
+  it('is enabled after a move and restores the board, lowering the score by the cost', async () => {
+    setupScore(100);
+    await playOneMove();
+    expect(undoButton().disabled).toBe(false);
+    await userEvent.click(undoButton());
+    expect(balls()).toHaveLength(1);
+    expect(field(0, 0).dataset.ball).toBe('true');
+    const panel = screen.getByRole('heading', { name: 'Wynik' }).closest('section');
+    expect(within(panel as HTMLElement).getByText('80')).toBeTruthy();
+    expect(undoButton().disabled).toBe(true);
+  });
+
+  it('is disabled with the too-few-points tooltip when the score cannot pay', async () => {
+    setupScore(10);
+    await playOneMove();
+    expect(undoButton().disabled).toBe(true);
+    expect(undoButton().parentElement?.getAttribute('title')).toBe(
+      'Za mało punktów: cofnięcie kosztuje 20 pkt',
+    );
+    await userEvent.keyboard('{Control>}z{/Control}');
+    expect(balls()).toHaveLength(4);
+  });
+
+  it('works with Ctrl+Z', async () => {
+    setupScore(100);
+    await playOneMove();
+    await userEvent.keyboard('{Control>}z{/Control}');
+    expect(balls()).toHaveLength(1);
+  });
+
+  it('ignores Ctrl+Z while a dialog or a text field has focus', async () => {
+    setupScore(100);
+    await playOneMove();
+    await userEvent.click(newGameButton());
+    await userEvent.keyboard('{Control>}z{/Control}');
+    expect(balls()).toHaveLength(4);
+    await userEvent.click(screen.getByRole('button', { name: 'Anuluj' }));
+    const input = document.createElement('input');
+    document.body.append(input);
+    input.focus();
+    await userEvent.keyboard('{Control>}z{/Control}');
+    expect(balls()).toHaveLength(4);
+    input.remove();
+  });
+});

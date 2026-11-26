@@ -587,9 +587,19 @@ describe('undo', () => {
     expect(reduce(animating, { type: 'undo' }, rng)).toBe(animating);
     const dialog = { ...animating, turn: null, choosing: true };
     expect(reduce(dialog, { type: 'undo' }, rng)).toBe(dialog);
-    const start = initialState(game(OPEN, { score: 100 }));
-    expect(reduce(start, { type: 'undo' }, rng)).toBe(start);
-    const undone = reduce({ ...animating, turn: null }, { type: 'undo' }, rng);
-    expect(reduce(undone, { type: 'undo' }, rng)).toBe(undone);
+  });
+
+  it('says why in the status line when it is blocked, and why it was done after an undo', () => {
+    const start = reduce(initialState(game(OPEN, { score: 100 })), { type: 'undo' }, rng);
+    expect(start.game.score).toBe(100);
+    expect(statusOf(start).lead).toBe('Brak ruchu do cofnięcia');
+    const undone = reduce({ ...played(), turn: null }, { type: 'undo' }, rng);
+    expect(statusOf(undone).lead).toBe('Cofnięto ruch (−20 pkt)');
+    expect(undone.undone?.cost).toBe(20);
+    const poor = initialState(game(OPEN));
+    let state = reduce(poor, { type: 'click', cell: at(0, 0) }, rng);
+    state = reduce(state, { type: 'click', cell: at(4, 4) }, rng);
+    state = reduce({ ...state, turn: null }, { type: 'undo' }, rng);
+    expect(statusOf(state).lead).toBe('Za mało punktów: cofnięcie kosztuje 20 pkt');
   });
 });

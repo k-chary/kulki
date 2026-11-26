@@ -100,7 +100,7 @@ export function startFromSearch(search: string, enabled = hookEnabled()): Start 
     game: {
       board: parseBoard(board.replaceAll('/', '\n')),
       preview,
-      score: 0,
+      score: Number(params.get('score') ?? 0),
       colorCount,
       bonus,
       cleared: 0,

@@ -14,6 +14,8 @@ export async function openFixture(
     scores?: number[];
     colors?: number;
     bonus?: boolean;
+    /** The score the fixture game starts with. */
+    score?: number;
   },
 ) {
   const query = new URLSearchParams({
@@ -24,6 +26,7 @@ export async function openFixture(
   if (options.scores) query.set('scores', options.scores.join(','));
   if (options.colors) query.set('colors', String(options.colors));
   if (options.bonus) query.set('bonus', '1');
+  if (options.score) query.set('score', String(options.score));
   await page.goto(`/?${query.toString()}`);
 }
 

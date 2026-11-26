@@ -1,0 +1,15 @@
+.control {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+}
+
+.tip {
+  display: inline-flex;
+}
+
+/* The wrapper, not the disabled button, receives the hover that shows the tooltip. */
+.tip > button:disabled {
+  pointer-events: none;
+}

@@ -11,3 +11,4 @@ export { formatDate } from './date';
 export { formatNumber, GROUP_SEPARATOR } from './number';
 export { formatCleared, plural } from './plural';
 export { chipStep, formatBonus, formatBonusDetail, type ChipStep } from './bonus';
+export { formatUndoCost, formatUndoName, formatUndoReason, formatUndone } from './undo';
