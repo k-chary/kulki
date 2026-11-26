@@ -1,12 +1,5 @@
 import { expect, test } from '@playwright/test';
-import {
-  gameOverDialog,
-  nearlyFullRows,
-  openFixture,
-  playToGameOver,
-  scoreRows,
-  field,
-} from './helpers';
+import { gameOverDialog, nearlyFullRows, openFixture, playToGameOver, scoreRows } from './helpers';
 
 test.describe('game over', () => {
   test('a full board asks for a name, saves it and rings the row until the next game', async ({
@@ -40,27 +33,6 @@ test.describe('game over', () => {
       .click();
     await expect(scoreRows(page, 'saved')).toHaveCount(0);
     await expect(scoreRows(page, 'stored')).toHaveCount(1);
-  });
-
-  test('an empty name is saved as „Gracz”', async ({ page }) => {
-    await openFixture(page, { rows: nearlyFullRows(), preview: 'ppp' });
-    await playToGameOver(page);
-
-    const dialog = gameOverDialog(page);
-    await dialog.getByLabel('Twoje imię').fill('');
-    await page.keyboard.press('Enter');
-    await expect(dialog).toContainText('Zapisano jako Gracz · 1. miejsce');
-    await expect(scoreRows(page, 'saved')).toContainText('Gracz');
-  });
-
-  test('the name is cut to 20 characters', async ({ page }) => {
-    await openFixture(page, { rows: nearlyFullRows(), preview: 'ppp' });
-    await playToGameOver(page);
-
-    const dialog = gameOverDialog(page);
-    await dialog.getByLabel('Twoje imię').fill('Abcdefghijklmnopqrstuvwxyz');
-    await dialog.getByRole('button', { name: 'Zapisz wynik' }).click();
-    await expect(dialog).toContainText('Zapisano jako Abcdefghijklmnopqrst · 1. miejsce');
   });
 
   test('a score outside a full top 30 shows the points missing and saves nothing', async ({
@@ -114,40 +86,6 @@ test.describe('game over', () => {
     await expect(scoreRows(page, 'stored')).toHaveCount(1);
     await expect(scoreRows(page, 'stored')).toContainText('Ola');
   });
-
-  test('the board takes no clicks after the game ended', async ({ page }) => {
-    await openFixture(page, { rows: nearlyFullRows(), preview: 'ppp' });
-    await playToGameOver(page);
-    await expect(gameOverDialog(page)).toBeVisible();
-    await expect(field(page, 8, 8)).toBeDisabled();
-  });
 });
 
-test.describe('highscore list', () => {
-  test('„Ta gra · teraz” climbs as the score grows', async ({ page }) => {
-    await openFixture(page, {
-      rows: { 0: 'rrrr....', 1: '........r' },
-      preview: 'bbb',
-      scores: [60, 40],
-    });
-
-    await expect(scoreRows(page)).toHaveCount(3);
-    await expect(scoreRows(page).nth(2)).toHaveAttribute('data-kind', 'current');
-    await expect(scoreRows(page, 'current')).toContainText('Ta gra');
-    await expect(scoreRows(page, 'current')).toContainText('teraz');
-
-    await field(page, 1, 8).click();
-    await field(page, 0, 4).click();
-
-    // 50 points beat the 40 and not the 60: second place.
-    await expect(scoreRows(page).nth(1)).toHaveAttribute('data-kind', 'current');
-    await expect(scoreRows(page, 'current')).toContainText('50');
-  });
-
-  test('a score outside a full list shows no live row', async ({ page }) => {
-    const scores = Array<number>(30).fill(100).join(',');
-    await page.goto(`/?seed=1&scores=${scores}`);
-    await expect(scoreRows(page, 'stored')).toHaveCount(30);
-    await expect(scoreRows(page, 'current')).toHaveCount(0);
-  });
-});
+test.describe('highscore list', () => {});

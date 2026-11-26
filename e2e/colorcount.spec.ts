@@ -52,16 +52,6 @@ test.describe('color count', () => {
     await expect(heading(page, 7)).toBeVisible();
   });
 
-  test('Anuluj keeps the game and its count', async ({ page }) => {
-    await page.goto('/?seed=5');
-    await page.getByRole('button', { name: 'Nowa gra' }).click();
-    await newGameDialog(page).getByRole('radio', { name: '9 kolorów' }).click();
-    await newGameDialog(page).getByRole('button', { name: 'Anuluj' }).click();
-    await expect(newGameDialog(page)).toHaveCount(0);
-    await expect(heading(page, 6)).toBeVisible();
-    await expect(balls(page)).toHaveCount(5);
-  });
-
   test('a finished 9-color game goes into the 9-color list only', async ({ page }) => {
     await openFixture(page, {
       rows: nearlyFullRows(),

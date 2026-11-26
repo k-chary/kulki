@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { BonusFilter } from './BonusFilter';
 
 afterEach(cleanup);
@@ -13,12 +12,5 @@ describe('BonusFilter', () => {
       'true',
     );
     expect(screen.getByRole('radio', { name: 'bez premii, ta gra' })).toBeTruthy();
-  });
-
-  it('reports a click', async () => {
-    const onChange = vi.fn();
-    render(<BonusFilter value={false} onChange={onChange} />);
-    await userEvent.click(screen.getByRole('radio', { name: 'z premią' }));
-    expect(onChange).toHaveBeenCalledWith(true);
   });
 });

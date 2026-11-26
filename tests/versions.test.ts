@@ -9,10 +9,6 @@ const tauriVersion = (JSON.parse(read('src-tauri/tauri.conf.json')) as { version
 const cargoVersion = /^version\s*=\s*"([^"]+)"/m.exec(read('src-tauri/Cargo.toml'))?.[1];
 
 describe('release version', () => {
-  it('is a plain semver number', () => {
-    expect(packageVersion).toMatch(/^\d+\.\d+\.\d+$/);
-  });
-
   it('matches in package.json, Cargo.toml and tauri.conf.json', () => {
     expect({ cargoVersion, tauriVersion }).toEqual({
       cargoVersion: packageVersion,

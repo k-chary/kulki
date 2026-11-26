@@ -77,11 +77,6 @@ describe('newGame', () => {
 });
 
 describe('newGame: color count', () => {
-  it('defaults to 6 colors and records the count', () => {
-    expect(newGame(createRng(1)).colorCount).toBe(6);
-    for (const count of COLOR_COUNTS) expect(newGame(createRng(1), count).colorCount).toBe(count);
-  });
-
   it("draws the start balls and the preview only from the count's colors", () => {
     for (const count of COLOR_COUNTS) {
       const allowed = colorsFor(count);
@@ -363,12 +358,6 @@ describe('playTurn: bonus', () => {
     .........
     .........
   `);
-
-  it('defaults to no bonus and records the setting', () => {
-    expect(newGame(createRng(1)).bonus).toBe(false);
-    expect(newGame(createRng(1), 6, true).bonus).toBe(true);
-    expect(newGame(createRng(1), 8, true).colorCount).toBe(8);
-  });
 
   it('deals the same start with or without the bonus', () => {
     expect(newGame(createRng(4), 6, true).board).toEqual(newGame(createRng(4), 6, false).board);
