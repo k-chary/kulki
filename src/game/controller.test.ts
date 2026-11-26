@@ -562,3 +562,34 @@ describe('pop-in of a new game', () => {
     expect(fresh.turn?.events[0]?.type).toBe('spawn');
   });
 });
+
+describe('undo', () => {
+  const played = () => {
+    let state = initialState(game(OPEN, { score: 100 }));
+    state = reduce(state, { type: 'click', cell: at(0, 0) }, rng);
+    return reduce(state, { type: 'click', cell: at(4, 4) }, rng);
+  };
+
+  it('takes back the move, clears the selection and is saved like a move', () => {
+    const before = initialState(game(OPEN, { score: 100 }));
+    const state = reduce({ ...played(), turn: null }, { type: 'undo' }, rng);
+    expect(state.game.board).toEqual(before.game.board);
+    expect(state.game.score).toBe(80);
+    expect(state.game.undo).toBeNull();
+    expect(state.selected).toBeNull();
+    expect(state.hover).toBeNull();
+    expect(saveEffect({ ...played(), turn: null }, state)).toMatchObject({ type: 'save' });
+  });
+
+  it('is refused while the turn animates, in a dialog, at the start and after an undo', () => {
+    const animating = played();
+    expect(animating.turn).not.toBeNull();
+    expect(reduce(animating, { type: 'undo' }, rng)).toBe(animating);
+    const dialog = { ...animating, turn: null, choosing: true };
+    expect(reduce(dialog, { type: 'undo' }, rng)).toBe(dialog);
+    const start = initialState(game(OPEN, { score: 100 }));
+    expect(reduce(start, { type: 'undo' }, rng)).toBe(start);
+    const undone = reduce({ ...animating, turn: null }, { type: 'undo' }, rng);
+    expect(reduce(undone, { type: 'undo' }, rng)).toBe(undone);
+  });
+});

@@ -18,6 +18,8 @@ import {
   newGame,
   playTurn,
   sameCell,
+  undo,
+  undoStatus,
 } from '../rules';
 import {
   type HighscoreEntry,
@@ -58,6 +60,7 @@ export interface ControllerState {
 export type ControllerAction =
   | { type: 'click'; cell: Cell }
   | { type: 'hover'; cell: Cell | null }
+  | { type: 'undo' }
   | { type: 'turnDone' }
   | { type: 'shakeEnd' }
   | { type: 'clearNotice'; noticeId: number }
@@ -218,6 +221,17 @@ export function reduce(
       if (action.cell === state.hover) return state;
       if (action.cell && state.hover && sameCell(action.cell, state.hover)) return state;
       return { ...state, hover: action.cell };
+    case 'undo':
+      // Refused unless the rules allow it, while a turn animates and while a dialog is open.
+      if (state.turn !== null || state.choosing || undoStatus(state.game) !== 'ok') return state;
+      return {
+        ...state,
+        game: undo(state.game),
+        selected: null,
+        hover: null,
+        shaking: false,
+        notice: null,
+      };
     case 'turnDone':
       return state.turn === null ? state : { ...state, turn: null };
     case 'shakeEnd':

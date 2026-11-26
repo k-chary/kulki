@@ -43,8 +43,13 @@ export {
   type GameEvent,
   type GameState,
   type TurnResult,
+  type UndoSnapshot,
+  type UndoStatus,
   deserialize,
   newGame,
   playTurn,
   serialize,
+  undo,
+  undoCost,
+  undoStatus,
 } from './game';
