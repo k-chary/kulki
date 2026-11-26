@@ -93,6 +93,10 @@
   --ball-color: var(--ball-brown);
 }
 
+.ball[data-color='grey'] {
+  --ball-color: var(--ball-grey);
+}
+
 .ball[data-color='black'] {
   --ball-color: var(--ball-black);
 

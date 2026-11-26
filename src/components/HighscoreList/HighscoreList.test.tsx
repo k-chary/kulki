@@ -117,8 +117,8 @@ describe('HighscoreList', () => {
           onColorCountChange={onChange}
         />,
       );
-      await userEvent.click(screen.getByRole('radio', { name: '9 kolorów' }));
-      expect(onChange).toHaveBeenCalledWith(9);
+      await userEvent.click(screen.getByRole('radio', { name: '10 kolorów' }));
+      expect(onChange).toHaveBeenCalledWith(10);
     });
 
     it("pins the current game under another count's list and jumps back on click", async () => {

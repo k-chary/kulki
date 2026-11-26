@@ -113,21 +113,21 @@ const clearing = Object.fromEntries(
   [2, 3, 4, 5, 6].map((col) => [`3,${col}`, { field: 'clearing', ball: 'clearing' } as Overlay]),
 );
 
-// The sample with the three extra colors of a 9-color game mixed in.
-const NINE = parseBoard(`
+// The sample with the four extra colors of a 10-color game mixed in.
+const TEN = parseBoard(`
   .b..g.n.y
-  ..p.k.o..
+  ..p.k.o.e
   g.i..b..r
-  ..rrrr.k.
+  e.rrrr.k.
   .y..p..n.
-  o..g..b..
+  o.eg..b..
   i.r..k..p
-  .b..y..n.
-  p..o.ig..
+  .b.ey..n.
+  p..o.ig.e
 `);
 
-/** A 9-color game: pink, brown and black join; black gets a rim on dark fields. */
-export const NineColors: Story = { args: { cells: cellsOf(NINE) } };
+/** A 10-color game: pink, brown, black and grey join; black gets a rim on dark fields. */
+export const TenColors: Story = { args: { cells: cellsOf(TEN) } };
 
 const brownSelected = {
   '7,7': { field: 'selected', ball: 'selected' },
@@ -138,7 +138,7 @@ const brownSelected = {
 
 /** A brown ball's path: dots and ring in the ball's own brown. */
 export const BrownPath: Story = {
-  args: { cells: cellsOf(NINE, brownSelected), pathColor: 'brown' },
+  args: { cells: cellsOf(TEN, brownSelected), pathColor: 'brown' },
 };
 
 const blackSelected = {
@@ -150,30 +150,42 @@ const blackSelected = {
 
 /** A black ball's path: on dark fields the dots and ring turn light grey. */
 export const BlackPath: Story = {
-  args: { cells: cellsOf(NINE, blackSelected), pathColor: 'black' },
+  args: { cells: cellsOf(TEN, blackSelected), pathColor: 'black' },
 };
 
-/** The candy theme over the same nine colors: M&M's-like shells and a licorice black. */
-export const CandyNineColors: Story = {
-  args: { cells: cellsOf(NINE) },
+const greySelected = {
+  '5,2': { field: 'selected', ball: 'selected' },
+  '5,1': { field: 'path' },
+  '4,1': { field: 'path' },
+  '4,2': { field: 'target' },
+} satisfies Record<string, Overlay>;
+
+/** A grey ball's path: dots and ring in the ball's own grey. */
+export const GreyPath: Story = {
+  args: { cells: cellsOf(TEN, greySelected), pathColor: 'grey' },
+};
+
+/** The candy theme over the same ten colors: M&M's-like shells, a licorice black and a silver grey. */
+export const CandyTenColors: Story = {
+  args: { cells: cellsOf(TEN) },
   decorators: [(Story) => <div data-ball-theme="candy">{Story()}</div>],
 };
 
 /** A candy brown ball's path. */
 export const CandyBrownPath: Story = {
-  args: { cells: cellsOf(NINE, brownSelected), pathColor: 'brown' },
+  args: { cells: cellsOf(TEN, brownSelected), pathColor: 'brown' },
   decorators: [(Story) => <div data-ball-theme="candy">{Story()}</div>],
 };
 
-/** The cats theme over the same nine colors: each ball is a cat's head in its classic color. */
-export const CatsNineColors: Story = {
-  args: { cells: cellsOf(NINE) },
+/** The cats theme over the same ten colors: each ball is a cat's head in its classic color. */
+export const CatsTenColors: Story = {
+  args: { cells: cellsOf(TEN) },
   decorators: [(Story) => <div data-ball-theme="cats">{Story()}</div>],
 };
 
 /** A black cat's path: a light face and contour keep it apart from a dark field. */
 export const CatsBlackPath: Story = {
-  args: { cells: cellsOf(NINE, blackSelected), pathColor: 'black' },
+  args: { cells: cellsOf(TEN, blackSelected), pathColor: 'black' },
   decorators: [(Story) => <div data-ball-theme="cats">{Story()}</div>],
 };
 

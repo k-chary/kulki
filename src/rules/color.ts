@@ -12,13 +12,14 @@ export const COLORS = [
   'pink',
   'brown',
   'black',
+  'grey',
 ] as const;
 
 export type Color = (typeof COLORS)[number];
 
 /** The fewest and most colors a game can use, and the default (the classic game). */
 export const MIN_COLORS = 5;
-export const MAX_COLORS = 9;
+export const MAX_COLORS = 10;
 export const DEFAULT_COLORS = 6;
 
 /** The color counts a player can pick, from MIN_COLORS to MAX_COLORS. */

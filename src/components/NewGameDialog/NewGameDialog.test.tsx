@@ -53,9 +53,9 @@ describe('NewGameDialog', () => {
         onOpenOptions={onOpenOptions}
       />,
     );
-    await userEvent.click(screen.getByRole('radio', { name: '9 kolorów' }));
+    await userEvent.click(screen.getByRole('radio', { name: '10 kolorów' }));
     await userEvent.click(screen.getByRole('button', { name: 'Zmień w Opcjach' }));
-    expect(onOpenOptions).toHaveBeenCalledWith(9);
+    expect(onOpenOptions).toHaveBeenCalledWith(10);
   });
 
   it('has no link without somewhere to go', () => {

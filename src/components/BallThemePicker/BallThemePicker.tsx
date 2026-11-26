@@ -19,7 +19,7 @@ export interface BallThemePickerProps {
 }
 
 /**
- * „Kolory kulek” in „Opcje”: one card per theme, each showing all nine balls in that
+ * „Kolory kulek” in „Opcje”: one card per theme, each showing all ten balls in that
  * theme whatever the app's theme is, so the two can be compared.
  */
 export function BallThemePicker({ value, onChange, force }: BallThemePickerProps) {

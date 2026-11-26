@@ -204,8 +204,8 @@ describe('rowsWithLive', () => {
 });
 
 describe('isColorCount', () => {
-  it('accepts the whole numbers 5 to 9 only', () => {
-    expect([4, 5, 6, 9, 10].map(isColorCount)).toEqual([false, true, true, true, false]);
+  it('accepts the whole numbers 5 to 10 only', () => {
+    expect([4, 5, 6, 10, 11].map(isColorCount)).toEqual([false, true, true, true, false]);
     expect([5.5, '6', null, undefined].map(isColorCount)).toEqual([false, false, false, false]);
   });
 });

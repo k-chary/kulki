@@ -8,8 +8,8 @@ const meta = {
   component: HighscoreFilter,
   args: { value: 6, gameColorCount: 6, onChange: fn() },
   argTypes: {
-    value: { control: 'inline-radio', options: [5, 6, 7, 8, 9] },
-    gameColorCount: { control: 'inline-radio', options: [5, 6, 7, 8, 9] },
+    value: { control: 'inline-radio', options: [5, 6, 7, 8, 9, 10] },
+    gameColorCount: { control: 'inline-radio', options: [5, 6, 7, 8, 9, 10] },
   },
   decorators: [(Story) => <RailFrame>{Story()}</RailFrame>],
 } satisfies Meta<typeof HighscoreFilter>;
@@ -23,6 +23,6 @@ export const GameList: Story = {};
 /** Browsing the 8-color list during a 6-color game; the dot stays on 6. */
 export const OtherList: Story = { args: { value: 8 } };
 
-export const Hover: Story = { args: { force: { count: 9, state: 'hover' } } };
+export const Hover: Story = { args: { force: { count: 10, state: 'hover' } } };
 
 export const Focus: Story = { args: { force: { count: 7, state: 'focus' } } };

@@ -12,6 +12,7 @@ export const COLOR_NAMES: Record<Color, string> = {
   pink: 'różowa',
   brown: 'brązowa',
   black: 'czarna',
+  grey: 'szara',
 };
 
 /** The difficulty each color count stands for, as the „Kolory” panel names it. */
@@ -21,6 +22,7 @@ export const COLOR_COUNT_LEVELS: Readonly<Record<number, string>> = {
   7: 'trudny',
   8: 'bardzo trudny',
   9: 'mistrzowski',
+  10: 'legendarny',
 };
 
 /** „1 kolor”, „4 kolory”, „6 kolorów”. */

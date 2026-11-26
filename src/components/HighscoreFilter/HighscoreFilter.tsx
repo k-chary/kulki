@@ -13,7 +13,7 @@ export interface HighscoreFilterProps {
 }
 
 /**
- * The 5–9 row under „Najlepsze wyniki”: picks which count's top 30 the panel
+ * The 5–10 row under „Najlepsze wyniki”: picks which count's top 30 the panel
  * shows, without touching the game in progress.
  */
 export function HighscoreFilter({ value, gameColorCount, onChange, force }: HighscoreFilterProps) {

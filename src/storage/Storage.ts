@@ -30,7 +30,7 @@ export interface Storage<Game = unknown> {
   renameHighscore(id: number, name: string): Promise<HighscoreEntry[]>;
   getLastName(): Promise<string | null>;
   setLastName(name: string): Promise<void>;
-  /** The next game's color count (5 to 9), or null when none was chosen yet. */
+  /** The next game's color count (5 to 10), or null when none was chosen yet. */
   getLastColorCount(): Promise<number | null>;
   setLastColorCount(colorCount: number): Promise<void>;
   /** Whether the next game has the bonus for long clears, or null when never chosen (callers treat that as off). */

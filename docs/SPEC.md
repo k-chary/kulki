@@ -6,7 +6,7 @@ Approved 2026-10-22. Source: https://claude.ai/code/artifact/2c36446e-f3a3-4162-
 
 Kulki v1 is a single-player desktop game (Tauri) in Polish: move balls on a 9×9 board and line up 5 or more of one color to clear them. It follows the classic Lines rules. The look, layout, motion and components come from the [Kulki visual design](https://claude.ai/artifact/Rg7LMfMFpU8usuiQCrqQF4) canvas, which replaces the earlier design draft. For game rules this spec wins; for how things look and move, the canvas does.
 
-In scope for v1: the full game loop, next-balls preview, current score, a top-30 highscore list, save and resume, and installers for Windows, macOS and Linux. Added after v1: difficulty, chosen as the number of ball colors (5 to 9). Its look (the three new balls and the „Nowa gra” dialog with its color picker) was designed after the canvas, in Storybook, and those stories are its visual reference. The same goes for the highscore filter added after it (HighscoreFilter and CurrentGameNote) and for the opt-in bonus for long clears after that (BonusPicker, BonusFilter, the „Opcje” tabs and the chip steps in ScorePanel), and for moving the game settings out of „Nowa gra” after that (its „Ustawienia gry” summary and the „Gra” tab of „Opcje”).
+In scope for v1: the full game loop, next-balls preview, current score, a top-30 highscore list, save and resume, and installers for Windows, macOS and Linux. Added after v1: difficulty, chosen as the number of ball colors (5 to 10). Its look (the new balls and the „Nowa gra” dialog with its color picker) was designed after the canvas, in Storybook, and those stories are its visual reference. The same goes for the highscore filter added after it (HighscoreFilter and CurrentGameNote) and for the opt-in bonus for long clears after that (BonusPicker, BonusFilter, the „Opcje” tabs and the chip steps in ScorePanel), and for moving the game settings out of „Nowa gra” after that (its „Ustawienia gry” summary and the „Gra” tab of „Opcje”).
 
 ## Game rules
 
@@ -15,8 +15,8 @@ A turn is one move; new balls appear only after a move that clears nothing.
 **Board and balls**
 
 - The board is 9×9 = 81 squares; each square holds at most one ball.
-- There are 9 colors: czerwony, żółty, zielony, niebieski, fioletowy, pomarańczowy, różowy, brązowy, czarny. Brązowy replaced biały because white balls were hard to see; saved games read their white balls as brown.
-- Each game uses 5 to 9 of them, chosen by the player before the game (see Difficulty). The count picks the first colors of that list: 5 is czerwony, żółty, zielony, niebieski and fioletowy; 6 is the classic set; 7 adds różowy, 8 brązowy and 9 czarny.
+- There are 10 colors: czerwony, żółty, zielony, niebieski, fioletowy, pomarańczowy, różowy, brązowy, czarny, szary. Brązowy replaced biały because white balls were hard to see; saved games read their white balls as brown.
+- Each game uses 5 to 10 of them, chosen by the player before the game (see Difficulty). The count picks the first colors of that list: 5 is czerwony, żółty, zielony, niebieski and fioletowy; 6 is the classic set; 7 adds różowy, 8 brązowy, 9 czarny and 10 szary.
 - Every ball's color is drawn uniformly at random from the game's colors, independently.
 - A new game places 5 balls on random squares. Their colors are random and do not come from the preview. If the 5 already form a line, the start is redrawn.
 - From the start, the preview ("Następne") shows the colors of the next 3 balls to appear. Their squares are chosen only when they appear.
@@ -59,7 +59,7 @@ The rules module computes the whole turn at once and returns it as a list of eve
 **Difficulty**
 
 - Fewer colors make lines easier: the color count is the game's difficulty. The default is 6, the classic game.
-- Each count has a name, shown under the picker: 5 łatwy, 6 klasyczny, 7 trudny, 8 bardzo trudny, 9 mistrzowski.
+- Each count has a name, shown under the picker: 5 łatwy, 6 klasyczny, 7 trudny, 8 bardzo trudny, 9 mistrzowski, 10 legendarny.
 - The count is fixed for a whole game. It is part of the game state, the saved game and the highscore entry.
 - The count does not change how points are scored; only the bonus setting does.
 
@@ -120,7 +120,7 @@ The game is played with a mouse; Kulki has one screen, and everything else is a 
 
 - Dialogs sit over the board only, never over the rail, so the highscore list stays readable beside them. A scrim dims the board; the card is up to 380 px wide.
 - While a dialog is open the board is locked and „Nowa gra” in the rail is disabled. Focus moves into the dialog and returns to „Nowa gra” on close.
-- „Nowa gra” (in the rail or in „Koniec gry”) opens the „Nowa gra” dialog: „Liczba kolorów” as a segmented control 5–9, a strip of the colors in play with the level's name, then „Ustawienia gry”, a read-only summary of the other settings the game will start with („Punktacja: Bez premii” or „Punktacja: Z premią”) with a „Zmień w Opcjach” link, then „Anuluj” and „Zacznij”. „Zacznij” starts a new game with the chosen count and the summed-up settings.
+- „Nowa gra” (in the rail or in „Koniec gry”) opens the „Nowa gra” dialog: „Liczba kolorów” as a segmented control 5–10, a strip of the colors in play with the level's name, then „Ustawienia gry”, a read-only summary of the other settings the game will start with („Punktacja: Bez premii” or „Punktacja: Z premią”) with a „Zmień w Opcjach” link, then „Anuluj” and „Zacznij”. „Zacznij” starts a new game with the chosen count and the summed-up settings.
 - „Zmień w Opcjach” swaps the dialog for „Opcje”, open on „Gra”. Closing „Opcje” („Gotowe”, Esc or a scrim click) brings „Nowa gra” back with the summary updated and the count picked before the link still chosen. „Anuluj” or „Zacznij” forgets that pick.
 - After at least one move the dialog also says „Obecna gra ({score} pkt) zostanie utracona.” and „Anuluj” is focused; otherwise „Zacznij” is focused. Esc, a scrim click and „Anuluj” close it with the game and its count untouched.
 - Game over shows „Koniec gry” with the final score over the finished board. Its three states are name entry, saved and outside the top 30, described under Persistence.
@@ -136,7 +136,7 @@ One window shows a header, the board and a side rail as one centered block. The 
 | Score | Wynik | Rail, 280 px wide | Current points and balls cleared, with Polish plural forms (1 kulka zbita, 2–4 kulki zbite, 5 kulek zbitych) |
 | Preview | Następne | Three 44 px slots | The next 3 colors, with „pojawią się po ruchu bez zbicia” always visible |
 | New game, options | Nowa gra, Opcje | Two 44 px secondary buttons sharing one row | „Nowa gra” restarts, „Opcje” opens the options dialog; both are disabled during animations and dialogs |
-| Highscores | Najlepsze wyniki · {n} kolorów, or Wyniki z premią · {n} kolorów | Fills the rest of the rail, scrolls | A 5–9 filter and a „Bez premii \| Z premią” filter, then the top 30 for the chosen count and scoring, with rank, name, date (dd.mm.rrrr) and points |
+| Highscores | Najlepsze wyniki · {n} kolorów, or Wyniki z premią · {n} kolorów | Fills the rest of the rail, scrolls | A 5–10 filter and a „Bez premii \| Z premią” filter, then the top 30 for the chosen count and scoring, with rank, name, date (dd.mm.rrrr) and points |
 
 **Highscore list rows**
 
@@ -147,7 +147,7 @@ One window shows a header, the board and a side rail as one centered block. The 
 **Browsing other highscore lists**
 
 - There is one top 30 for each color count and scoring: 10 lists in all.
-- Under the heading sits a compact 5–9 segmented control (HighscoreFilter, „Pokaż wyniki dla”), and under it a compact „Bez premii | Z premią” control (BonusFilter, „Pokaż wyniki”). Together they only pick which top 30 the panel shows; the game in progress, its settings and its score are untouched. A small dot marks the current game's count and scoring.
+- Under the heading sits a compact 5–10 segmented control (HighscoreFilter, „Pokaż wyniki dla”), and under it a compact „Bez premii | Z premią” control (BonusFilter, „Pokaż wyniki”). Together they only pick which top 30 the panel shows; the game in progress, its settings and its score are untouched. A small dot marks the current game's count and scoring.
 - Both show the current game's settings at launch and whenever a game starts or ends, so „Koniec gry” and the saved row always appear in their own list. They are not remembered across launches. Otherwise they stay where the player put them, and they stay usable during animations and dialogs.
 - Every list can be chosen, even one with no scores. Another empty list says „Brak wyników dla {n} kolorów.”, or „Brak wyników z premią dla {n} kolorów.”
 - Another list has no „Ta gra” row, since scores across counts and scorings do not compare. Instead the current game is pinned at the foot of the panel (CurrentGameNote): „Ta gra · {n} kolorów” with its place in its own list and its points, styled like the „Ta gra” row with a dashed accent border; a bonus game adds „z premią ·” before „teraz”. Outside its own top 30 it shows „–” and „poza top 30”. It updates as the score grows, and clicking it shows the current game's list again (both filters).
@@ -167,10 +167,10 @@ One window shows a header, the board and a side rail as one centered block. The 
 
 - „Opcje” opens a dialog over the board, like „Nowa gra”. It works mid-game and never touches the game in progress or its score. Two underlined tabs, „Gra” (shown first) and „Wygląd”, keep the card short enough for the board; the arrow keys switch them. Opened from the rail it closes back to the board; opened from „Nowa gra” it closes back to „Nowa gra”.
 - „Gra” holds the game settings other than the color count: today „Punktacja” as a segmented control „Bez premii | Z premią” with one line on what it means („10 pkt za każdą kulkę”, or „Od 6. kulki w jednym zbiciu każda warta o 10 pkt więcej”), under the note „Obowiązuje od następnej gry. Obecna gra się nie zmieni.” A change is remembered at once and is what „Nowa gra” sums up (see Choosing the game settings). The color count is not here; it is picked only in „Nowa gra”.
-- On „Wygląd”, „Kolory kulek” picks the ball theme from three cards, each showing all nine balls in its own theme:
+- On „Wygląd”, „Kolory kulek” picks the ball theme from three cards, each showing all ten balls in its own theme:
   - **Klasyczne** („Spokojne barwy”): the current palette, with its own light and dark values. The default.
   - **Cukierkowe** („Żywe jak draże czekoladowe”): vivid colors as close to M&M's shells as possible, the same in light and dark. The six classic candies (red, orange, yellow, green, blue, brown) plus the limited-edition purple and pink, and a glossy licorice black.
-  - **Kotki** („Kocie mordki w klasycznych barwach”): every ball is a cute cat's head (two ears, eyes, nose, whiskers, pink inner ears and cheeks) with fur in the classic color; the color alone tells cats apart, all nine share one face. A dark contour outlines each cat; the black cat gets a light face and contour so it stands out on dark fields. No gloss. Clear, spawn, hop, shake and slide animate the cat exactly like a ball. The logo's three balls stay round.
+  - **Kotki** („Kocie mordki w klasycznych barwach”): every ball is a cute cat's head (two ears, eyes, nose, whiskers, pink inner ears and cheeks) with fur in the classic color; the color alone tells cats apart, all ten share one face. A dark contour outlines each cat; the black cat gets a light face and contour so it stands out on dark fields; the grey cat is a mid-light grey that reads on both light and dark fields. No gloss. Clear, spawn, hop, shake and slide animate the cat exactly like a ball. The logo's three balls stay round.
 - A picked theme applies at once (the board behind the dialog changes) and is remembered. „Gotowe” (focused), Esc and a scrim click close the dialog.
 - The theme changes only how balls look: the rules, saves and highscores never see it.
 - The UI never names the brand; the theme is „Cukierkowe”.

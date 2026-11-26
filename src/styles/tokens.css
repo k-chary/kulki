@@ -106,6 +106,7 @@
   --ball-candy-pink: #f2559b;
   --ball-candy-brown: #6a3420;
   --ball-candy-black: #141414; /* no black M&M's: a glossy licorice black */
+  --ball-candy-grey: #9ba1ab;  /* a silver sugar shell */
 
   /* Cat balls: a cat's head in the ball's color, drawn by three masks on a 100 x 100 grid
      (head silhouette with curved ears tilted outward, ink face with a contour, pink inner
@@ -215,6 +216,7 @@
   --ball-classic-pink: #f08cc0;
   --ball-classic-brown: #8a5a32;
   --ball-classic-black: #1c1f26;
+  --ball-classic-grey: #8c929e;
   --ball-black-edge: transparent;
   --path-black: #1c1f26;             /* path dots and target ring for a black ball */
   --ball-highlight: rgb(255 255 255 / 0.85);
@@ -265,6 +267,7 @@
     --ball-classic-pink: #f59ac9;
     --ball-classic-brown: #a8703f;
     --ball-classic-black: #06080c;
+    --ball-classic-grey: #a3a9b5;
     --ball-black-edge: rgb(255 255 255 / 0.4); /* a black ball on a dark field needs a rim */
     --path-black: #9aa5bd;           /* path dots and target ring for a black ball */
     --ball-highlight: rgb(255 255 255 / 0.7);
@@ -313,6 +316,7 @@
   --ball-classic-pink: #f59ac9;
   --ball-classic-brown: #a8703f;
   --ball-classic-black: #06080c;
+  --ball-classic-grey: #a3a9b5;
   --ball-black-edge: rgb(255 255 255 / 0.4); /* a black ball on a dark field needs a rim */
   --path-black: #9aa5bd;           /* path dots and target ring for a black ball */
   --ball-highlight: rgb(255 255 255 / 0.7);
@@ -345,6 +349,7 @@
   --ball-pink: var(--ball-classic-pink);
   --ball-brown: var(--ball-classic-brown);
   --ball-black: var(--ball-classic-black);
+  --ball-grey: var(--ball-classic-grey);
 }
 
 :root[data-ball-theme="candy"],
@@ -359,6 +364,7 @@
   --ball-pink: var(--ball-candy-pink);
   --ball-brown: var(--ball-candy-brown);
   --ball-black: var(--ball-candy-black);
+  --ball-grey: var(--ball-candy-grey);
 }
 
 /*

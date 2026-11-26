@@ -81,8 +81,19 @@ describe('tokens.css', () => {
     expect([...dark.keys()].sort()).toEqual([...light.keys()].sort());
   });
 
-  it('has the nine ball colors in both ball themes', () => {
-    const balls = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'brown', 'black'];
+  it('has the ten ball colors in both ball themes', () => {
+    const balls = [
+      'red',
+      'orange',
+      'yellow',
+      'green',
+      'blue',
+      'purple',
+      'pink',
+      'brown',
+      'black',
+      'grey',
+    ];
     const base = tokenValues(blocks, 'base');
     for (const ball of balls) {
       expect(light.has(`--ball-classic-${ball}`)).toBe(true);

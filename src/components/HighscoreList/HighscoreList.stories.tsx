@@ -136,11 +136,11 @@ export const FilterOtherListOutsideTop30: Story = {
   decorators: [(Story) => <RailFrame tall>{Story()}</RailFrame>],
 };
 
-/** Nobody has played 9 colors yet. */
+/** Nobody has played 10 colors yet. */
 export const FilterOnEmptyList: Story = {
   args: {
     rows: [],
-    colorCount: 9,
+    colorCount: 10,
     gameColorCount: 6,
     onColorCountChange: fn(),
     current: { place: 2, score: 320 },
@@ -206,11 +206,11 @@ export const BonusBrowsingPlainList: Story = {
   decorators: [(Story) => <RailFrame tall>{Story()}</RailFrame>],
 };
 
-/** No bonus game has been played with 9 colors yet. */
+/** No bonus game has been played with 10 colors yet. */
 export const BonusEmptyList: Story = {
   args: {
     rows: [],
-    colorCount: 9,
+    colorCount: 10,
     gameColorCount: 6,
     onColorCountChange: fn(),
     bonus: true,

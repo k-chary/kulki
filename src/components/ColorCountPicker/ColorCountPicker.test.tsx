@@ -7,11 +7,11 @@ import { ColorCountPicker } from './ColorCountPicker';
 afterEach(cleanup);
 
 describe('ColorCountPicker', () => {
-  it('offers 5 to 9 colors with the chosen count checked', () => {
+  it('offers 5 to 10 colors with the chosen count checked', () => {
     render(<ColorCountPicker value={6} />);
     expect(screen.getByRole('radiogroup', { name: 'Liczba kolorów' })).toBeTruthy();
     const options = screen.getAllByRole('radio');
-    expect(options.map((o) => o.textContent)).toEqual(['5', '6', '7', '8', '9']);
+    expect(options.map((o) => o.textContent)).toEqual(['5', '6', '7', '8', '9', '10']);
     expect(screen.getByRole('radio', { name: '6 kolorów' }).getAttribute('aria-checked')).toBe(
       'true',
     );
@@ -28,7 +28,7 @@ describe('ColorCountPicker', () => {
   it('reports the clicked count', async () => {
     const onChange = vi.fn();
     render(<ColorCountPicker value={6} onChange={onChange} />);
-    await userEvent.click(screen.getByRole('radio', { name: '9 kolorów' }));
-    expect(onChange).toHaveBeenCalledWith(9);
+    await userEvent.click(screen.getByRole('radio', { name: '10 kolorów' }));
+    expect(onChange).toHaveBeenCalledWith(10);
   });
 });
